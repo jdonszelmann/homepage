@@ -7,20 +7,24 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        node-modules = pkgs.mkYarnPackage {
+        node-modules = pkgs.buildNpmPackage {
           name = "node-modules";
           src = ./.;
+          npmDepsHash = "sha256-yvESIlYLlyX8oOWzDmcqx0HNSKfTXQcEvyI4UfhrHZw=";
         };
 
         nativeBuildInputs = with pkgs; [ ];
-        buildInputs = with pkgs; [ yarn node-modules ];
+        buildInputs = with pkgs; [ nodejs node-modules ];
 
         dev = with pkgs;
           writeScriptBin "dev" ''
-            yarn run start
+            npm run start
           '';
-      in
-      with pkgs; rec {
+        prefetch = with pkgs;
+          writeScriptBin "prefetch" ''
+            nix run nixpkgs#prefetch-npm-deps package-lock.json
+          '';
+      in with pkgs; rec {
         packages = rec {
           inherit node-modules;
           website = pkgs.stdenv.mkDerivation rec {
@@ -31,19 +35,18 @@
             buildPhase = ''
               ln -s ${node-modules}/libexec/homepage/node_modules node_modules
               export HOME=$TMPDIR
-              ${pkgs.yarn}/bin/yarn run build
+              ${pkgs.nodejs}/bin/npm run build
             '';
             installPhase = ''
-              mkdir $out
-              cp -r dist $out
+              runHook preInstall
+              cp -pr dist $out/
+              runHook postInstall
             '';
           };
           default = website;
         };
         devShells.default = mkShell {
-          buildInputs = buildInputs ++ [
-            dev
-          ];
+          buildInputs = buildInputs ++ [ dev ];
           inherit nativeBuildInputs;
           packages = with pkgs; [ lychee ];
         };
