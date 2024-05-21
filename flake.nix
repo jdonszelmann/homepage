@@ -7,10 +7,12 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+        npmDepsHash = "sha256-yvESIlYLlyX8oOWzDmcqx0HNSKfTXQcEvyI4UfhrHZw=";
+
         node-modules = pkgs.buildNpmPackage {
           name = "node-modules";
           src = ./.;
-          npmDepsHash = "sha256-yvESIlYLlyX8oOWzDmcqx0HNSKfTXQcEvyI4UfhrHZw=";
+          inherit npmDepsHash;
         };
 
         nativeBuildInputs = with pkgs; [ ];
@@ -27,20 +29,16 @@
       in with pkgs; rec {
         packages = rec {
           inherit node-modules;
-          website = pkgs.stdenv.mkDerivation rec {
-            pname = "homepage";
-            version = "2024-01-07";
-            src = self;
-            inherit nativeBuildInputs buildInputs;
+          website = pkgs.buildNpmPackage {
+            name = "homepage";
+            version = "22-05-2024";
+            src = ./.;
+            inherit nativeBuildInputs buildInputs npmDepsHash;
             buildPhase = ''
-              ln -s ${node-modules}/libexec/homepage/node_modules node_modules
-              export HOME=$TMPDIR
               ${pkgs.nodejs}/bin/npm run build
             '';
             installPhase = ''
-              runHook preInstall
               cp -pr dist $out/
-              runHook postInstall
             '';
           };
           default = website;
