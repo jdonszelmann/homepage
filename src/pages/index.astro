@@ -10,7 +10,8 @@ import {
 	faGithub,
 	faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
-// import matrix from "../../assets/images/matrix.svg";
+import matrix from "../../assets/images/matrix.svg?raw";
+import rust from "../../assets/images/rust.svg?raw";
 ---
 
 <Layout title="Jonathan Dönszelmann">
@@ -39,43 +40,42 @@ import {
 			<i set:html={icon(faEarthEurope).html} />
 			<span>https://donsz.nl</span>
 		</Social>
-		<!-- <Social link="">
+		<Social link="">
 			<i>
-				<svg
-					aria-hidden="true"
-					focusable="false"
-					role="img"
-					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 496 512"
-					><path fill="currentColor" d={matrix.}></path>
-				</svg>
-				<span>https://donsz.nl</span>
+				<Fragment set:html={matrix} alt="matrix logo" />
 			</i>
-		</Social> -->
-
-		<style lang="scss">
-			.main {
-				display: flex;
-				flex-direction: column;
-
-				.title {
-					text-align: center;
-				}
-			}
-
-			.grid {
-				display: grid;
-				column-gap: 1em;
-				row-gap: 1em;
-				grid-template-columns: repeat(auto-fit, minmax(14em, 1fr));
-			}
-		</style>
-
-		<style is:global>
-			i {
-				width: 1.33em;
-				height: 1.33em;
-			}
-		</style>
+			<span>@jonathan:jdonszelmann.nl</span>
+		</Social>
+		<Social link="https://crates.io/users/jdonszelmann">
+			<i>
+				<Fragment set:html={rust} alt="rust logo" />
+			</i>
+			<span>jdonszelmann</span>
+		</Social>
 	</div>
 </Layout>
+
+<style lang="scss">
+	.main {
+		display: flex;
+		flex-direction: column;
+
+		.title {
+			text-align: center;
+		}
+	}
+
+	.grid {
+		display: grid;
+		column-gap: 1em;
+		row-gap: 1em;
+		grid-template-columns: repeat(auto-fit, minmax(16em, 1fr));
+	}
+</style>
+
+<style is:global>
+	i {
+		width: 1.33em;
+		height: 1.33em;
+	}
+</style>
