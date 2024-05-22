@@ -9,9 +9,9 @@ import {
 	faMastodon,
 	faGithub,
 	faLinkedin,
+	faRust,
 } from "@fortawesome/free-brands-svg-icons";
 import matrix from "../../assets/images/matrix.svg?raw";
-import rust from "../../assets/images/rust.svg?raw";
 ---
 
 <Layout title="Jonathan Dönszelmann">
@@ -47,9 +47,7 @@ import rust from "../../assets/images/rust.svg?raw";
 			<span>@jonathan:jdonszelmann.nl</span>
 		</Social>
 		<Social link="https://crates.io/users/jdonszelmann">
-			<i>
-				<Fragment set:html={rust} alt="rust logo" />
-			</i>
+			<i set:html={icon(faRust).html} />
 			<span>jdonszelmann</span>
 		</Social>
 	</div>
@@ -68,7 +66,7 @@ import rust from "../../assets/images/rust.svg?raw";
 	.grid {
 		display: grid;
 		column-gap: 1em;
-		row-gap: 1em;
+		row-gap: 0.5em;
 		grid-template-columns: repeat(auto-fit, minmax(16em, 1fr));
 	}
 </style>
