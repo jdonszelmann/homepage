@@ -1,0 +1,31 @@
+---
+interface Props {
+    link: string;
+}
+
+const { link } = Astro.props;
+---
+
+<a class="social" href={link}>
+    <slot />
+</a>
+
+<style lang="scss">
+    .social {
+        display: grid;
+        grid-template-columns: auto auto;
+
+        color: white;
+        text-decoration: none;
+        background: black;
+        font-weight: bold;
+        font-family: monospace;
+        font-size: large;
+
+        padding: 0.4em 0.6em;
+        border-radius: 0.2em;
+
+        align-items: center;
+        justify-content: space-between;
+    }
+</style>

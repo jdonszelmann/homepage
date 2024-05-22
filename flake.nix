@@ -7,16 +7,10 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        npmDepsHash = "sha256-yvESIlYLlyX8oOWzDmcqx0HNSKfTXQcEvyI4UfhrHZw=";
-
-        node-modules = pkgs.buildNpmPackage {
-          name = "node-modules";
-          src = ./.;
-          inherit npmDepsHash;
-        };
+        npmDepsHash = "sha256-WkGCXpmxuMfzZMG51EQrE7r46+lZ1WDVgLgGUtSlX6s=";
 
         nativeBuildInputs = with pkgs; [ ];
-        buildInputs = with pkgs; [ nodejs node-modules ];
+        buildInputs = with pkgs; [ nodejs ];
 
         dev = with pkgs;
           writeScriptBin "dev" ''
@@ -44,7 +38,7 @@
           default = website;
         };
         devShells.default = mkShell {
-          buildInputs = buildInputs ++ [ dev ];
+          buildInputs = buildInputs ++ [ dev prefetch ];
           inherit nativeBuildInputs;
           packages = with pkgs; [ lychee ];
         };
