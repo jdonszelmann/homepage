@@ -6,9 +6,17 @@ interface Props {
 const { link } = Astro.props;
 ---
 
-<a class="social" href={link}>
-    <slot />
-</a>
+{
+    link !== "" && link !== null && typeof link !== "undefined" ? (
+        <a class="social" href={link}>
+            <slot />
+        </a>
+    ) : (
+        <div class="social">
+            <slot />
+        </div>
+    )
+}
 
 <style lang="scss">
     .social {
