@@ -23,30 +23,38 @@ const { title } = Astro.props;
 		<main>
 			<slot name="main" />
 			<slot name="socials" />
+			<div class="gap"></div>
+			<slot name="situation" />
 		</main>
 	</body>
+	<style is:global>
+		:root {
+		}
+		html,
+		body {
+			margin: 0;
+			padding: 0;
+		}
+		body {
+			display: grid;
+			grid-template-columns: auto min(60em, 90vw) auto;
+			grid-template-rows: auto;
+			grid-template-areas: "left middle right";
+		}
+		body > * {
+			grid-area: middle;
+		}
+
+		main {
+			display: grid;
+			grid-template-rows: auto auto 4em auto;
+		}
+	</style>
+	<style is:global>
+		i {
+			width: 1.33em;
+			height: 1.33em;
+			display: inline-block;
+		}
+	</style>
 </html>
-<style is:global>
-	:root {
-	}
-	html,
-	body {
-		margin: 0;
-		padding: 0;
-	}
-	body {
-		display: grid;
-		grid-template-columns: auto min(60em, 90vw) auto;
-		grid-template-rows: auto;
-		grid-template-areas: "left middle right";
-	}
-	body > * {
-		grid-area: middle;
-	}
-</style>
-<style is:global>
-	i {
-		width: 1.33em;
-		height: 1.33em;
-	}
-</style>

@@ -1,10 +1,17 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Social from "../components/Social.astro";
+import Card from "../components/Card.astro";
 
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
-import { faEarthEurope } from "@fortawesome/free-solid-svg-icons";
+import {
+	faEarthEurope,
+	faLocationDot,
+	faGraduationCap,
+	faBriefcase,
+	faLanguage,
+} from "@fortawesome/free-solid-svg-icons";
 import {
 	faMastodon,
 	faGithub,
@@ -51,6 +58,58 @@ import matrix from "../../assets/images/matrix.svg?raw";
 			<span>jdonszelmann</span>
 		</Social>
 	</div>
+
+	<div class="situation grid" slot="situation">
+		<Card>
+			<i slot="icon" set:html={icon(faEarthEurope).html} />
+			<div slot="description">
+				Delft, The Netherlands
+				<br />
+				He/Him
+				<div class="lang">
+					<i set:html={icon(faLanguage).html} />
+					<span>rw: Dutch, English</span>
+					<span>r: French</span>
+				</div>
+			</div>
+		</Card>
+		<Card>
+			<i slot="icon" set:html={icon(faBriefcase).html} />
+			<div slot="description">
+				Lecturer @ TU Delft
+				<ul>
+					<li>
+						<a
+							href="https://cese.ewi.tudelft.nl/software-fundamentals"
+							>Software Fundamentals</a
+						>
+					</li>
+					<li>
+						<a href="https://cese.ewi.tudelft.nl/software-systems"
+							>Software Systems</a
+						>
+					</li>
+					<li>
+						<a
+							href="https://cese.ewi.tudelft.nl/embedded-systems-lab"
+							>Embedded Systems Lab</a
+						>
+					</li>
+				</ul>
+			</div>
+		</Card>
+		<Card>
+			<i slot="icon" set:html={icon(faGraduationCap).html} />
+			<div slot="description">
+				<ul>
+					<li>BSc Computer Science & Engineering</li>
+					<li>MSc Embedded Systems</li>
+					<li>Dutch Teaching Qualification</li>
+				</ul>
+				@ TU Delft
+			</div>
+		</Card>
+	</div>
 </Layout>
 
 <style lang="scss">
@@ -63,10 +122,39 @@ import matrix from "../../assets/images/matrix.svg?raw";
 		}
 	}
 
+	.lang {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		grid-template-rows: 1fr 1fr;
+		gap: 0.2em;
+
+		i {
+			grid-row: 1 / span 2;
+
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+
+			height: 2.66em;
+			width: 2.66em;
+		}
+	}
+
 	.grid {
 		display: grid;
 		column-gap: 1em;
 		row-gap: 0.5em;
-		grid-template-columns: repeat(auto-fit, minmax(16em, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(18em, 1fr));
+	}
+
+	ul {
+		padding-left: 0;
+		margin-top: 0.5em;
+		margin-bottom: 0.5em;
+	}
+
+	a {
+		color: unset;
 	}
 </style>
