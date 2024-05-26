@@ -1,0 +1,54 @@
+---
+interface Props {}
+
+const {} = Astro.props;
+---
+
+<div class="card">
+    <div class="icon part">
+        <slot name="icon" />
+    </div>
+    <div class="description part">
+        <slot name="description" />
+    </div>
+</div>
+
+<style lang="scss" is:inline>
+    .card {
+        display: grid;
+        grid-template-columns: 1fr 3fr;
+        gap: 1em;
+
+        color: white;
+        text-decoration: none;
+        background: black;
+        font-weight: bold;
+        font-family: monospace;
+        font-size: large;
+
+        padding: 0.4em 0.6em;
+        border-radius: 0.2em;
+
+        align-items: center;
+        justify-content: space-between;
+
+        height: 10em;
+    }
+
+    .icon {
+        padding: 1em;
+        box-sizing: border-box;
+
+        i {
+            width: 3.8em;
+            height: 3.8em;
+        }
+    }
+
+    .part {
+        display: flex;
+        align-items: center;
+        justify-content: left;
+        height: 100%;
+    }
+</style>
