@@ -20,14 +20,22 @@
           writeScriptBin "prefetch" ''
             nix run nixpkgs#prefetch-npm-deps package-lock.json
           '';
+        nerdfonts =
+          pkgs.nerdfonts.override { fonts = [ "NerdFontsSymbolsOnly" ]; };
       in with pkgs; rec {
         packages = rec {
-          inherit node-modules;
           website = pkgs.buildNpmPackage {
             name = "homepage";
             version = "22-05-2024";
             src = ./.;
             inherit nativeBuildInputs buildInputs npmDepsHash;
+            configurePhase = ''
+              mkdir -p ./public/fonts
+              ln -sf ${nerdfonts}/share/fonts/truetype/NerdFonts/* ./public/fonts/
+              ln -sf ${pkgs.fira}/share/fonts/opentype/* ./public/fonts/
+              ln -sf ${pkgs.jetbrains-mono}/share/fonts/truetype/* ./public/fonts/
+              ln -sf ${pkgs.fira-mono}/share/fonts/opentype/* ./public/fonts/
+            '';
             buildPhase = ''
               ${pkgs.nodejs}/bin/npm run build
             '';
@@ -38,9 +46,12 @@
           default = website;
         };
         devShells.default = mkShell {
-          buildInputs = buildInputs ++ [ dev prefetch ];
+          buildInputs = buildInputs ++ [ dev prefetch yarn ];
           inherit nativeBuildInputs;
-          packages = with pkgs; [ lychee ];
+          packages = with pkgs; [ lychee (pkgs.writeShellScriptBin "watch" ''
+            yarn run dev --host '0.0.0.0'
+          '') ];
+          shellHook = packages.website.configurePhase;
         };
       });
 }

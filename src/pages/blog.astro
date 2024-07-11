@@ -1,0 +1,20 @@
+---
+import Layout from "../layouts/Overview.astro";
+import PostPreview from "../components/PostPreview.astro";
+const posts = await Astro.glob("./blog/**/*.{md,mdx}");
+---
+
+<Layout>
+    <div class="previews">
+    {posts.map((post) => <PostPreview post={post as any} />)}
+    </div>
+</Layout>
+
+<style>
+.previews {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    margin-top: 1em;
+}
+</style>

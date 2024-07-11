@@ -1,0 +1,282 @@
+---
+import TOCHeading from "../components/TOCHeading.astro";
+import {type HierarchicalHeading} from "../ts/HierarchicalHeading.ts";
+
+interface Heading {
+    slug: string,
+    text: string,
+    depth: number,
+}
+
+export interface Props {
+    content: {
+        title: string,
+    }
+    headings: Heading[]
+    frontmatter: {
+        authors: string[],
+        reviewers: string[],
+        description: string,
+    }
+}
+
+const {
+    content: { title },
+    headings,
+    frontmatter: {authors, reviewers = []},
+} = Astro.props;
+
+
+const maxDepth = 2;
+
+function parseHeadings(headings: Heading[], depth: number): HierarchicalHeading[] {
+    if (headings.length == 0) {
+        return [];
+    }
+
+    const result: HierarchicalHeading[] = [];
+    let acc: Heading[] = [];
+
+    for (const heading of headings) {
+        if (heading.depth > maxDepth) {
+            continue;
+        }
+
+        if (heading.depth > depth) {
+            acc.push(heading);
+        } else if (heading.depth == depth) {
+            if (acc.length != 0) {
+                result[result.length - 1].children = parseHeadings(acc, depth + 1);
+                acc = [];
+            }
+            result.push({
+                slug: heading.slug,
+                text: heading.text,
+                children: [],
+            })
+        } else if (heading.depth < depth) {
+            throw new Error("bad heading hierarchy")
+        }
+    }
+
+    if (acc.length != 0) {
+        result[result.length - 1].children = parseHeadings(acc, depth + 1);
+    }
+
+    return result;
+}
+
+headings.splice(0, 0, {
+    slug: "title",
+    text: title,
+    depth: 1,
+})
+const hierarchicalHeadings = headings.length == 0? []: headings[0].depth == 1? parseHeadings(headings, 1): (() => {throw new Error("bad heading hierarchy (should start with h1)")})();
+
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="description" content="Astro description" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <title>{title}</title>
+        <style lang="scss">
+            @font-face {
+                font-family: "JBM";
+                src: url('/fonts/JetBrainsMono-Regular.ttf') format('truetype');
+            }
+            @font-face {
+                font-family: "NF";
+                src: url('/fonts/SymbolsNerdFontMono-Regular.ttf') format('truetype');
+            }
+            @font-face {
+                font-family: "Fira Sans";
+                src: url('/fonts/FiraSans-Regular.otf') format('opentype');
+                font-weight: normal;
+
+            } 
+            @font-face {
+                font-family: "Fira Sans";
+                src: url('/fonts/FiraSans-Bold.otf') format('opentype');
+                font-weight: bold;
+            }
+
+
+            div.authors {
+                flex-direction: column;
+                font-weight: bold;
+                font-size: 10pt;
+            }
+
+            a.author {
+                display: inline-flex;
+                align-items: center;
+                margin-right: 1em;
+
+                color: #212529;
+                box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+
+                padding: 0.3em;
+                border-radius: 0.3em;
+                text-decoration: none;
+            }
+
+            a.author:last-child {
+                margin-right: 0;
+            }
+
+            img.gh-avatar {
+                display: inline-block;
+                margin-right: 0.3em;
+                height: 1.5em;
+                border-radius: 1em;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                background: #f5f5f5;
+            }
+
+            body {
+                display: grid;
+                grid-template-rows: auto;
+                grid-template-areas: "left nav middle right";
+
+                grid-template-columns: auto 10em min(40em, 70vw) auto;
+                gap: 1em;
+            }
+
+            @media (width <= 800px) {
+                body {
+                    grid-template-columns: 2em auto 2em;
+                    grid-template-rows: 3em auto;
+                    grid-template-areas: 
+                        "left nav right" 
+                        "left middle right";
+                }
+
+                nav {
+                    flex-direction: row !important;
+                }
+
+                .space {
+                    display: block;
+                    margin-left: auto;
+                }
+
+                .toc {
+                    display: none;
+                }
+
+                .reviewers {
+                   display: none !important;
+                }
+            }
+            @media (width > 800px) {
+                nav {
+                    padding-top: 1.5em;
+                    align-self: start;
+                    position: sticky;
+                    top: 0;
+                }
+                .toc {
+                    display: contents;
+                }
+            }
+
+            .space {
+                display: none;
+            }
+
+            main {
+                grid-area: middle;
+                font-family: "Fira Sans";
+            }
+
+            nav {
+                background: #f5f5f5;
+                grid-area: nav;
+                display: flex;
+                flex-direction: column;
+
+                justify-content: start;
+                align-items: center;
+
+                gap: 1em;
+            }
+
+            .menu {
+                display: contents;
+
+                a {
+                    text-decoration: none;
+                    color: black;
+                }
+            }
+
+            .reviewers {
+                display: contents;
+            }
+        </style>
+    </head>
+
+    <body>
+        <nav>
+            <div class="menu">
+                <a href="/">Home</a>
+                <a href="/blog">Overview</a>
+            </div>
+
+            <div class="space"></div>
+
+            {authors.length > 1? "Authors:": "Author:"}
+            <div class="authors">
+                {
+                    authors.map((author: any) => (
+                        <a class="author" href=`https://github.com/${author}`>
+                            <img
+                                alt={`${author}'s github avatar`} 
+                                class="gh-avatar"
+                                src={`https://github.com/${author}.png`}
+                            />
+                            {author}
+                        </a>
+                    ))
+                }
+            </div>
+            {authors.length > 0 && (
+                <div class="reviewers">
+                Reviewed by:
+                <div class="authors">
+                    {
+                        reviewers.map((author: any) => (
+                            <a class="author" href=`https://github.com/${author}`>
+                                <img
+                                    alt={`${author}'s github avatar`} 
+                                    class="gh-avatar"
+                                    src={`https://github.com/${author}.png`}
+                                />
+                                {author}
+                            </a>
+                        ))
+                        }
+                </div>
+            </div>
+            )}
+
+            <div class="toc">
+                <TOCHeading elems={hierarchicalHeadings}>
+            </div>
+
+        </nav>
+        <main>
+            <h1 id="title" class="title">{title}</h1>
+            <!-- <p>{description}</p> -->
+            <slot />
+        </main>
+    </body>
+</html>

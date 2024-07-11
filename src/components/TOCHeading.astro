@@ -1,0 +1,40 @@
+---
+import { type HierarchicalHeading } from "../ts/HierarchicalHeading.ts";
+import TOCHeading from "./TOCHeading.astro"
+
+const { elems }: { elems: HierarchicalHeading[] } = Astro.props;
+---
+
+<ul>
+    {
+        elems.map((h) => (
+            <li>
+                <a href={`#${h.slug}`}>{h.text}</a>
+                <TOCHeading elems={h.children}>
+            </li>
+        ))
+    }
+</ul>
+
+<style lang="scss">
+    li ul::marker {
+        content: "\f0f6d ";
+    }
+
+    li ul {
+        padding-left: 0.6em;
+        border-left: solid black;
+        list-style-type: none;
+    }
+    ul {
+        list-style-type: '\f4df  ';
+        margin-left: 0;
+        padding-left: 0;
+
+        font-family: 'NF';
+    }
+    a {
+        text-decoration: none;
+        color: black
+    }
+</style>

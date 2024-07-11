@@ -1,0 +1,100 @@
+---
+export interface Props {
+    post: {
+        frontmatter: {
+            title: string;
+            authors: string[];
+            reviewers: string[];
+            description: string;
+        };
+        compiledContent: string;
+        url: string;
+    }
+}
+
+const {
+    post: {
+        frontmatter: { authors, reviewers = [], title },
+        compiledContent,
+        url
+    }
+}: Props = Astro.props;
+
+const first = compiledContent().match(
+    new RegExp("<p[^>]*>.*?</p[^>]*>", "s"),
+)[0];
+---
+
+<div class="preview">
+    <a class="click-area" href={url}>
+        <h1 class="title">{title}</h1>
+        <div class="first-paragraph" set:html={first} />
+    </a>
+
+    <div class="author-area">
+    {authors.length > 1? "Authors:": "Author:"}
+    <div class="authors">
+        {
+            authors.map((author: any) => (
+                <a class="author" href=`https://github.com/${author}`>
+                    <img
+                        alt={`${author}'s github avatar`} 
+                        class="gh-avatar"
+                        src={`https://github.com/${author}.png`}
+                    />
+                    {author}
+                </a>
+            ))
+        }
+    </div>
+    </div>
+</div>
+
+<style>
+    .click-area {
+        display: contents;
+        color: black;
+        text-decoration: none;
+    }
+
+    .preview {
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+        display: block;
+        padding: 1em;
+    }
+
+    .author-area {
+        display: flex;
+        flex-direction: row;
+        gap: 1em;
+    }
+
+    div.authors {
+        font-weight: bold;
+        font-size: 10pt;
+    }
+
+    a.author {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 1em;
+
+        color: #212529;
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+
+        padding: 0.3em;
+        border-radius: 0.3em;
+        text-decoration: none;
+    }
+
+    a.author:last-child {
+        margin-right: 0;
+    }
+
+    img.gh-avatar {
+        display: inline-block;
+        margin-right: 0.3em;
+        height: 1.5em;
+        border-radius: 1em;
+    }
+</style>
