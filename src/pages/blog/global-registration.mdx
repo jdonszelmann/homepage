@@ -1,0 +1,149 @@
+---
+layout: "../../layouts/Blog.astro"
+title: 'Global Registration'
+pubDate: 2024-07-10
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "rust"]
+description: |
+    You might not have considered this before, but tests in Rust are rather magical.
+    Anywhere in your project you can slap `#[test]` on a function and the compiler makes sure that they're all automatically run.
+    This pattern, of wanting access to items that are distributed over a crate and possibly even multiple crates, doesn't just come up when dealing with tests,
+    but it's not something that Rust supports except for tests specifically.
+draft: true
+---
+import Gh from '../../components/GitHub.astro';
+
+If you've written a benchmark using criterion before, you may have seen this pattern:
+```rust
+fn criterion_benchmark(c: &mut Criterion) {
+    c.bench_function("benchmark_1", benchmark_1);
+    c.bench_function("benchmark_2", benchmark_2);
+    c.bench_function("benchmark_3", benchmark_3);
+    // ...
+    c.bench_function("benchmark_n", benchmark_n);
+}
+
+criterion_group!(benches, criterion_benchmark);
+criterion_main!(benches);
+```
+
+Being explicit has upsides, but it would be very cool if you could instead write:
+
+```rust
+
+#[bench]
+fn benchmark_1(b: &mut Bencher) {}
+
+#[bench]
+fn benchmark_2(b: &mut Bencher) {}
+
+#[bench]
+fn benchmark_3(b: &mut Bencher) {}
+
+// ...
+
+#[bench]
+fn benchmark_n(b: &mut Bencher) {}
+
+// magically finds all the #[bench] functions
+// even when they're spread over multiple files
+criterion_main!();
+```
+
+This same pattern is also useful for 
+registering routes for a webserver, 
+[filters for tracing](https://github.com/rust-lang/testing-devex-team/issues/3#issuecomment-2112822128),
+or even for defining commmand line flags.
+Personally, I've had a need for this while I was testing embedde code.
+There, you don't have access to rust's built-in test framework.
+Interestingly, Rust does have a weird kind of support for this through [`#![feature(custom_test_frameworks)]`](https://doc.rust-lang.org/nightly/unstable-book/language-features/custom-test-frameworks.html).
+I've even recommended it to my students once or twice, who wanted to test their embedded software but it always felt a bit painful as this feature will, at least in its current form, never be stable.
+
+Various people have expressed interest in having a generic system built into the compiler that can provide this behavior.
+At [RustNL](https://2024.rustnl.org), I talked to <Gh name="epage" /> who wants this for the [Testing Devex team](https://github.com/rust-lang/testing-devex-team), 
+exactly to make tests less magical and to provide users with the option to define their own test frameworks.
+Since then, I've been thinking about this feature. 
+It started with a [pre-rfc](https://internals.rust-lang.org/t/global-registration-a-kind-of-pre-rfc/20813/26), and at this point I've written most of an implementation.
+I'm just not 100% sure that that's the implementation we should want anymore.
+
+Why? Well that's what the rest of this blog post is about.
+
+# Library Solutions
+
+There are currently two major libraries that can help you achieve global registration.
+
+# Distributed Slice
+
+# An implementation
+
+# Probably not what you want
+
+Inter-crate applications:
+
+* Embedded tests might also want to test dependencies
+    * This works with concat_registry!
+* Interrupt handlers: Hal defines a registry, anyone can define handlers that should run when the interrupt happens, the hal calls these.
+    * You really want this to be global
+* libraries providing test fixtures
+    * This works with concat_registry!
+* Hayley's metrics
+    * This works under concat_registry! but apparently gives a lot of overhead as there are many crates.
+* Server Routes 
+    * This works under concat_registry!
+
+
+Problems:
+* versioning of global registries
+* semver
+* import for side effects
+* no errors when addition fails: lint?
+* visibility:
+    * write implying read is likely fine
+    * read implying write is not, but you can solve this with a public getter
+    * Not an issue with concat_registry!
+
+
+```rust
+use custom_test_framework::test_main;
+
+fn main() {
+    #[cfg(test)]
+    test_main!()
+}
+
+#[cfg(test)]
+mod tests {
+    use custom_test_framework::custom_test;
+
+    #[custom_test]
+    fn test_a() {}
+
+    #[custom_test]
+    fn test_b() {}
+}
+```
+
+What should this become? What identifier should the global registry get?
+Would you need a separate 
+
+```rust
+use custom_test_framework::{test_main, define_test_registry};
+
+define_test_registry!()
+
+// rest of the previous example ...
+```
+
+It would be nice if `#[custom_test]` could expand to 
+
+```rust
+registry_add!(custom_test_framework::TESTS, test_{n})
+```
+That would mean that you should be able to add to registries *outside* the current crate *and yet* that other crate can't access the elements you add to it.
+People find that confusing.
+
+Need compile time lists for this;
+We first need to have those before this design can work.
+
+

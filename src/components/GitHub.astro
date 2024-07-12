@@ -1,0 +1,58 @@
+---
+interface Props {
+    name: string;
+    large: boolean;
+}
+
+const { name, large = false } = Astro.props;
+---
+
+<a
+    class:list={["author", large ? "large" : null]}
+    href=`https://github.com/${name}`
+>
+    <img
+        alt={`${name}'s github avatar`}
+        class="gh-avatar"
+        src={`https://github.com/${name}.png`}
+    />
+    {name}
+</a>
+
+<style lang="scss">
+    a.author {
+        display: inline-flex;
+        align-items: center;
+
+        color: #212529;
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+
+        padding: 0 0.3em;
+        border-radius: 0.3em;
+        text-decoration: none;
+
+        font-size: 10pt;
+        vertical-align: middle;
+    }
+
+    a.author.large {
+        padding: 0.3em;
+        font-size: unset;
+        margin-right: 1em;
+    }
+
+    a.author:last-child {
+        margin-right: 0;
+    }
+
+    img.gh-avatar {
+        display: inline-block;
+        height: 1em;
+        border-radius: 1em;
+        margin-right: 0.3em;
+    }
+
+    .large img.gh-avatar {
+        height: 1.3em;
+    }
+</style>

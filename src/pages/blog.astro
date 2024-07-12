@@ -6,15 +6,19 @@ const posts = await Astro.glob("./blog/**/*.{md,mdx}");
 
 <Layout>
     <div class="previews">
-    {posts.map((post) => <PostPreview post={post as any} />)}
+        {
+            posts
+                .filter((i) => !i.draft)
+                .map((post) => <PostPreview post={post as any} />)
+        }
     </div>
 </Layout>
 
 <style>
-.previews {
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-    margin-top: 1em;
-}
+    .previews {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        margin-top: 1em;
+    }
 </style>

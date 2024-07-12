@@ -2,7 +2,6 @@
 layout: "../../layouts/Blog.astro"
 title: 'This is just a test'
 pubDate: 2024-07-10
-description: 'just a test'
 authors: ['jdonszelmann']
 reviewers: ['jdonszelmann']
 tags: [ "test"]

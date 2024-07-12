@@ -23,7 +23,7 @@ const { title } = Astro.props;
         <main>
             <slot name="main" />
             <slot name="socials" />
-            <div class="gap"></div>
+            <slot name="blog" />
             <slot name="situation" />
         </main>
     </body>
@@ -47,7 +47,8 @@ const { title } = Astro.props;
 
         main {
             display: grid;
-            grid-template-rows: auto auto 4em auto;
+            grid-template-rows: auto auto 4em auto 4em;
+            gap: 2em;
         }
     </style>
     <style is:global>
