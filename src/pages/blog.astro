@@ -8,7 +8,9 @@ const posts = await Astro.glob("./blog/**/*.{md,mdx}");
     <div class="previews">
         {
             posts
-                .filter((i) => !i.draft)
+                .filter((i) => {
+                    return !i.frontmatter.draft;
+                })
                 .map((post) => <PostPreview post={post as any} />)
         }
     </div>
