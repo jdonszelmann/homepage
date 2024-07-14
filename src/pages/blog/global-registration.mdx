@@ -3,18 +3,20 @@ layout: "../../layouts/Blog.astro"
 title: 'Global Registration'
 pubDate: 2024-07-10
 authors: ['jdonszelmann']
-reviewers: []
+reviewers: ["bal-e"]
 tags: [ "rust"]
 description: |
     You might not have considered this before, but tests in Rust are rather magical.
     Anywhere in your project you can slap `#[test]` on a function and the compiler makes sure that they're all automatically run.
-    This pattern, of wanting access to items that are distributed over a crate and possibly even multiple crates, doesn't just come up when dealing with tests,
+    This pattern, of wanting access to items that are distributed over a crate and possibly even multiple crates, 
+    is something that projects like bevy, tracing, and dioxus have all expressed interest in
     but it's not something that Rust supports except for tests specifically.
 draft: true
 ---
 import User from '../../components/GithubUser.astro';
 
-If you've written a benchmark using criterion before, you may have seen this pattern:
+[Criterion](https://docs.rs/criterion) is a custom benchmarking framework which provides great statistical analyses of performance.
+If you've ever used it before, you may have seen this pattern:
 ```rust
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("benchmark_1", benchmark_1);
@@ -50,12 +52,15 @@ fn benchmark_n(b: &mut Bencher) {}
 // even when they're spread over multiple files
 criterion_main!();
 ```
+I call this pattern _global registration:_ collecting marked items across a crate, 
+or even across all the crates in an executable.
 
-This same pattern is also useful for 
-registering routes for a webserver, 
-[filters for tracing](https://github.com/rust-lang/testing-devex-team/issues/3#issuecomment-2112822128),
-or even for defining commmand line flags.
-Personally, I've had a need for this while I was testing embedded code.
+We see it in many places:
+* [defining logging filters for the `tracing` crate](https://github.com/rust-lang/testing-devex-team/issues/3#issuecomment-2112822128);
+* [type reflection](https://github.com/bevyengine/bevy/issues/3936);
+* even for [defining commmand-line flags](https://docs.rs/gflags/0.3.12/gflags/)
+
+Personally, I needed this functionality for implementing unit tests in embedded code.
 There, you don't have access to rust's built-in test framework.
 Interestingly, Rust does have a weird kind of support for this through [`#![feature(custom_test_frameworks)]`](https://doc.rust-lang.org/nightly/unstable-book/language-features/custom-test-frameworks.html).
 I've even recommended it to my students once or twice, who wanted to test their embedded software but it always felt a bit painful as this feature will, at least in its current form, never be stable.
@@ -71,13 +76,14 @@ Why? Well that's what the rest of this blog post is about.
 
 # Library Solutions
 
+While direct support from the compiler is the ideal way to implement this feature, as always, people have come up with interesting workarounds.
 There are currently two libraries that can help you achieve global registration, both of which are maintained by <User name="dtolnay" />.
 Let's discuss them briefly.
 
 ## Inventory
 
 [Inventory](https://docs.rs/inventory/latest/inventory/) works using *global constructors*.
-These are special functions that are called before main is by the operating system - the exact mechanism differs a bit from platform to platform.
+These are special functions that are called before main by the operating system - the exact mechanism differs a bit from platform to platform.
 C++ uses these to run constructors for global variables, and in rust you can use them using the [ctor](https://docs.rs/ctor/latest/ctor/).
 If you would like to know more, I rather liked [this blog post](https://maskray.me/blog/2021-11-07-init-ctors-init-array) about them.
 
@@ -131,18 +137,23 @@ Inventory works as promised, and can be quite useful.
 Also, it deals well with dynamic library loading.
 However, it requires running code before main, and it doesn't work on all platforms; notably embedded platforms don't really work.
 
-> Note, in Rust, several things happen before main is called,
-> like setting up some things related to threading, 
-> checking that stdin and stdout are configured correctly, 
-> initializing argv,
-> and other platform specific setup. 
-> When global constructors are executed, parts of the standard library do not work yet, like printing. 
+> Using global constructors in Rust code is quite tricky.
+> The standard library does a lot of work before `main()`,
+> such as preparing the threading infrastructure,
+> configuring standard input and output,
+> and collecting the command-line arguments.
+> There are no guarantees that this will be available to global constructors.
+> Thus, Inventory does the bare minimum within its constructor functions.
 
 ## Linkme
 
 An alternative to inventory is [linkme](https://docs.rs/linkme/latest/linkme/). 
 It comes with slightly different platform support, there are even some test for a cortex-m target, and does not involve running code before main.
 It works all at compile time, though most of the magic happens during linking.
+
+Object files contain different kinds of data (code, global variables, etc.), organized into _sections_.
+When a linker processes object files, it collects the data for each section together.
+Linkme uses some tricks that instruct the linker to create a section that contains all the registered elements.
 Again, adapting the example from the docs:
 
 ```rust
@@ -175,7 +186,7 @@ At this point, an obvious reaction is:
 If the compiler could generate this kind of distributed slice, the issue of platform support disappears.
 This is basically how libtest works.
 So, after [talking about it on internals.rust-lang.org](https://internals.rust-lang.org/t/global-registration-a-kind-of-pre-rfc/20813) 
-I enthousiasicaly added what is essentially linkme to the compiler.
+I enthusiasicaly added what is essentially linkme to the compiler.
 The implementation even considers the possibility of some day supporting dynamic linking if Rust ever starts properly doing that.
 
 > Note, in past discussions this feature was often called "distributed slice". 
@@ -470,5 +481,6 @@ I'm pretty sure we should not want the kind of inter-crate that I originally imp
 A more explicit importing of elements from other crates leads to fewer surprises.
 However, as you can see there are still some details that I'm not entirely sure about how to solve.
 Let me know if you have any ideas!
+Also, if you *do* have strong arguments for usecases which need truely global registration, I'd love to hear.
 
 
