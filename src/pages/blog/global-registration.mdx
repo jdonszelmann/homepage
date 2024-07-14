@@ -449,6 +449,18 @@ Rust doesn't really have a compile-time only collection type, nor the ability to
 Maybe that's an abstraction that we'd need first in Rust before implementing this feature, 
 because right now there's a lot of compiler magic going on that's likely hard to teach to users of the language.
 
+# Externally Implementable Items
+
+Many of the things I've written about here come from discussions with <User name="m-ou-se" />, 
+as we thought that a feature she was working on ([Externally Implementable Items; EII](https://github.com/rust-lang/rust/issues/125418)) 
+would have a very similar implementation to global registration.
+
+Basically, externally implementable items are like registering a single element in a global registry.
+Or worded differently, a global registry is like having the possibility to provide more than one externally implemented element.
+
+In the end I think we worked out a rather neat design for EII (more info probably coming soon), 
+but one that does not help implement global registration.
+
 # Conclusion
 
 Well, that's where global registration stands now.
