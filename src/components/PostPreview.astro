@@ -25,7 +25,10 @@ const {
 <div class="preview">
     <a class="click-area" href={url}>
         <h1 class="title">{title}</h1>
-        <div class="first-paragraph" set:html={marked.parse(description)} />
+        <div
+            class="first-paragraph"
+            set:html={marked.parse(description || "")}
+        />
     </a>
 
     <div class="author-area">
