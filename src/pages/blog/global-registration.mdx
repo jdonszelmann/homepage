@@ -55,7 +55,7 @@ This same pattern is also useful for
 registering routes for a webserver, 
 [filters for tracing](https://github.com/rust-lang/testing-devex-team/issues/3#issuecomment-2112822128),
 or even for defining commmand line flags.
-Personally, I've had a need for this while I was testing embedde code.
+Personally, I've had a need for this while I was testing embedded code.
 There, you don't have access to rust's built-in test framework.
 Interestingly, Rust does have a weird kind of support for this through [`#![feature(custom_test_frameworks)]`](https://doc.rust-lang.org/nightly/unstable-book/language-features/custom-test-frameworks.html).
 I've even recommended it to my students once or twice, who wanted to test their embedded software but it always felt a bit painful as this feature will, at least in its current form, never be stable.
@@ -316,7 +316,7 @@ A fact is that [testing devex wants to make custom test frameworks a thing](http
 and I think it's safe to conclude that this same pattern is useful in other places too.
 Let's start from the beginning.
 
-To support custom test frameworks, we at least want a way register items from various modules within a single crate.
+To support custom test frameworks, we at least want a way to register items from various modules within a single crate.
 So lets start with single-crate registries. 
 That also resolves some problems with registry visibility, 
 within a single crate it's less important who's allowed to add to a registry since you control all the code.
@@ -366,7 +366,7 @@ This is roughly where I got to, and maybe someone else has a brilliant idea.
 ## Stable identifier
 
 I think it will be common to hide global registries in macros.
-To a user's perspective, it looks like tests are somewhat magically collected, and I actually think that's alright.
+From a user's perspective, it looks like tests are somewhat magically collected, and I actually think that's alright.
 So let's look at an example of what a custom test framework could look like:
 
 ```rust

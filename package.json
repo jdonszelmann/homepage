@@ -15,6 +15,7 @@
         "@expressive-code/plugin-line-numbers": "^0.35.3",
         "astro": "^4.1.1",
         "astro-expressive-code": "^0.35.3",
+        "marked": "^13.0.2",
         "typescript": "^5.3.3"
     },
     "devDependencies": {
