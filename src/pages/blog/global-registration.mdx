@@ -33,7 +33,6 @@ criterion_main!(benches);
 Being explicit has upsides, but it would be very cool if you could instead write:
 
 ```rust
-
 #[bench]
 fn benchmark_1(b: &mut Bencher) {}
 
@@ -273,6 +272,20 @@ The only possibility is that `a` does not see the items added by `b`.
 You can already encounter this problem with the `log` crate right now.
 They did employ the [semver trick](https://github.com/dtolnay/semver-trick) to make it somewhat complicated to construct.
 
+## Semver
+
+> You've published a crate with a global registry definition collecting `u32`.
+> You've made a mistake though, and would actually like it to collect `u64` instead.
+> Is there any way you can upgrade without it being a breaking change?
+
+With global registration, everyone in the dependency tree of a crate has to agree on the type of the element in the registry.
+You could define a second registry, and deprecate the old one, and when you need the elements iterate over both the new old registry.
+However, existing crates that are already reading the global registry won't know that they now have to read two registries to make sure they get all the elements.
+
+What you'd want is some way to communicate that all the elements in the old registry should be converted using some function into elements in the new registry.
+[Later on in this blog post](#externally-implementable-items) I briefly touch on Externally Implementable Items, for which <User name="m-ou-se" /> and I think
+we have solved this problem, but it won't easily transfer to global registration.
+
 ## Compile time access
 
 > If the compiler implements this feature, why is the information only available at runtime?
@@ -344,7 +357,7 @@ Talking to some friends, we came up with some examples
 
 * A dependency might define some routes that you can just import.
 * <User name="epage" /> talked about wanting a dependency to register test fixtures.
-* Sometimes in embedded programming, the only actually runable crate is your main crate (it contains the code to boot the processor).
+* Sometimes in embedded programming, the only actually runnable crate is your main crate (it contains the code to boot the processor).
   However, this main crate might then actually want to run test from dependencies as they wouldn't be able to boot on their own.
 * A dependency of yours defines some metrics, you want to register those, and some more of your own.
   You might also want to combine several lists of metrics from several dependencies.
