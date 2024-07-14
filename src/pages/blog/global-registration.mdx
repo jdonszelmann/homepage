@@ -12,7 +12,7 @@ description: |
     but it's not something that Rust supports except for tests specifically.
 draft: true
 ---
-import Gh from '../../components/GitHub.astro';
+import User from '../../components/GithubUser.astro';
 
 If you've written a benchmark using criterion before, you may have seen this pattern:
 ```rust
@@ -61,7 +61,7 @@ Interestingly, Rust does have a weird kind of support for this through [`#![feat
 I've even recommended it to my students once or twice, who wanted to test their embedded software but it always felt a bit painful as this feature will, at least in its current form, never be stable.
 
 Various people have expressed interest in having a generic system built into the compiler that can provide this behavior.
-At [RustNL](https://2024.rustnl.org), I talked to <Gh name="epage" /> who wants this for the [Testing Devex team](https://github.com/rust-lang/testing-devex-team), 
+At [RustNL](https://2024.rustnl.org), I talked to <User name="epage" /> who wants this for the [Testing Devex team](https://github.com/rust-lang/testing-devex-team), 
 exactly to make tests less magical and to provide users with the option to define their own test frameworks.
 Since then, I've been thinking about this feature. 
 It started with a [pre-rfc](https://internals.rust-lang.org/t/global-registration-a-kind-of-pre-rfc/20813/26), and at this point I've written most of an implementation.
@@ -71,7 +71,7 @@ Why? Well that's what the rest of this blog post is about.
 
 # Library Solutions
 
-There are currently two libraries that can help you achieve global registration, both of which are maintained by <Gh name="dtolnay" />.
+There are currently two libraries that can help you achieve global registration, both of which are maintained by <User name="dtolnay" />.
 Let's discuss them briefly.
 
 ## Inventory
@@ -204,75 +204,168 @@ One crate defines a registry, with `#[global_registry]`;
 anyone can add to it and in the final binary a static appears that, when iterated over, contains all the elements. Neat!
 
 Of course, I acted first and only then thought about it properly...
-After lots of incredibly helpful discussion with <Gh name="m-ou-se"/>, 
+After lots of incredibly helpful discussion with <User name="m-ou-se"/>, 
 we realised that this has a lot of implications.
+Let's do some thought experiments, and discuss what they mean.
 
-## The implications
+## Visibility
 
-Let's do some thought experiments:
+> If a registry is public, should anyone be able to add to it? 
+> Does `pub` mean read or write access?
+> On a related note, does `pub use` forward this read and/or write access?
 
-1. If a registry is public, should anyone be able to add to it? Does `pub` mean read or write access?
-   On a related note, does `pub use` forward this read and/or write access?
-2. If there are two *different* versions of a crate that defines a global registry.
-   Say, v0.1.0 and v0.2.0, should these registries be merged? 
-   Okay, maybe not, but the registry was supposed to be shared between crates but now we get two disjoint registries with the same name, 
-   and people generally think they're adding to the same global set of elements because the identifier is the same.
-3. If the compiler implements this feature, why is the information only available at runtime?
-   What stops us from collecting registered elements to a `const`?
-4. Let's say you made a mistake with the type of your registy, and you want to change it in a way that's not a breaking change.
-   Are there any upgrade paths?
-5. Let's think of a usecase. A custom testing framework. The framework defines a registry of tests, and in your crate you add to it.
-   Some dependency of yours uses the same version of the same test framework. When you run your tests, should the tests of the dependency also run?
-   If the list is truely global, that's what'd happen, but it's not consistent with what libtest currently does.
-6. Okay, that's silly. Each crate should get its own crate-local registry of tests. 
-   The custom test framework could maybe expose a macro that creates it.
-   Can you actually think of any good usecases where the registry should be truely global?
-
-This last question we were stuck on for a little bit. 
-Custom test frameworks are usually crate-local.
-A benchmarking framework too.
-The routes for a webserver probably as well.
-Maybe you'd have a crate that adds some extra routes, which you'd then have to import for side effect to actually access them.
+An option that we considered is somehow applying two visibilities to a registry definition, or splitting it up in two parts:
 
 ```rust
-// just mention the crate so the globally 
-// registered routes are actually implicitly added
-extern crate my_extra_routes;
+#[global_registry(pub REGISTRY_ADDER)]
+static ERROR_MSGS: Registry<&str>;
+
+// in another crate:
+
+// the adder is public so this is ok
+register!(REGISTRY_ADDER, "b");
 ```
 
-I believe that the expected globalness of global registration, 
-i.e. the fact that it can implicitly collect information from any crate in the dependency tree,
-mostly stems from the fact that that was the only obvious way to implement the feature before.
+I think the only design that makes sense is that `pub` forwards both read and write access,
+if you want a read-only registry you can make it not public but provide a public getter function that returns the elements:
+```rust
+// private
+#[global_registry]
+static ERROR_MSGS: Registry<&str>;
+
+// public getter
+pub fn get_error_msgs() -> &Registry<&str> {
+    &ERROR_MSGS
+}
+```
+If you somehow want a write-only registry, you're out of luck.
+
+## Versioning
+
+> What happens if there are two *different* versions of a crate that defines a global registry in the dependency tree.
+
+Imagine a crate graph like this:
+
+```bash
+cargo tree
+a v0.1.0
+├── b v0.1.0
+│   └── c v0.1.0
+└── c v0.2.0
+```
+
+`c` defines a global registry `ERROR_MSGS`. 
+`b` adds some messages, and `a` reads them, 
+getting access to the registy by importing a *different version* of `c`.
+The only possibility is that `a` does not see the items added by `b`.
+
+You can already encounter this problem with the `log` crate right now.
+They did employ the [semver trick](https://github.com/dtolnay/semver-trick) to make it somewhat complicated to construct.
+
+## Compile time access
+
+> If the compiler implements this feature, why is the information only available at runtime?
+> What stops us from collecting registered elements to a `const` like this?
+```rust
+// private
+#[global_registry]
+const ERROR_MSGS: Registry<&str>;
+
+register!(ERROR_MSGS, "a");
+register!(ERROR_MSGS, "b");
+```
+
+It would be rather convenient if you could for example sort the elements at compile time 
+(ignoring problems with us not yet having traits in const fns).
+In fact, it seems rather likely that most uses of global registries will be hidden in macros. 
+Like a `#[test]` attribute, or `#[get("/")]` on a server route.
+So why couldn't registries be a part of the macro machinery?
+
+The answer to all this is quite simple, 
+we can only know all the items in a registry once all crates in a dependency tree are compiled.
+At that point we can't go back and rerun const fns in other crates with the final list of items, 
+and we definitely can't expand any macros in dependent crates anymore.
+
+## Registration in dependencies
+
+> Let's think of a usecase. A custom testing framework. 
+> The framework defines a registry of tests, and in your crate you add to it.
+> Some dependency of yours uses the same version of the same test framework. 
+> When you run your tests, should the tests of the dependency also run?
+
+If the registry is truely global, that's exactly what'd happen, but it's not at all how tests behave right now.
+Obviously, each crate should get its own crate-local registry of tests.
+In fact, I'm not sure there's ever a usecase where you genuinely want global registration.
+A benchmarking framework will also be crate-local, and the routes for a webserver probably as well.
+It can even be pretty confusing if some far far dependency accidentally (or even maliciously) injects some extra routes in your webserver.
+
+So why did I initially implement inter-crate global registration?
+I thought that was the thing people wanted.
+For a little while I was afraid I'd misunderstood what people thought this feature meant, 
+or implemented the wrong thing.
+But this is the design I sketched in my [pre-rfc](https://internals.rust-lang.org/t/global-registration-a-kind-of-pre-rfc/20813), where everyone generally agreed with it.
+Maybe that's because of the way I framed it.
+However, it's also just the version of global registration people are used to. 
+That's what linkme and inventory provide.
+
+In any case, I now believe that *actually global* registration is not something we should want.
 
 # An alternative design
 
-An alternative to 
+A fact is that [testing devex wants to make custom test frameworks a thing](https://github.com/rust-lang/testing-devex-team/issues/2), 
+and I think it's safe to conclude that this same pattern is useful in other places too.
+Let's start from the beginning.
 
+To support custom test frameworks, we at least want a way register items from various modules within a single crate.
+So lets start with single-crate registries. 
+That also resolves some problems with registry visibility, 
+within a single crate it's less important who's allowed to add to a registry since you control all the code.
+In fact, now a registry could actually be a const and available during const evaluation, 
+since within a crate that shouldn't really be an issue. Neat!
 
-Inter-crate applications:
+At this point we can also drop any issues related to registries and dynamic linking.
+Everything happens before and during const evaluation and dynamic linking isn't yet relevant.
 
-* Embedded tests might also want to test dependencies
-    * This works with concat_registry!
-* Interrupt handlers: Hal defines a registry, anyone can define handlers that should run when the interrupt happens, the hal calls these.
-    * You really want this to be global
-* libraries providing test fixtures
-    * This works with concat_registry!
-* Hayley's metrics
-    * This works under concat_registry! but apparently gives a lot of overhead as there are many crates.
-* Server Routes 
-    * This works under concat_registry!
+## Intercrate sometimes?
 
+It's not true that there are *no* applications for inter-crate registries.
+Talking to some friends, we came up with some examples
 
-Problems:
-* versioning of global registries
-* semver
-* import for side effects
-* no errors when addition fails: lint?
-* visibility:
-    * write implying read is likely fine
-    * read implying write is not, but you can solve this with a public getter
-    * Not an issue with concat_registry!
+* A dependency might define some routes that you can just import.
+* <User name="epage" /> talked about wanting a dependency to register test fixtures.
+* Sometimes in embedded programming, the only actually runable crate is your main crate (it contains the code to boot the processor).
+  However, this main crate might then actually want to run test from dependencies as they wouldn't be able to boot on their own.
+* A dependency of yours defines some metrics, you want to register those, and some more of your own.
+  You might also want to combine several lists of metrics from several dependencies.
 
+Still, you want to limit the number of crates these items can come from. 
+You don't want a random dependency's metrics, or server routes, or tests.
+A way to solve this, is to explicitly register them.
+
+```rust
+use other_crate::OTHER_ROUTES;
+
+#[global_registry]
+const MY_ROUTES: Registry<Route>;
+
+register_many!(MY_ROUTES, OTHER_ROUTES);
+```
+
+# Unsolved questions
+
+I think that designing registries like this solves most of the 
+complicated questions associated with the magic intercrate global registration that I implemented.
+Adding elements from different crates is possible, but much more explicit now.
+However, there are also some things I haven't completely worked out yet.
+
+In truth, that's why I began writing this blogpost. 
+This is roughly where I got to, and maybe someone else has a brilliant idea.
+
+## Stable identifier
+
+I think it will be common to hide global registries in macros.
+To a user's perspective, it looks like tests are somewhat magically collected, and I actually think that's alright.
+So let's look at an example of what a custom test framework could look like:
 
 ```rust
 use custom_test_framework::test_main;
@@ -294,26 +387,74 @@ mod tests {
 }
 ```
 
-What should this become? What identifier should the global registry get?
-Would you need a separate 
+I think this looks pretty neat, if this worked.
+Using [`#![feature(custom_test_frameworks)]`](https://doc.rust-lang.org/nightly/unstable-book/language-features/custom-test-frameworks.html) I've written
+tests for embedded systems that look pretty much exactly like this.
+But where, in this example is the global registry defined?
+If `test_main!` defines it, with some name, how does `#[custom_test]` refer to it?
+`test_main!` is invoked in a function scope.
+Maybe you'd have a 3rd macro, that you'd have to put above main to define the registry.
 
 ```rust
-use custom_test_framework::{test_main, define_test_registry};
+use custom_test_framework::{test_main, init};
 
-define_test_registry!()
+init!()
 
-// rest of the previous example ...
+fn main() {
+    #[cfg(test)]
+    test_main!()
+}
+
+#[cfg(test)]
+mod tests {
+    use custom_test_framework::custom_test;
+
+    #[custom_test]
+    fn test_a() {}
+
+    #[custom_test]
+    fn test_b() {}
+}
 ```
 
-It would be nice if `#[custom_test]` could expand to 
+Actually, nowhere here we use the name of the global registry.
+That's actually fine hygiene-wise because top level items don't really have hygiene in Rust,
+but it'd probably give some weird errors when you call `init!` twice, or not at all.
+It's all a little unfortunate.
+
+## NonLocal DefIDs
+
+Under this crate-local version of global registration, 
+an implementation would probably look like a hashmap that maps from the `DefId` of the registry definition to a list of all the elements.
+This `DefId` key could in theory be any `DefId`. 
+Also one that lives outside the current crate.
+In theory, this could be valid:
 
 ```rust
-registry_add!(custom_test_framework::TESTS, test_{n})
+register!(custom_test_framework, some_test);
 ```
-That would mean that you should be able to add to registries *outside* the current crate *and yet* that other crate can't access the elements you add to it.
-People find that confusing.
 
-Need compile time lists for this;
-We first need to have those before this design can work.
+The identifier `custom_test_framework`, the name of our custom test framework crate is easy to refer to from anywhere in the program.
+Alternatively you could refer to some identifier *in* `custom_test_framework`.
+I think this is incredibly complicated to teach the community.
+Also, it can be confusing because if you bind a registry to an identifier in a different crate, 
+that crate itself won't get access to the elements as registration will be crate-local.
+
+## Compile time collections
+
+At this point, we're inventing a lot of new features that together gives users what's essentially a compile-time growable vector.
+You can add single `const` elements, concat `const` slices from different crates into one larger slice, and iterate over them.
+However, that's a completely new thing to Rust. 
+Rust doesn't really have a compile-time only collection type, nor the ability to express that.
+Maybe that's an abstraction that we'd need first in Rust before implementing this feature, 
+because right now there's a lot of compiler magic going on that's likely hard to teach to users of the language.
+
+# Conclusion
+
+Well, that's where global registration stands now.
+I'm pretty sure we should not want the kind of inter-crate that I originally implemented.
+A more explicit importing of elements from other crates leads to fewer surprises.
+However, as you can see there are still some details that I'm not entirely sure about how to solve.
+Let me know if you have any ideas!
 
 
