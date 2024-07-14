@@ -317,7 +317,7 @@ and we definitely can't expand any macros in dependent crates anymore.
 > Some dependency of yours uses the same version of the same test framework. 
 > When you run your tests, should the tests of the dependency also run?
 
-If the registry is truely global, that's exactly what'd happen, but it's not at all how tests behave right now.
+If the registry is truly global, that's exactly what'd happen, but it's not at all how tests behave right now.
 Obviously, each crate should get its own crate-local registry of tests.
 In fact, I'm not sure there's ever a usecase where you genuinely want global registration.
 A benchmarking framework will also be crate-local, and the routes for a webserver probably as well.
@@ -494,6 +494,6 @@ I'm pretty sure we should not want the kind of inter-crate that I originally imp
 A more explicit importing of elements from other crates leads to fewer surprises.
 However, as you can see there are still some details that I'm not entirely sure about how to solve.
 Let me know if you have any ideas!
-Also, if you *do* have strong arguments for usecases which need truely global registration, I'd love to hear.
+Also, if you *do* have strong arguments for usecases which need truly global registration, I'd love to hear.
 
 
