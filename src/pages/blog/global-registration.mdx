@@ -12,6 +12,7 @@ description: |
     is something that projects like bevy, tracing, and dioxus have all expressed interest in
     but it's not something that Rust supports except for tests specifically.
 draft: false
+time: "15 minutes"
 ---
 import User from '../../components/GithubUser.astro';
 
@@ -141,7 +142,7 @@ However, it requires running code before main, and it doesn't work on all platfo
 > such as preparing the threading infrastructure,
 > configuring standard input and output,
 > and collecting the command-line arguments.
-> There are no guarantees that this will be available to global constructors.
+> When global constructors are run, none of these are initialized yet.
 > Thus, Inventory does the bare minimum within its constructor functions.
 
 ## Linkme
@@ -495,5 +496,4 @@ A more explicit importing of elements from other crates leads to fewer surprises
 However, as you can see there are still some details that I'm not entirely sure about how to solve.
 Let me know if you have any ideas!
 Also, if you *do* have strong arguments for usecases which need truly global registration, I'd love to hear.
-
 
