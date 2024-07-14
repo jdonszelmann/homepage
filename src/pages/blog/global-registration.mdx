@@ -346,10 +346,12 @@ A way to solve this, is to explicitly register them.
 use other_crate::OTHER_ROUTES;
 
 #[global_registry]
-const MY_ROUTES: Registry<Route>;
+const MY_ROUTES: &[Route];
 
 register_many!(MY_ROUTES, OTHER_ROUTES);
 ```
+
+I think having this is pretty neat, as you can now register any const slice of elements.
 
 # Unsolved questions
 
