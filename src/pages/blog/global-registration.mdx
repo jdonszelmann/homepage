@@ -6,15 +6,17 @@ authors: ['jdonszelmann']
 reviewers: []
 tags: [ "rust"]
 description: |
-    You might not have considered this before, but tests in Rust are rather magical.
-    Anywhere in your project you can slap `#[test]` on a function and the compiler makes sure that they're all automatically run.
-    This pattern, of wanting access to items that are distributed over a crate and possibly even multiple crates, doesn't just come up when dealing with tests,
-    but it's not something that Rust supports except for tests specifically.
+    Writing unit tests in Rust is super easy because the compiler does a lot of heavy lifting for us.
+    You can slap `#[test]` on a function anywhere in your crate and it will automatically be run for you.
+    Collecting items from across a crate is introspective functionality that users can't really implement themselves.
+    Crates like Criterion, Dioxus, and Bevy could benefit from this functionality but they need help from the compiler.
 draft: true
 ---
 import User from '../../components/GithubUser.astro';
 
-If you've written a benchmark using criterion before, you may have seen this pattern:
+[Criterion](https://docs.rs/criterion) is a custom benchmarking framework which provides great statistical analyses of performance.
+If you've ever used it before, you may have seen this pattern:
+
 ```rust
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("benchmark_1", benchmark_1);
@@ -28,10 +30,10 @@ criterion_group!(benches, criterion_benchmark);
 criterion_main!(benches);
 ```
 
-Being explicit has upsides, but it would be very cool if you could instead write:
+Every benchmarking function has to be explicitly registered with the Criterion runtime, because Criterion has no way of automatically discovering those functions.
+Being explicit has upsides, but it would be really convenient if we could write:
 
 ```rust
-
 #[bench]
 fn benchmark_1(b: &mut Bencher) {}
 
@@ -46,46 +48,58 @@ fn benchmark_3(b: &mut Bencher) {}
 #[bench]
 fn benchmark_n(b: &mut Bencher) {}
 
-// magically finds all the #[bench] functions
-// even when they're spread over multiple files
+// Find all functions marked with `#[bench]` automatically.
 criterion_main!();
 ```
 
-This same pattern is also useful for 
-registering routes for a webserver, 
-[filters for tracing](https://github.com/rust-lang/testing-devex-team/issues/3#issuecomment-2112822128),
-or even for defining commmand line flags.
-Personally, I've had a need for this while I was testing embedded code.
-There, you don't have access to rust's built-in test framework.
-Interestingly, Rust does have a weird kind of support for this through [`#![feature(custom_test_frameworks)]`](https://doc.rust-lang.org/nightly/unstable-book/language-features/custom-test-frameworks.html).
-I've even recommended it to my students once or twice, who wanted to test their embedded software but it always felt a bit painful as this feature will, at least in its current form, never be stable.
+I call this pattern _global registration:_ collecting marked items across a crate, or even across all the crates in an executable.
+We see it in many places:
+registering routes for a webserver;
+[defining logging filters for the `tracing` crate](https://github.com/rust-lang/testing-devex-team/issues/3#issuecomment-2112822128);
+[type reflection](https://github.com/bevyengine/bevy/issues/3936);
+even for defining commmand-line flags.
+Personally, I needed this functionality for implementing unit tests in embedded code.
+Rust's testing infrastructure relies on compiler magic to do this work, but none of these use cases can benefit.
 
-Various people have expressed interest in having a generic system built into the compiler that can provide this behavior.
-At [RustNL](https://2024.rustnl.org), I talked to <User name="epage" /> who wants this for the [Testing Devex team](https://github.com/rust-lang/testing-devex-team), 
-exactly to make tests less magical and to provide users with the option to define their own test frameworks.
-Since then, I've been thinking about this feature. 
-It started with a [pre-rfc](https://internals.rust-lang.org/t/global-registration-a-kind-of-pre-rfc/20813/26), and at this point I've written most of an implementation.
-I'm just not 100% sure that that's the implementation we should want anymore.
+A lot of people want such a feature to exist.
+For relevant libraries, such a feature can vastly improve the user-facing API.
+At [RustNL 2024](https://2024.rustnl.org), I talked to <User name="epage" /> who wants this for the [Testing Devex team](https://github.com/rust-lang/testing-devex-team), so that custom testing frameworks work as effectively as Rust's default.
+Since that conversation, I've been thinking about this feature.
+I wrote a [Pre-RFC](https://internals.rust-lang.org/t/global-registration-a-kind-of-pre-rfc/20813/26) and received a lot of community feedback.
+I've worked on implementing this feature in the compiler, and now it's mostly complete.
+I'm just not 100% sure that that's the implementation we want anymore.
 
-Why? Well that's what the rest of this blog post is about.
+Why? Well, that's what the rest of this blog post is about.
 
-# Library Solutions
+# Existing Solutions
 
-There are currently two libraries that can help you achieve global registration, both of which are maintained by <User name="dtolnay" />.
-Let's discuss them briefly.
+While direct support from the compiler is the ideal way to implement this feature, as always, people have come up with interesting workarounds.
+I want to take a moment to talk about the three most prominent ones.
+The first is a compiler feature, while the latter two are libraries mantained by <User name="dtolnay" />.
+
+## Custom Test Frameworks
+
+The Rust community has demanded support for custom test frameworks for a while, and it has always been clear that the compiler's test collection functionality would have to be extended to support them.
+There's already an implementation of this floating around, through the [unstable `custom_test_frameworks` feature](https://doc.rust-lang.org/nightly/unstable-book/language-features/custom-test-frameworks.html).
+Unfortunately, this is only targeted to the use case of custom test frameworks, and in its current form, it will likely never be stable.
+
+For a course I teach, students have to write embedded Rust code to program a drone.
+I've recommended `custom_test_frameworks` to them before, but they didn't tend to use it.
+// TODO: Explain why students didn't like using this feature.
+
+// TODO: Expand a bit more on the design of this feature.
 
 ## Inventory
 
-[Inventory](https://docs.rs/inventory/latest/inventory/) works using *global constructors*.
-These are special functions that are called before main is by the operating system - the exact mechanism differs a bit from platform to platform.
-C++ uses these to run constructors for global variables, and in rust you can use them using the [ctor](https://docs.rs/ctor/latest/ctor/).
-If you would like to know more, I rather liked [this blog post](https://maskray.me/blog/2021-11-07-init-ctors-init-array) about them.
+[Inventory](https://docs.rs/inventory/latest/inventory/) collects items using *global constructors*.
+This is an arcane mechanism provided by many C/C++ compilers: it allows users to register code to be run before `main()`.
+The underlying implementation differs between platforms, but it usually involves some kind of linker magic.
+C++ uses these to run constructors for global variables, and in Rust you can use them through [ctor](https://docs.rs/ctor).
+If you would like to know more, I rather liked [this explainer](https://maskray.me/blog/2021-11-07-init-ctors-init-array).
 
-What happens, is that before main, 
-a small bit of code runs for each element that needs to be registered, 
-to atomically add itself to a global linked list.
-Collecting happens based on the type of the item that's being collected.
-I adapted the example from their docs to show what's going on:
+For every item marked by the user, Inventory defines a new global constructor, which will (atomically) add the item to a global linked list.
+Items of a different type are put in a different linked list, so that different kinds of information can be collected.
+Here's an example, adopted from their documentation:
 
 ```rust
 pub struct Flag {
@@ -127,22 +141,26 @@ fn main() {
 }
 ```
 
-Inventory works as promised, and can be quite useful. 
-Also, it deals well with dynamic library loading.
-However, it requires running code before main, and it doesn't work on all platforms; notably embedded platforms don't really work.
+Inventory works quite well, and even works from dynamic libraries.
+However, not all platforms support running code before `main()`; most notably, embedded platforms don't really work.
 
-> Note, in Rust, several things happen before main is called,
-> like setting up some things related to threading, 
-> checking that stdin and stdout are configured correctly, 
-> initializing argv,
-> and other platform specific setup. 
-> When global constructors are executed, parts of the standard library do not work yet, like printing. 
+> Using global constructors in Rust code is quite tricky.
+> The standard library does a lot of work before `main()`,
+> such as preparing the threading infrastructure,
+> configuring standard input and output,
+> and collecting the command-line arguments.
+> There are no guarantees that this will be available to global constructors.
+> Thus, Inventory does the bare minimum within its constructor functions.
 
 ## Linkme
 
-An alternative to inventory is [linkme](https://docs.rs/linkme/latest/linkme/). 
-It comes with slightly different platform support, there are even some test for a cortex-m target, and does not involve running code before main.
-It works all at compile time, though most of the magic happens during linking.
+An alternative to Inventory is [`linkme`](https://docs.rs/linkme/latest/linkme/).
+Instead of relying on global constructors, `linkme` uses linker magic.
+Object files contain different kinds of data (code, global variables, etc.), organized into _sections_.
+When a linker processes object files, it collects the data for each section together.
+Using arcane linker features, `linkme` defines its own sections and puts marked items in them.
+The linker will collect items from statically and dynamically linked crates together automatically.
+At runtime, it provides access to collections of items by traversing the contents of the corresponding section.
 Again, adapting the example from the docs:
 
 ```rust
@@ -164,22 +182,23 @@ fn bench_deserialize(b: &mut Bencher) {}
 // ... more elements
 // __SPECIAL_END_SYMBOL
 ```
-Now, the memory between the special start and end symbol form a contiguous range of memory, 
-a slice, containing each of the elements that were added. 
-This works without running code before main, though dynamic library loading isn't really supported.
+
+Now, `BENCHMARKS` will point to the elements between the special start and end symbols.
+No code needs to be run before `main()`, so `linkme` is portable to more platforms.
+However, it doesn't support dynamic library loading.
 
 At this point, an obvious reaction is:
 
 # Why don't we put this in the compiler?
 
 If the compiler could generate this kind of distributed slice, the issue of platform support disappears.
-This is basically how libtest works.
+This is basically how `libtest` works.
 So, after [talking about it on internals.rust-lang.org](https://internals.rust-lang.org/t/global-registration-a-kind-of-pre-rfc/20813) 
-I enthousiasicaly added what is essentially linkme to the compiler.
+I enthusiastically added what is essentially `linkme` to the compiler.
 The implementation even considers the possibility of some day supporting dynamic linking if Rust ever starts properly doing that.
 
 > Note, in past discussions this feature was often called "distributed slice". 
-> That's also the name of the version from the linkme crate.
+> That's also the name of the version from the `linkme` crate.
 > I renamed it because it being specifically a slice exposes too much of the internal working of the feature,
 > and it removes a lot of flexibility to change the design later.
 
@@ -200,6 +219,7 @@ fn main() {
     }
 }
 ```
+
 One crate defines a registry, with `#[global_registry]`; 
 anyone can add to it and in the final binary a static appears that, when iterated over, contains all the elements. Neat!
 
