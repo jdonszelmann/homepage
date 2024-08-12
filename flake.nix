@@ -7,7 +7,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        npmDepsHash = "sha256-vebMkJkDX2h82JCOkrYlXiqjhqVtJxCwFgTQZXgBwMs=";
+        npmDepsHash = "sha256-xhw+CutTTQzQCci+TUWifez0JofIYU+izySnlPfVBJE=";
 
         nativeBuildInputs = with pkgs; [ ];
         buildInputs = with pkgs; [ nodejs ];
