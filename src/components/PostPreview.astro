@@ -9,6 +9,7 @@ export interface Props {
             authors: string[];
             reviewers: string[];
             description: string;
+            pubDate: Date;
         };
         slug: string;
     };
@@ -16,7 +17,7 @@ export interface Props {
 
 const {
     post: {
-        data: { authors, description, title },
+        data: { authors, description, title, pubDate },
         slug,
     },
 }: Props = Astro.props;
@@ -36,6 +37,8 @@ const {
         <div class="authors">
             {authors.map((author: any) => <Gh name={author} large={true} />)}
         </div>
+
+        Published: {pubDate.toISOString().slice(0, 10)}<br />
     </div>
 </div>
 

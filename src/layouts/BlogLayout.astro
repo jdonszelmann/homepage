@@ -17,11 +17,13 @@ export interface Props {
         description: string,
         draft: boolean,
         title: string,
+        pubDate: Date,
+        time?: string,
     }
 }
 
 const {
-    data: {authors, description, reviewers = [], draft=false, title},
+data: {authors, description, reviewers = [], draft=false, title, pubDate, time},
     headings,
 } = Astro.props;
 
@@ -273,6 +275,10 @@ const hierarchicalHeadings = headings.length == 0? []: headings[0].depth == 1? p
                         ))
                         }
                 </div>
+
+
+            Published: {pubDate.toISOString().slice(0,10)}<br>
+                {time?`read time: ${time}`:""}
             </div>
             )}
 
