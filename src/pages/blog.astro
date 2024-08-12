@@ -3,7 +3,14 @@ import Layout from "../layouts/Overview.astro";
 import PostPreview from "../components/PostPreview.astro";
 import { getCollection } from "astro:content";
 
-const blog = await getCollection("blog");
+let blog = await getCollection("blog");
+blog.sort((a, b) => {
+    if (a.data.pubDate < b.data.pubDate) {
+        return 1;
+    } else {
+        return -1;
+    }
+});
 ---
 
 <Layout>
