@@ -1,0 +1,17 @@
+---
+title: 'Incremental Compilation'
+pubDate: 2024-08-12
+authors: ['jdonszelmann']
+tags: ["rust"]
+description: |
+    Over the past week I've been trying to understand rust's incremental compilation model
+    by implementing it myself. The one inside [rustc](https://rustc-dev-guide.rust-lang.org/queries/incremental-compilation.html) is already very
+    well documented, but the implementation lives inside of a giant compiler. Maybe this is a little more accessible to you!
+draft: false
+time: "5 minutes"
+---
+
+This blog post is going to be a short one, since most of the things I wanted to say I ended up writing in the documentation of the crate I published
+containing the implementation. As I write more there, I might decide I have more to talk about, but for now the documentation itself should be a pretty
+interesting read, one I'd otherwise put in a blog post. If you're interested, you can find it [here](https://docs.rs/incremental-query/latest/incremental_query/)!
+
