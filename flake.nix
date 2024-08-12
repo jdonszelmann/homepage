@@ -49,7 +49,7 @@
           buildInputs = buildInputs ++ [ dev prefetch yarn ];
           inherit nativeBuildInputs;
           packages = with pkgs; [ lychee (pkgs.writeShellScriptBin "watch" ''
-            yarn run dev --host '0.0.0.0'
+            yarn run dev --host '0.0.0.0:8000'
           '') ];
           shellHook = packages.website.configurePhase;
         };

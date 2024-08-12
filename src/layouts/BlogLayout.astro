@@ -10,22 +10,19 @@ interface Heading {
 }
 
 export interface Props {
-    content: {
-        title: string,
-    }
     headings: Heading[]
-    frontmatter: {
+    data: {
         authors: string[],
         reviewers: string[],
         description: string,
-        draft: boolean
+        draft: boolean,
+        title: string,
     }
 }
 
 const {
-    content: { title },
+    data: {authors, description, reviewers = [], draft=false, title},
     headings,
-    frontmatter: {authors, description, reviewers = [], draft=false},
 } = Astro.props;
 
 

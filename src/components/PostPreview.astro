@@ -4,26 +4,26 @@ import { marked } from "marked";
 
 export interface Props {
     post: {
-        frontmatter: {
+        data: {
             title: string;
             authors: string[];
             reviewers: string[];
             description: string;
         };
-        url: string;
+        slug: string;
     };
 }
 
 const {
     post: {
-        frontmatter: { authors, description, title },
-        url,
+        data: { authors, description, title },
+        slug,
     },
 }: Props = Astro.props;
 ---
 
 <div class="preview">
-    <a class="click-area" href={url}>
+    <a class="click-area" href=`/blog/${slug}`>
         <h1 class="title">{title}</h1>
         <div
             class="first-paragraph"

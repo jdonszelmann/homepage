@@ -1,15 +1,17 @@
 ---
 import Layout from "../layouts/Overview.astro";
 import PostPreview from "../components/PostPreview.astro";
-const posts = await Astro.glob("./blog/**/*.{md,mdx}");
+import { getCollection } from "astro:content";
+
+const blog = await getCollection("blog");
 ---
 
 <Layout>
     <div class="previews">
         {
-            posts
+            blog
                 .filter((i) => {
-                    return !i.frontmatter.draft;
+                    return !i.data.draft;
                 })
                 .map((post) => <PostPreview post={post as any} />)
         }

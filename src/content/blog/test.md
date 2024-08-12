@@ -1,11 +1,11 @@
 ---
-layout: "../../layouts/Blog.astro"
 title: 'This is just a test'
 pubDate: 2024-07-10
 authors: ['jdonszelmann']
 reviewers: ['jdonszelmann']
 tags: [ "test"]
 draft: true
+description: "empty"
 ---
 
 gotta start somewhere :shrug:
