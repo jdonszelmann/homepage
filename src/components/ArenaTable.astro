@@ -1,0 +1,50 @@
+---
+interface Props {}
+
+const {} = Astro.props;
+---
+
+<script is:inline>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const tables = document.querySelectorAll(
+            ".cratesio-sorted-table table",
+        );
+        for (const table of tables) {
+            const body = table.querySelector("tbody");
+            const rows = body.querySelectorAll("tr");
+            let new_rows = await Promise.all(
+                Array.from(rows).map((row) => {
+                    const crate = row.querySelector(".crate");
+                    if (crate == null) {
+                        return Promise.resolve([0, row]);
+                    }
+
+                    let name = new URL(crate).pathname.split("/").pop();
+                    return (async () => {
+                        const resp = await fetch(
+                            `https://crates.io/api/v1/crates/${name}`,
+                        );
+                        const data = await resp.json();
+
+                        return [data["crate"]["downloads"], row];
+                    })();
+                }),
+            );
+
+            new_rows.sort((a, b) => a[0] < b[0]);
+
+            for (const row of new_rows) {
+                const last = row[1].lastChild;
+                last.innerText = row[0];
+            }
+
+            body.replaceChildren(...new_rows.map((i) => i[1]));
+        }
+    });
+</script>
+
+<div class="cratesio-sorted-table">
+    <slot />
+</div>
+
+<style lang="scss"></style>

@@ -1,0 +1,63 @@
+---
+interface Props {
+    name: string;
+    large: boolean;
+}
+
+const { name, large = false } = Astro.props;
+---
+
+<a
+    class:list={["crate", large ? "large" : null]}
+    href=`https://crates.io/crates/${name}`
+>
+    <img
+        alt={`crates.io logo`}
+        class="logo"
+        src={`https://crates.io/assets/cargo.png`}
+    />
+    {name}
+</a>
+
+<style lang="scss">
+    a.crate {
+        display: inline-flex;
+        align-items: center;
+
+        color: white;
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+
+        padding: 0 0.3em;
+        border-radius: 0.3em;
+        text-decoration: none;
+
+        font-size: 10pt;
+        vertical-align: middle;
+
+        background: #264323;
+    }
+
+    a.crate.large {
+        padding: 0.3em;
+        /* font-size: unset; */
+        margin-right: 1em;
+
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    a.crate:last-child {
+        margin-right: 0;
+    }
+
+    img.logo {
+        display: inline-block;
+        height: 1em;
+        border-radius: 1em;
+        margin-right: 0.3em;
+    }
+
+    .large img.logo {
+        height: 1.3em;
+    }
+</style>
