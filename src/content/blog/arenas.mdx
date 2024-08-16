@@ -20,7 +20,8 @@ import ArenaTable from '../../components/ArenaTable.astro';
 
 In the table below, I talk about various properties arena do and don't have. 
 Sometimes, you might not need an arena at all.
-Libraries such as <Crate name="elsa" /> can help you write immutable datastructures,
+Libraries such as <Crate name="elsa" /> or <Crate name="rpds" /> can help you write efficient datastructures, 
+that are immutable, or provide quick clones because they are mostly based on pointers internally.
 which could be what you're actually looking for.
 
 In the table, I've abbreviated some things a little, so here is the full explanation:
@@ -36,6 +37,20 @@ This makes element iteration harder, since elements aren't stored at well-known 
 
 Interestingly, <Crate name="bumpalo" /> supports both kinds. 
 By default, the arena is mixed-type, but you can allocate vectors of a single type in their arena.
+
+**Requires**
+
+This indicates what kind of reference *to the arena* you need to allocate something in it.
+
+**Gives Out, and Deref Key**
+
+Some arenas directly give you references,
+but some are based on indices, 
+and you might even need to have access to the arena to use these indices.
+"Gives Out" documents what kind of type you get to refer to an allocation. 
+Sometimes it has a `'a` lifetime, refering to the fact that it is bound to the lifetime of the arena.
+"Deref Key" documents whether you need access to the arena to use the key, 
+or whether the key directly gives access to the element.
 
 **Reuse Memory**
 
@@ -59,16 +74,6 @@ though there are many more types for which this is a problem.
 Although an arena isn't a vec, the items are often stored prety much in-order.
 So this column is about whether the arena supports this.
 The type behind it indicates whether to iterate you need a reference or mutable reference to the arena.
-
-**Gives Out, and Deref Key**
-
-Some arenas directly give you references,
-but some are based on indices, 
-and you might even need to have access to the arena to use these indices.
-"Gives Out" documents what kind of type you get to refer to an allocation. 
-Sometimes it has a `'a` lifetime, refering to the fact that it is bound to the lifetime of the arena.
-"Deref Key" documents whether you need access to the arena to use the key, 
-or whether the key directly gives access to the element.
 
 **Collections**
 
@@ -105,29 +110,30 @@ The others I think mostly make sense.
 
 <ArenaTable>
 
-| Crate                                     | Type   | Reuse Mem      | Runs Drop | Iteration | Gives Out         | Deref Key | Collections  | `no_std` | no `unsafe` | concurrent     | dedup |   Approach                                                                                      | Downloads |
-| ----------------------------------------- | ------ | -------------- | --------- | --------- | ----------------- | --------- | ------------ | -------- | ----------- | -------------- | ----- | ----------------------------------------------------------------------------------------------- | --------- |
-| <Crate name="bumpalo" large />            | Both   | ❌             | ❌        | ❌        | `&'a mut`         | ✅        | ✅           | ✅       | ❌          | ❌             | ❌    | Linked Arena Chunks                                                                             |           |
-| <Crate name="typed-arena" large />        | Single | ❌             | ✅        | ✅ `&mut` | `&'a mut`         | ✅        | ❌           | ❌       | ❌          | ❌             | ❌    | Linked Arena Chunks                                                                             |           |
-| <Crate name="slotmap" large />            | Single | ✅ freelist    | ✅        | ✅ `&`    | `K: Key`          | ❌        | ❌           | ✅       | ❌          | ❌             | ❌    | `Vec` with Freelist                                                                             |           |
-| <Crate name="atree" large />              | Single | ✅ freelist    | ✅        | ✅ `&`    | `Token`           | ❌        | ❌           | ❌       | ✅          | ❌             | ❌    | `Vec`-Backed Linked Tree                                                                        |           |
-| <Crate name="generational-arena" large /> | Single | ✅ freelist    | ✅        | ✅ `&`    | `Index`           | ❌        | ❌           | ✅       | ✅          | ❌             | ❌    | `Vec` with Freelist                                                                             |           |
-| <Crate name="drop-arena" large />         | Single | ✅ freelist    | ✅        | ❌        | `DropBox<'a>`     | ✅        | ❌           | ❌       | ❌          | ❌             | ❌    | <Crate name="typed-arena"/>+ free list                                                          |           |
-| <Crate name="erased-type-arena" large />  | Mixed  | ❌             | ✅        | ❌        | `ArenaMut<'a>`    | ✅        | ❌           | ❌       | ❌          | ❌             | ❌    | Linked List                                                                                     |           |
-| <Crate name="typed-arena-nomut" large />  | Single | ❌             | ✅        | ✅ `&`    | `&'a`             | ✅        | ❌           | ❌       | ❌          | ❌             | ❌    | Linked Arena Chunks                                                                             |           |
-| <Crate name="gc-arena" large />           | Single | ✅ GC          | ✅        | ❌        | `Gc<'a>`          | ✅        | ❌           | ✅       | ❌          | ❌             | ❌    | [Garbage Collector](https://kyju.org/blog/rust-safe-garbage-collection/)                        |           |
-| <Crate name="id-arena" large />           | Single | ❌             | ✅        | ✅ `&`    | `Id`              | ❌        | ❌           | ✅       | ✅          | ✅             | ❌    | `Vec`                                                                                           |           |
-| <Crate name="internment" large />         | Single | ❌             | ✅        | ❌        | `ArenaIntern<'a>` | ✅        | ❌           | ❌       | ❌          | 🔒             | ✅    | Hashset of Boxes                                                                                |           |
-| <Crate name="concurrent_arena" large />   | Single | ❌             | ❌        | ❌        | `ArenaArc`        | ✅        | ❌           | ❌       | ❌          | ✅ alloc may 🔒| ❌    | Reference Counted Buckets                                                                       |           |
-| <Crate name="multi-stash" large />        | Single | ❌             | ✅        | ✅ `&`    | `Key` (usize)     | ✅        | ❌           | ✅       | ❌          | ❌             | ❌    | Indexed `Vec`                                                                                   |           |
-| <Crate name="colosseum" large />          | Single | ❌             | ✅        | ❌        | `&'a mut`         | ✅        | ❌           | ❌       | ❌          | 🔒             | ❌    | `Mutex`ed <Crate name="typed-arena" />                                                          |           |
-| <Crate name="atomic_arena" large />       | Single | ✅ freelist    | ✅        | ✅ `&`    | `Key`             | ❌        | ❌           | ❌       | ❌          | 🔒             | ❌    | `Vec`[^1]                                                                                       |           |
-| <Crate name="slab" large />               | Single | ✅ compact[^2] | ✅        | ✅ `&`    | `usize`           | ❌        | ❌           | ✅       | ✅          | ❌             | ❌    | `Vec` with Freelist                                                                             |           |
-| <Crate name="sharded-slab" large />       | Single | ✅ freelist    | ✅        | ✅ `&`    | `usize`           | ❌        | ❌           | ❌       | ❌          | ✅             | ❌    | [Linked Arena Chunks](https://docs.rs/sharded-slab/0.1.7/sharded_slab/implementation/index.html)|           |
-| <Crate name="bump_scope" large />         | Mixed  | ❌             | ✅        | ❌        | `BumpBox<'a>`     | ✅        | ✅           | ✅       | ❌          | ❌             | ❌    | Linked Arena Chunks[^3]                                                                         |           |
-| <Crate name="elise" large />              | Mixed  | ✅ GC          | ✅        | ❌        | `Gc<'a>`          | ✅        | ❌           | ❌       | ❌          | 🔒             | ❌    | Single Global GC                                                                                |           |
-| <Crate name="shredder" large />           | Mixed  | ✅ GC          | ✅        | ❌        | `Gc<'a>`          | ✅        | ❌           | ❌       | ❌          | 🔒 (spinlock)  | ❌    | Single Global GC                                                                                |           |
-
+| Crate                                     | Type   | Takes    | Gives Out         | Deref Key |Reuse Mem      | Runs Drop | Iteration | Collections  | `no_std` | no `unsafe` | concurrent     | dedup |   Approach                                                                                      | Downloads |
+| ----------------------------------------- | ------ | -------- | ----------------- | --------- |-------------- | --------- | --------- | ------------ | -------- | ----------- | -------------- | ----- | ----------------------------------------------------------------------------------------------- | --------- |
+| <Crate name="slab" large />               | Single | `&mut`   | `usize`           | ❌        |✅ compact[^2] | ✅        | ✅ `&`    | ❌           | ✅       | ✅          | ❌             | ❌    | `Vec` with Freelist                                                                             |           |
+| <Crate name="bumpalo" large />            | Both   | `&`      | `&'a mut`         | ✅        |❌             | ❌        | ❌        | ✅           | ✅       | ❌          | ❌             | ❌    | Linked Arena Chunks                                                                             |           |
+| <Crate name="sharded-slab" large />       | Single | `&`      | `usize`           | ❌        |✅ freelist    | ✅        | ✅ `&`    | ❌           | ❌       | ❌          | ✅             | ❌    | [Linked Arena Chunks](https://docs.rs/sharded-slab/0.1.7/sharded_slab/implementation/index.html)|           |
+| <Crate name="typed-arena" large />        | Single | `&`      | `&'a mut`         | ✅        |❌             | ✅        | ✅ `&mut` | ❌           | ❌       | ❌          | ❌             | ❌    | Linked Arena Chunks                                                                             |           |
+| <Crate name="slotmap" large />            | Single | `&mut`   | `K: Key`          | ❌        |✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ❌          | ❌             | ❌    | `Vec` with Freelist                                                                             |           |
+| <Crate name="id-arena" large />           | Single | `&mut`   | `Id`              | ❌        |❌             | ✅        | ✅ `&`    | ❌           | ✅       | ✅          | ✅             | ❌    | `Vec`                                                                                           |           |
+| <Crate name="generational-arena" large /> | Single | `&mut`   | `Index`           | ❌        |✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ✅          | ❌             | ❌    | `Vec` with Freelist                                                                             |           |
+| <Crate name="internment" large />         | Single | `&`      | `ArenaIntern<'a>` | ✅        |❌             | ✅        | ❌        | ❌           | ❌       | ❌          | 🔒             | ✅    | Hashset of Boxes                                                                                |           |
+| <Crate name="concurrent_arena" large />   | Single | `&`      | `ArenaArc`        | ✅        |❌             | ❌        | ❌        | ❌           | ❌       | ❌          | ✅ alloc may 🔒| ❌    | Reference Counted Buckets                                                                       |           |
+| <Crate name="atree" large />              | Single | `&mut`   | `Token`           | ❌        |✅ freelist    | ✅        | ✅ `&`    | ❌           | ❌       | ✅          | ❌             | ❌    | `Vec`-Backed Linked Tree                                                                        |           |
+| <Crate name="multi-stash" large />        | Single | `&mut`   | `Key` (usize)     | ✅        |❌             | ✅        | ✅ `&`    | ❌           | ✅       | ❌          | ❌             | ❌    | Indexed `Vec`                                                                                   |           |
+| <Crate name="colosseum" large />          | Single | `&`      | `&'a mut`         | ✅        |❌             | ✅        | ❌        | ❌           | ❌       | ❌          | 🔒             | ❌    | `Mutex`ed <Crate name="typed-arena" />                                                          |           |
+| <Crate name="gc" large />                 | Mixed  | glob     | `Gc`              | ✅        |✅ GC          | ✅        | ❌        | ❌           | ❌       | ❌          | ❌             | ❌    | [Garbage Collector](https://manishearth.github.io/blog/2015/09/01/designing-a-gc-in-rust/)      |           |
+| <Crate name="atomic_arena" large />       | Single | `&mut`?? | `Key`             | ❌        |✅ freelist    | ✅        | ✅ `&`    | ❌           | ❌       | ❌          | 🔒             | ❌    | `Vec`[^1]                                                                                       |           |
+| <Crate name="gc-arena" large />           | Single | `&`      | `Gc<'a>`          | ✅        |✅ GC          | ✅        | ❌        | ❌           | ✅       | ❌          | ❌             | ❌    | [Garbage Collector](https://kyju.org/blog/rust-safe-garbage-collection/)                        |           |
+| <Crate name="typed-arena-nomut" large />  | Single | `&`      | `&'a`             | ✅        |❌             | ✅        | ✅ `&`    | ❌           | ❌       | ❌          | ❌             | ❌    | Linked Arena Chunks                                                                             |           |
+| <Crate name="compact_arena" large />      | Single | `&mut`   | `IdxN<'a>`        | ❌        |❌             | ✅        | ❌        | ❌           | ✅       | ❌          | ❌             | ❌    | `Vec` with "branded" indices                                                                    |           |
+| <Crate name="bump_scope" large />         | Mixed  | `&`      | `BumpBox<'a>`     | ✅        |❌             | ✅        | ❌        | ✅           | ✅       | ❌          | ❌             | ❌    | Linked Arena Chunks[^3]                                                                         |           |
+| <Crate name="shredder" large />           | Mixed  | glob     | `Gc<'a>`          | ✅        |✅ GC          | ✅        | ❌        | ❌           | ❌       | ❌          | 🔒 (spinlock)  | ❌    | Single Global GC                                                                                |           |
+| <Crate name="erased-type-arena" large />  | Mixed  | `&`      | `ArenaMut<'a>`    | ✅        |❌             | ✅        | ❌        | ❌           | ❌       | ❌          | ❌             | ❌    | Linked List                                                                                     |           |
+| <Crate name="elise" large />              | Mixed  | glob     | `Gc<'a>`          | ✅        |✅ GC          | ✅        | ❌        | ❌           | ❌       | ❌          | 🔒             | ❌    | Single Global GC                                                                                |           |
+| <Crate name="drop-arena" large />         | Single | `&`      | `DropBox<'a>`     | ✅        |✅ freelist    | ✅        | ❌        | ❌           | ❌       | ❌          | ❌             | ❌    | <Crate name="typed-arena"/>+ free list                                                          |           |
 
 </ArenaTable>
 

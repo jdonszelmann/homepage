@@ -43,8 +43,92 @@ const {} = Astro.props;
     });
 </script>
 
-<div class="cratesio-sorted-table">
+<div class="cratesio-sorted-table fullwidth">
     <slot />
 </div>
 
-<style lang="scss"></style>
+<style lang="scss" is:global>
+    .fullwidth table {
+        width: 100%;
+        border-spacing: 0;
+        table-layout: fixed;
+        border-collapse: collapse;
+        display: block;
+        overflow-x: scroll;
+
+        tbody tr:nth-child(odd) td {
+            background-color: #ccc;
+        }
+        tbody tr:nth-child(even) td {
+            background: #f5f5f5;
+        }
+        th {
+            background: #f5f5f5;
+        }
+
+        th,
+        td {
+            min-width: fit-contnt;
+            white-space: nowrap;
+            padding: 0.5em 0.2em;
+            border-left: 0.5px solid #ddd;
+        }
+
+        @media (width > 449px) {
+            tr td:first-child,
+            th:first-child {
+                position: sticky;
+                left: 0;
+                z-index: 2;
+            }
+        }
+
+        @media (width < 450px) {
+            tr th:first-child {
+                overflow: hidden;
+            }
+
+            tr td:first-child,
+            th:first-child {
+                width: 0px !important;
+                max-width: 0px !important;
+                min-width: unset;
+                padding: 0;
+                border-left: 0;
+            }
+
+            tr td {
+                padding-top: 1.8em;
+            }
+
+            tr td:first-child .crate,
+            th:first-child .crate {
+                position: sticky;
+                left: 0;
+                z-index: 2;
+                display: block;
+                width: fit-content;
+                padding-top: 0;
+                padding-bottom: 0;
+                z-index: 20 !important;
+
+                transform: translate(0em, -1em);
+            }
+        }
+    }
+
+    @media (width > 900px) {
+        .fullwidth {
+            width: 100%;
+        }
+        .fullwidth table {
+            position: relative;
+            left: calc(-100vw + (100vw * 0.5 + 15em));
+            /* hack that interacts with grid's sizing to make tables
+             * as wide as they can possibly be when the screen supports it 
+             * The times 0.5 is to allow for the auto layout on *both sides*
+            */
+            width: calc(100vw - 6em);
+        }
+    }
+</style>
