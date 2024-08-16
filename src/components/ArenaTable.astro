@@ -131,7 +131,7 @@ const {} = Astro.props;
         }
         .fullwidth table {
             position: relative;
-            left: calc(-100vw + (100vw * 0.5 + 15em));
+            left: calc(max(-100vw, -130em) + (min(100vw, 130em) * 0.5 + 15em));
             /* hack that interacts with grid's sizing to make tables
              * as wide as they can possibly be when the screen supports it 
              * The times 0.5 is to allow for the auto layout on *both sides*
