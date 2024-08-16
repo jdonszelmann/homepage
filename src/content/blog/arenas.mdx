@@ -16,6 +16,24 @@ time: "10 minutes"
 import Crate from '../../components/Crate.astro';
 import ArenaTable from '../../components/ArenaTable.astro';
 
+## What's an arena?
+
+Very basically, an arena is a way to store your data somewhere without directly going through the system allocator.
+If you have a lot of small objects which you don't mind to deallocate *together* instead of individually, 
+this can be a lot faster.
+You could use a `Vec` for this.
+However, if you store data in a vec its address might change all the time. 
+
+When the vector grows, its contents move around memory. 
+That's not actually as inefficient as you think, it happens less and less often as the vec grows.
+The real problem with this moving around is that you can't depend on the address of your elements staying the same. 
+It's common that you want to hold on to those addresses in a datastructure while also adding new objects. 
+
+The simplest kind of arena is built to solve that exact problem, by allocating in large chunks, 
+and promising never to deallocate or move those. 
+To grow, such an arena would simply allcoate a whole new chunk of memory.
+However, there are so many more ways to do this which give you arenas with slightly different properties.
+
 ## properties of arenas
 
 In the table below, I talk about various properties arena do and don't have. 
