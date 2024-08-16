@@ -74,47 +74,45 @@ const {} = Astro.props;
             border-left: 0.5px solid #ddd;
         }
 
-        @media (width > 449px) {
-            tr td:first-child,
-            th:first-child {
-                position: sticky;
-                left: 0;
-                z-index: 2;
-            }
+        /* @media (width > 449px) { */
+        tr td:first-child,
+        th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
         }
+        /* } */
 
-        @media (width < 450px) {
-            tr th:first-child {
-                overflow: hidden;
-            }
-
-            tr td:first-child,
-            th:first-child {
-                width: 0px !important;
-                max-width: 0px !important;
-                min-width: unset;
-                padding: 0;
-                border-left: 0;
-            }
-
-            tr td {
-                padding-top: 1.8em;
-            }
-
-            tr td:first-child .crate,
-            th:first-child .crate {
-                position: sticky;
-                left: 0;
-                z-index: 2;
-                display: block;
-                width: fit-content;
-                padding-top: 0;
-                padding-bottom: 0;
-                z-index: 20 !important;
-
-                transform: translate(0em, -1em);
-            }
-        }
+        /* @media (width < 450px) { */
+        /*     tr th:first-child { */
+        /*         overflow: hidden; */
+        /*     } */
+        /**/
+        /*     tr td:first-child, */
+        /*     th:first-child { */
+        /*         width: 0px !important; */
+        /*         max-width: 0px !important; */
+        /*         min-width: unset; */
+        /*         padding: 0; */
+        /*         border-left: 0; */
+        /*     } */
+        /**/
+        /*     tr td { */
+        /*         padding-top: 1.8em; */
+        /*     } */
+        /**/
+        /*     tr td:first-child .crate, */
+        /*     th:first-child .crate { */
+        /*         position: sticky; */
+        /*         left: 0; */
+        /*         z-index: 2; */
+        /*         display: block; */
+        /*         width: fit-content; */
+        /*         padding-top: 0; */
+        /*         padding-bottom: 0; */
+        /*         transform: translate(0em, -1em); */
+        /*     } */
+        /* } */
     }
 
     @media (width > 900px) {
