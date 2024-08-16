@@ -101,6 +101,13 @@ A few arena libraries also provide an alternative set of collections like `Vec`,
 
 These should be pretty obvious.
 
+**ABA mitigation**
+
+If your arena supports deletions, 
+the arena must be careful that on re-allocation it doesn't accidentally reuse an ID it previously gave to you.
+If you had still stored that old ID, you could now use it to access a new allocation.
+Or not, some arenas don't care and let you deal with this.
+
 **Concurrent**
 
 This documents whether the arena can be used concurrently. 
@@ -141,6 +148,7 @@ Ordered by number of downloads, not by what you should use!! That only depends o
 | <Crate name="generational-arena" large />       | Single | `&mut`   | `Index`           | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ✅          |                |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
 | <Crate name="internment" large />               | Single | `&`      | `ArenaIntern<'a>` | ✅        | ❌             | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒             | ✅    | Hashset of Boxes                                                                                |           |             |         |
 | <Crate name="concurrent_arena" large />         | Single | `&`      | `ArenaArc`        | ✅        | ❌             | ❌        | ❌        | ❌           | ❌       | ❌          |                |  ✅ alloc may 🔒| ❌    | Reference Counted Buckets                                                                       |           |             |         |
+| <Crate name="thunderdome" large />              | Single | `&mut`   | `Index`           | ❌        | ✅ freelist    | ✅        | ❌        | ❌           | ✅       | ❌          | ✅             |  ❌             | ❌    | Memory efficient <Crate name="generational-arena"/>                                             |           |             |         |
 | <Crate name="atree" large />                    | Single | `&mut`   | `Token`           | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ❌       | ✅          |                |  ❌             | ❌    | `Vec`-Backed Linked Tree                                                                        |           |             |         |
 | <Crate name="multi-stash" large />              | Single | `&mut`   | `Key` (usize)     | ✅        | ❌             | ✅        | ✅ `&`    | ❌           | ✅       | ❌          |                |  ❌             | ❌    | Indexed `Vec`                                                                                   |           |             |         |
 | <Crate name="colosseum" large />                | Single | `&`      | `&'a mut`         | ✅        | ❌             | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒             | ❌    | `Mutex`ed <Crate name="typed-arena" />                                                          |           |             |         |
@@ -150,6 +158,7 @@ Ordered by number of downloads, not by what you should use!! That only depends o
 | <Crate name="typed-arena-nomut" large />        | Single | `&`      | `&'a`             | ✅        | ❌             | ✅        | ✅ `&`    | ❌           | ❌       | ❌          |                |  ❌             | ❌    | Linked Arena Chunks                                                                             |           |             |         |
 | <Crate name="typed-generational-arena" large /> | Single | `&mut`   | `Index`           | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ✅          |                |  ❌             | ❌    | Various backings with Freelist[^3]                                                              |           |             |         |
 | <Crate name="compact_arena" large />            | Single | `&mut`   | `IdxN<'a>`        | ❌        | ❌             | ✅        | ❌        | ❌           | ✅       | ❌          |                |  ❌             | ❌    | `Vec` with "branded" indices                                                                    |           |             |         |
+| <Crate name="blink-alloc" large />              | Mixed  | `&`      |`&mut (T: 'static)`| ✅        | ❌             | ✅        | ❌        | ✅           | ✅       | ❌          |                |  🔒             | ❌    | Linked Arena Chunks                                                                             |           |             |         |
 | <Crate name="bumpalo-herd" large />             | Both   | `&`      | `&'a mut`         | ✅        | ❌             | ❌        | ❌        | ❌           | ✅       | ❌          |                |  ✅             | ❌    | Per-thread <Crate name="bumpalo" /> arena                                                       |           |             |         |
 | <Crate name="bump_scope" large />               | Mixed  | `&`      | `BumpBox<'a>`     | ✅        | ❌             | ✅        | ❌        | ✅           | ✅       | ❌          |                |  ❌             | ❌    | Linked Arena Chunks[^4]                                                                         |           |             |         |
 | <Crate name="shredder" large />                 | Mixed  | glob     | `Gc<'a>`          | ✅        | ✅ GC          | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒 (spinlock)  | ❌    | Single Global GC                                                                                |           |             |         |
@@ -160,8 +169,6 @@ Ordered by number of downloads, not by what you should use!! That only depends o
 
 {/*
 TODO: column that says whether keys are generational
-thunderdome
-riddance
 stadium?
 */}
 
