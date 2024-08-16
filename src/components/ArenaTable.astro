@@ -162,6 +162,8 @@ import { faFilter } from "@fortawesome/free-solid-svg-icons";
                 let value = null;
                 if (cell.innerText.includes("✅")) {
                     value = true;
+                } else if (cell.innerText.includes("🔒")) {
+                    value = true;
                 } else if (cell.innerText.includes("❌")) {
                     value = false;
                 }
