@@ -2,9 +2,199 @@
 interface Props {}
 
 const {} = Astro.props;
+
+import { icon } from "@fortawesome/fontawesome-svg-core";
+import { faFilter } from "@fortawesome/free-solid-svg-icons";
 ---
 
 <script is:inline>
+    class Crate {
+        constructor(table_row, name) {
+            this.table_row = table_row;
+            this.name = name;
+            this.data = null;
+        }
+
+        downloads() {
+            if (this.data === null) {
+                return null;
+            }
+
+            return this.data["crate"]["downloads"];
+        }
+
+        last_updated() {
+            if (this.data === null) {
+                return null;
+            }
+
+            const updated = new Date(this.data["versions"][0]["created_at"]);
+            return `${updated.toLocaleString("default", { month: "long" })} ${updated.getFullYear()}`;
+        }
+
+        version() {
+            if (this.data === null) {
+                return null;
+            }
+
+            return this.data["versions"][0]["num"];
+        }
+
+        prepare() {
+            const children = this.table_row.children;
+            children[children.length - 3].innerText = this.downloads();
+            children[children.length - 2].innerText = this.last_updated();
+            children[children.length - 1].innerText = this.version();
+            return this.table_row;
+        }
+    }
+
+    class SortButtonManager {
+        constructor(el, column, on_update) {
+            this.el = el;
+            this.el.classList.add("sort");
+            this.el.onclick = () => this.cycle();
+            this.state = null;
+            this.column = column;
+            this.on_update = on_update;
+
+            this.update();
+        }
+
+        cycle() {
+            switch (this.state) {
+                case null:
+                    this.state = true;
+                    break;
+                case true:
+                    this.state = false;
+                    break;
+                case false:
+                    this.state = null;
+                    break;
+            }
+
+            this.update();
+        }
+
+        update() {
+            switch (this.state) {
+                case null:
+                    console.log("null");
+                    const filter_template =
+                        document.getElementById("filter-icon");
+                    this.el.innerText = "";
+                    this.el.appendChild(
+                        filter_template.content.cloneNode(true),
+                    );
+                    break;
+                case true:
+                    this.el.innerText = "✅";
+                    break;
+                case false:
+                    this.el.innerText = "❌";
+                    break;
+            }
+
+            this.on_update();
+        }
+    }
+
+    class Table {
+        constructor(table_elem, table_rows, on_update) {
+            const head_cells = table_elem.querySelectorAll("thead tr th");
+            this.column_index = Array.from(head_cells).map((i) => i.innerText);
+            this.columns = new Map();
+            this.crates = new Map();
+            this.on_update = on_update;
+
+            for (const i of this.column_index) {
+                this.columns.set(i, []);
+            }
+
+            for (const row of table_rows) {
+                const crate_elem = row.querySelector(".crate");
+                if (crate_elem == null) {
+                    continue;
+                }
+
+                const name = new URL(crate_elem).pathname.split("/").pop();
+                const crate = new Crate(row, name);
+
+                this.process_crate(crate);
+                this.crates.set(name, crate);
+
+                this.fetch_crate_data(name).then((data) => {
+                    crate.data = data;
+                    this.on_update(this);
+                });
+            }
+
+            this.sorts = [];
+
+            for (let i = 0; i < head_cells.length; i++) {
+                const column_name = this.column_index[i];
+                const column = this.columns.get(column_name);
+                if (column.some((c) => c[0] != null)) {
+                    const head_cell = head_cells[i];
+                    let sort = document.createElement("button");
+                    this.sorts.push(
+                        new SortButtonManager(sort, column, () => {
+                            this.on_update(this);
+                        }),
+                    );
+                    head_cell.appendChild(sort);
+                }
+            }
+        }
+
+        async fetch_crate_data(name) {
+            const resp = await fetch(`https://crates.io/api/v1/crates/${name}`);
+            const data = await resp.json();
+            return data;
+        }
+
+        process_crate(crate) {
+            for (let i = 0; i < crate.table_row.children.length; i++) {
+                const cell = crate.table_row.children[i];
+                const column_name = this.column_index[i];
+
+                let value = null;
+                if (cell.innerText.includes("✅")) {
+                    value = true;
+                } else if (cell.innerText.includes("❌")) {
+                    value = false;
+                }
+                this.columns.get(column_name).push([value, crate]);
+            }
+        }
+
+        is_visible(crate) {
+            for (const sort of this.sorts) {
+                const column = sort.column;
+                for (const c of column) {
+                    if (c[1].name == crate.name) {
+                        if (
+                            (sort.state === true && c[0] !== true) ||
+                            (sort.state === false && c[0] !== false)
+                        ) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        rows() {
+            return Array.from(this.crates.values())
+                .toSorted((a, b) => a.downloads() < b.downloads())
+                .filter((crate) => this.is_visible(crate))
+                .map((crate) => crate.prepare());
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
         const tables = document.querySelectorAll(
             ".cratesio-sorted-table table",
@@ -12,52 +202,41 @@ const {} = Astro.props;
         for (const table of tables) {
             const body = table.querySelector("tbody");
             const rows = body.querySelectorAll("tr");
-            let new_rows = await Promise.all(
-                Array.from(rows).map((row) => {
-                    const crate = row.querySelector(".crate");
-                    if (crate == null) {
-                        return Promise.resolve([0, row, "", "0.0.0"]);
-                    }
 
-                    let name = new URL(crate).pathname.split("/").pop();
-                    return (async () => {
-                        const resp = await fetch(
-                            `https://crates.io/api/v1/crates/${name}`,
-                        );
-                        const data = await resp.json();
-
-                        const updated = new Date(
-                            data["versions"][0]["created_at"],
-                        );
-                        return [
-                            data["crate"]["downloads"],
-                            row,
-                            `${updated.toLocaleString("default", { month: "long" })} ${updated.getFullYear()}`,
-                            data["versions"][0]["num"],
-                        ];
-                    })();
-                }),
-            );
-
-            new_rows.sort((a, b) => a[0] < b[0]);
-
-            for (const row of new_rows) {
-                const children = row[1].children;
-                children[children.length - 3].innerText = row[0];
-                children[children.length - 2].innerText = row[2];
-                children[children.length - 1].innerText = row[3];
-            }
-
-            body.replaceChildren(...new_rows.map((i) => i[1]));
+            new Table(table, rows, (table) => {
+                body.replaceChildren(...table.rows());
+            });
         }
     });
 </script>
+
+<template id="filter-icon">
+    <i set:html={icon(faFilter).html} />
+</template>
 
 <div class="cratesio-sorted-table fullwidth">
     <slot />
 </div>
 
 <style lang="scss" is:global>
+    button {
+        border: 1px solid black;
+        border-radius: 0.2em;
+        background: transparent;
+        margin-left: 0.4em;
+
+        i,
+        i * {
+            height: 0.8em;
+            width: 0.8em;
+            color: black;
+        }
+    }
+
+    .sort {
+        cursor: pointer;
+    }
+
     .fullwidth table {
         width: 100%;
         border-spacing: 0;
