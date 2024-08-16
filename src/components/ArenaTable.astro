@@ -16,7 +16,7 @@ const {} = Astro.props;
                 Array.from(rows).map((row) => {
                     const crate = row.querySelector(".crate");
                     if (crate == null) {
-                        return Promise.resolve([0, row]);
+                        return Promise.resolve([0, row, "", "0.0.0"]);
                     }
 
                     let name = new URL(crate).pathname.split("/").pop();
@@ -26,7 +26,15 @@ const {} = Astro.props;
                         );
                         const data = await resp.json();
 
-                        return [data["crate"]["downloads"], row];
+                        const updated = new Date(
+                            data["versions"][0]["created_at"],
+                        );
+                        return [
+                            data["crate"]["downloads"],
+                            row,
+                            `${updated.toLocaleString("default", { month: "long" })} ${updated.getFullYear()}`,
+                            data["versions"][0]["num"],
+                        ];
                     })();
                 }),
             );
@@ -34,8 +42,10 @@ const {} = Astro.props;
             new_rows.sort((a, b) => a[0] < b[0]);
 
             for (const row of new_rows) {
-                const last = row[1].lastChild;
-                last.innerText = row[0];
+                const children = row[1].children;
+                children[children.length - 3].innerText = row[0];
+                children[children.length - 2].innerText = row[2];
+                children[children.length - 1].innerText = row[3];
             }
 
             body.replaceChildren(...new_rows.map((i) => i[1]));
@@ -68,7 +78,7 @@ const {} = Astro.props;
 
         th,
         td {
-            min-width: fit-contnt;
+            min-width: fit-content;
             white-space: nowrap;
             padding: 0.5em 0.2em;
             border-left: 0.5px solid #ddd;
