@@ -66,7 +66,9 @@ Some arenas directly give you references,
 but some are based on indices, 
 and you might even need to have access to the arena to use these indices.
 "Gives Out" documents what kind of type you get to refer to an allocation. 
-Sometimes it has a `'a` lifetime, refering to the fact that it is bound to the lifetime of the arena.
+Sometimes it has a `'a` lifetime, refering to the fact that it is bound to the lifetime of the arena,
+or `T: 'static`, meaning the type given out must be `'static`. 
+If no such lifetime is given, the index type is completely free from the arena's lifetime.
 "Deref Key" documents whether you need access to the arena to use the key, 
 or whether the key directly gives access to the element.
 
@@ -131,6 +133,10 @@ This roughly documentes how the library works.
 
 The others I think mostly make sense.
 
+> Note that there are instances where I left a cell blank. 
+> That's on some new columns, for which I've not gone through all the crates yet,
+> so I don't have all the data yet. Feel free to help out!
+
 ## Overview
 
 Ordered by number of downloads, not by what you should use!! That only depends on your situation.
@@ -143,7 +149,7 @@ Ordered by number of downloads, not by what you should use!! That only depends o
 | <Crate name="bumpalo" large />                  | Both   | `&`      | `&'a mut`         |`NonZero<usize>`      | ✅        | ❌             | ❌        | ❌        | ✅           | ✅       | ❌          |                |  ❌             | ❌    | Linked Arena Chunks                                                                             |           |             |         |
 | <Crate name="sharded-slab" large />             | Single | `&`      | `usize`           |`usize`               | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ❌       | ❌          |                |  ✅             | ❌    | [Linked Arena Chunks](https://docs.rs/sharded-slab/0.1.7/sharded_slab/implementation/index.html)|           |             |         |
 | <Crate name="typed-arena" large />              | Single | `&`      | `&'a mut`         |`NonZero<usize>`      | ✅        | ❌             | ✅        | ✅ `&mut` | ❌           | ❌       | ❌          |                |  ❌             | ❌    | Linked Arena Chunks                                                                             |           |             |         |
-| <Crate name="slotmap" large />                  | Single | `&mut`   | `K: Key`          |`NonZero<u64>`        | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ❌          |                |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
+| <Crate name="slotmap" large />                  | Single | `&mut`   | `K: Key`          |`NonZero<u64>`        | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ❌          | ✅             |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
 | <Crate name="id-arena" large />                 | Single | `&mut`   | `Id`              |`usize`+`u32`         | ❌        | ❌             | ✅        | ✅ `&`    | ❌           | ✅       | ✅          |                |  ✅             | ❌    | Indexed `Vec`                                                                                   |           |             |         |
 | <Crate name="generational-arena" large />       | Single | `&mut`   | `Index`           |`usize`+`u64`         | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ✅          |                |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
 | <Crate name="internment" large />               | Single | `&`      | `ArenaIntern<'a>` |`usize`               | ✅        | ❌             | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒             | ✅    | Hashset of Boxes                                                                                |           |             |         |
