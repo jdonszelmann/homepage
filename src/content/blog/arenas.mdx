@@ -7,7 +7,7 @@ tags: [ "rust"]
 description: |
     Sometimes you just really need an arena. Sometimes for performance reasons, other times for lifetime-related reasons.
     In their most basic forms, they're just a vec with some extra guarantees. However, it's those extra guarantees that matter.
-    I've found myself looking for the right kind of arena too many times, so here's an overview of literally everything there is. 
+    I've found myself looking for the right kind of arena too many times, so here's an overview of literally everything there is.
     I think, let me know if I forgot something.
 draft: false
 time: "10 minutes"
@@ -19,26 +19,26 @@ import ArenaTable from '../../components/ArenaTable.astro';
 ## What's an arena?
 
 Very basically, an arena is a way to store your data somewhere without directly going through the system allocator.
-If you have a lot of small objects which you don't mind to deallocate *together* instead of individually, 
+If you have a lot of small objects which you don't mind to deallocate *together* instead of individually,
 this can be a lot faster.
 You could use a `Vec` for this.
-However, if you store data in a vec its address might change all the time. 
+However, if you store data in a vec its address might change all the time.
 
-When the vector grows, its contents move around memory. 
+When the vector grows, its contents move around memory.
 That's not actually as inefficient as you think, it happens less and less often as the vec grows.
-The real problem with this moving around is that you can't depend on the address of your elements staying the same. 
-It's common that you want to hold on to those addresses in a datastructure while also adding new objects. 
+The real problem with this moving around is that you can't depend on the address of your elements staying the same.
+It's common that you want to hold on to those addresses in a datastructure while also adding new objects.
 
-The simplest kind of arena is built to solve that exact problem, by allocating in large chunks, 
-and promising never to deallocate or move those. 
-To grow, such an arena would simply allcoate a whole new chunk of memory.
+The simplest kind of arena is built to solve that exact problem, by allocating in large chunks,
+and promising never to deallocate or move those.
+To grow, such an arena would simply allocate a whole new chunk of memory.
 However, there are so many more ways to do this which give you arenas with slightly different properties.
 
 ## properties of arenas
 
-In the table below, I talk about various properties arena do and don't have. 
+In the table below, I talk about various properties arena do and don't have.
 Sometimes, you might not need an arena at all.
-Libraries such as <Crate name="elsa" /> or <Crate name="rpds" /> can help you write efficient datastructures, 
+Libraries such as <Crate name="elsa" /> or <Crate name="rpds" /> can help you write efficient datastructures,
 that are immutable, or provide quick clones because they are mostly based on pointers internally.
 That could be what you're actually looking for.
 
@@ -49,11 +49,11 @@ In the table, I've abbreviated some things a little, so here is the full explana
 Some arena implementations only allow you to store a single datatype in them.
 This can be good for performance, and might make it possible to iterate over the full list of allocations.
 However, it can be a limitation too.
-If the arena is supposed to work a little like an alternative to the built-in memory allocator, 
+If the arena is supposed to work a little like an alternative to the built-in memory allocator,
 then you might want to allocate arbitrary elements of mixed types.
 This makes element iteration harder, since elements aren't stored at well-known offsets in the arena.
 
-Interestingly, <Crate name="bumpalo" /> supports both kinds. 
+Interestingly, <Crate name="bumpalo" /> supports both kinds.
 By default, the arena is mixed-type, but you can allocate vectors of a single type in their arena.
 
 **Requires**
@@ -63,7 +63,7 @@ This indicates what kind of reference *to the arena* you need to allocate someth
 **Gives Out, and Deref Key**
 
 Some arenas directly give you references,
-but some are based on indices, 
+but some are based on indices,
 and you might even need to have access to the arena to use these indices.
 "Gives Out" documents what kind of type you get to refer to an allocation. 
 Sometimes it has a `'a` lifetime, refering to the fact that it is bound to the lifetime of the arena,
@@ -86,7 +86,7 @@ Note, that for performance reasons, shrinking usually isn't often a very good id
 
 Especially the mixed-type arenas sometimes don't run `Drop` of stored elements.
 It's hard to call `Drop` if you don't know where in the arena elements are stored.
-This is a problem if you, for example, want to store an `Rc` in an arena, 
+This is a problem if you, for example, want to store an `Rc` in an arena,
 though there are many more types for which this is a problem.
 
 **Iteration**
@@ -105,14 +105,14 @@ These should be pretty obvious.
 
 **ABA mitigation**
 
-If your arena supports deletions, 
+If your arena supports deletions,
 the arena must be careful that on re-allocation it doesn't accidentally reuse an ID it previously gave to you.
 If you had still stored that old ID, you could now use it to access a new allocation.
 Or not, some arenas don't care and let you deal with this.
 
 **Concurrent**
 
-This documents whether the arena can be used concurrently. 
+This documents whether the arena can be used concurrently.
 For some, I documented whether they require locking.
 
 **Dedup**
@@ -124,10 +124,10 @@ So far I only investigated one library doing this.
 
 This roughly documentes how the library works.
 
-* Linked Arena Chunks means that at a basic level, 
-  big chunks of contiguous memory are allocated, 
+* Linked Arena Chunks means that at a basic level,
+  big chunks of contiguous memory are allocated,
   slowly filled, and linked together to form one big arena built up from smaller chunks.
-* `Vec` (with freelist) refers to the backing storage. 
+* `Vec` (with freelist) refers to the backing storage.
   An Arena is a `Vec`, and you get indices to later index the `Vec` to get the element you stored.
 * Linked List means every element in the arena gets its own link in a linked list.
 
@@ -172,6 +172,7 @@ Ordered by number of downloads, not by what you should use!! That only depends o
 | <Crate name="riddance" large />                 | Single | `&mut`   | `Id<T>`           |`u32`/`u64`           | ❌        | ✅ freelist    | ✅        | ✅        | ❌           | ❌       | ❌          |                |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
 | <Crate name="drop-arena" large />               | Single | `&`      | `DropBox<'a>`     |`NonZero<usize>`      | ✅        | ✅ freelist    | ✅        | ❌        | ❌           | ❌       | ❌          |                |  ❌             | ❌    | <Crate name="typed-arena"/>+ free list                                                          |           |             |         |
 | <Crate name="elise" large />                    | Mixed  | glob     | `Gc<'a>`          |`usize`               | ✅        | ✅ GC          | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒             | ❌    | Single Global GC                                                                                |           |             |         |
+| <Crate name="hato" large />                     | Mixed  | `&mut`   | `Handle`          |`u32`+`u32`           | ❌        | ✅ freelist    | ❌        | ❌        | ❌           | ❌       | ❌          | ❌             |  🔒             | ❌    | `Vec`s of bitwise-copyable objects grouped by type                                              |           |             |         |
 
 {/*
 TODO: column that says whether keys are generational
