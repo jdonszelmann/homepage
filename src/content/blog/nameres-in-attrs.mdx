@@ -1,0 +1,339 @@
+---
+title: 'Name resolution in attributes, how hard can it be?'
+pubDate: 2025-01-12
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "rust"]
+description: |
+    This rabbit hole started when I was implementing [Externally Implementable Items](https://github.com/rust-lang/rust/issues/125418) (EII, from now on) in rustc.
+    I didn't get very far. I was quickly horrified by how built-attributes were implemented in the compiler, 
+    and got a little distracted trying to change this.
+    In this blog post I'll show you how we ended up here, how built-in attributes used to work, why specifically resolving an identifier in
+    an attribute and resolving its definition was near impossible, and what changes I'm working on, to improve this situation.
+draft: true
+time: "20 minutes"
+---
+
+import User from '../../components/GithubUser.astro';
+
+## Externally implementable items
+
+I feel like I have to start by giving some context.
+I promise we'll talk about the internals of how attributes work soon. 
+But how did we get here?
+
+Externally implementable items, are items that are declared in one crate and implemented in another.
+That explanation might sound a little abstract, so let's illustrate that idea with an example.
+
+In `#![no_std]` code (like embedded code), it is quite common to have to write your own panic handler:
+
+```rust
+#![no_std]
+
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    loop {}
+}
+```
+
+When you write this, you are implementing a function that `core` is expecting to exist.
+At the time of writing, calling `panic!()` will eventually call this code in `core`:
+
+```rust
+extern "Rust" {
+    #[lang = "panic_impl"]
+    fn panic_impl(pi: &PanicInfo<'_>) -> !;
+}
+
+// ...
+
+let pi = PanicInfo::new(/* ... */);
+unsafe { panic_impl(&pi) }
+```
+
+`panic_impl` will be the panic handler you defined.
+This is an example of an externally implementable item.
+The declaration comes from `core`, and the implementation is given in your code.
+
+I realise this might be new to some people reading this.
+It is possible to have never seen a `#[panic_handler]` before, because in most rust code, `std` provides the implementation.
+In fact, when you write this code in a crate without `#[no_std]`:
+
+```rust
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    loop {}
+}
+```
+
+you get an error talking about a "duplicate lang item `panic_impl`", which has a "first definition in `std`".
+This is an important property of EII: there exists only one implementation, and any crate could give that implementation.
+
+Other items which have this property are:
+
+- The global allocator, implemented using `#[global_allocator]`
+- Various language items like `#[lang = "eh_personality"]`
+- In a way, the `main` function is an EII. When a binary is executed, it expects an implementation of `main`
+- You could imagine a logger being registered this way
+
+Existing EII are all magically built into the compiler, often using lang items.
+However, the idea is that in the future any crate could declare an EII for another crate to implement.
+This is what [various](https://github.com/rust-lang/rfcs/pull/3632) [rfcs](https://github.com/rust-lang/rfcs/pull/3635) [were](https://github.com/rust-lang/rfcs/pull/3645 ) about:
+
+Currently, the plan <User name="m-ou-se" /> and I are implementing looks like this:
+One crate declares the EII:
+
+```rust
+#[externally_implementable(thing_handler)]
+fn do_thing();
+```
+
+The `externally_implementable` attribute creates a new macro called `thing_handler` which the declaring crate can export.
+Another crate could now implment the EII by using that attribute:
+
+```rust
+#[thing_handler]
+fn my_thing_handler() {
+    ..;
+}
+```
+
+A hypothetical panic handler declaration, using EII, would look like this:
+
+```rust
+#[externally_implementable(panic_handler)]
+fn panic_impl(info: &PanicInfo);
+```
+
+The neat thing with this design is that the implementation for `panic_handler` can stay the same!
+
+## Expanding EII
+
+Let's take a look at what we plan `externally_implementable` to expand to,
+to understand how it might be implementented in the compiler.
+There are two important parts to it:
+
+```rust
+#[externally_implementable(panic_handler)]
+fn panic_impl(info: &PanicInfo);
+
+// expands to:
+
+//1. a symbol to call
+extern "Rust" {
+    fn panic_impl(info: &PanicInfo)
+}
+
+// 2. a macro to connect the implementation to the declaration
+#[i_am_secretly_an_attribute_macro]
+macro_rules! panic_handler { /* ... */ }
+
+```
+Putting this new `panic_handler` attribute on a function also has an expansion, which should look roughly like this:
+
+```rust
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    loop {}
+}
+
+// expands to:
+
+#[provides_implementation_for(core::panic_impl)]
+fn panic(info: &PanicInfo) -> ! {
+    loop {}
+}
+```
+
+And yes, you are reading this correctly, we expect that `#[panic_handler]` will expand to another macro,
+which I've called `#[provides_implementation_for(...)]` in this example.
+
+## Macros expanding to other macros? Where does it end?
+
+While researching, this is where for me the rabbit hole started.
+Rust secretly has two different kinds of attributes:
+
+1. attribute macros, some of which are built in to the compiler
+
+Attribute macros transform a sequence of tokens (a `TokenStream`) into another sequence of tokens.
+Sometimes these are even called "Syntax Extensions" in the compiler.
+You can define these extensions yourself, in "proc macro crates".
+Rust also has a couple attribute macros built-in, like `#[derive(...)]` and `#[test]`.
+
+2. built-in attributes
+
+Built-in attributes *are not macros at all*.
+They look like a macro, but have no expansion.
+Instead, built-in attributes are kept around for the entire compilation process.
+I like to say that they guide the compilation process,
+annotating certain bits of code to modify how they are compiled.
+
+A good example of this is `#[inline]`.
+`#[inline]` does not expand to anything.
+Instead, it changes how the code for a function is generated way later in the compilation process.
+
+`#[provides_implementation_for(core::panic_impl)]` would be such a built-in attribute.
+It simply marks to the compiler that the function that it is put on is an implementation for `core::panic_impl`.
+Then later stages in the compiler can generate the right code for this.
+
+When we were designing EII, this seemed like a resonable solution.
+But note that we are expecting name resolution to happen here.
+We want `core::panic_impl` to resolve so we can properly make this link between the implementation and declaration.
+This turned out to be a problem.
+
+## A high level overview of name resolution
+
+In rustc, name resolution and macro expansion are essentially one step.
+Both processes alternate until no more progress can be made.
+This is called a [fixed point](https://cs.stackexchange.com/questions/76763/what-is-a-fixpoint).
+This is necessary, because we both need to resolve the names of macros,
+while the result of expanding a macro can also contain new identifiers, even to more macros!
+
+The result of name resolution is a [large number of maps](https://github.com/rust-lang/rust/blob/7bb98889534d597911263d647424557b414770ec/compiler/rustc_resolve/src/lib.rs#L1009-L1209).
+These maps mostly refer to `DefId`s, which are unique identifiers given to (you guessed it) definitions.
+`DefId`s are generated based on another kind of ID, a `NodeId`.
+Node here means an AST node, and various parts of the AST get one after parsing, so name resolution can later refer to parts of the AST.
+
+So, if we want names to resolve in attributes, they just need a NodeId. great!
+We can just give them one when we parse them.
+Let's see, when does rustc parse built-in attributes?
+
+## When does rustc parse built-in attributes
+
+This question gets its own section, because the answer is, unfortunately, complicated.
+When I first looked into this, I was horrified to learn that the answer depends on which attribute we are talking about.
+Built-in attributes mainly exist to modify how rust compiles certain bits of syntax (remember, like `#[inline]`).
+So at some point the attribute is *applied*. `#[inline]` is applied when function signatures are code generated.
+
+Until december 2024, all built-in attributes followed the same common process before being applied:
+
+1. they were tokenized
+
+That's it.
+
+Most syntax is lowered after name resolution, from the AST to the HIR.
+Attributes were not, and were instead kept around as a sequence of tokens.
+This means that there wasn't even a `hir::Attribute`.
+Attributes from the AST were simply kept around unchanged.
+
+Mostly, that is. There is a specific exception to support the following:
+
+```rust
+#![doc = include_str("../README.md")]
+```
+
+Before lowering, the right hand side is allowed to be an expression.
+However, after lowering, the right hand side of an attribute with an equals sign needs to be a single literal,
+in this case a string literal containing your readme.
+
+So, an `AttrArgsEq`, as this is called, used to look like:
+
+```rust
+enum AttrArgsEq {
+    Ast(/* ... */),
+    Hir(/* ... */),
+}
+```
+
+*all code* that deals with attribute needed to consider these two options,
+while before lowering, all attributes contain `AttrArgsEq::Ast` and after lowering,
+all attributes contain `AttrArgsEq::Hir`.
+Most places dealt with this with something like this:
+
+```rust
+match attr_args_eq {
+    AttrArgsEq::Ast(/* ... */) => /* ... */,
+    AttrArgsEq::Hir(..) => unreachable!()
+}
+```
+
+Or later in the compiler the opposite, asserting that `AttrArgsEq::Ast` is unreachable.
+However, I have also found places where this was not realised,
+and an implementation for both was given, while one will absolutely never be executed...
+More worryingly, there are also places (like `rustc_ast_pretty`) where both implementations were given,
+because both paths *were* reachable, but no indication was given why.
+The code that pretty prints the HIR, for attributes calls back into the code that prints the AST.
+
+Some attributes were parsed once to validate them after HIR lowering happened.
+They were then often parsed again when applied.
+Some attributes have various different points when they are applied in the compiler.
+Often this meant they were parsed multiple times.
+Sometimes in more than one way.
+
+Some built-in attributes have associated warnings.
+For example, when writing the following:
+
+```rust
+#[inline(never)]
+#[inline(always)]
+fn foo()
+```
+
+Rust warns that `#[inline(always)]` is unused, and `#[inline(never)]` is the one that is applied.
+This is, in fact, wrong.
+`#[inline(always)]` is applied and `#[inline(never)]` is ignored.
+This is because in the place where `inline` is applied, is not the same place as where this warning is emitted.
+And the sequence of inline attributes is parsed differently in these two places.
+
+The way in which attributes were parsed varies wildly, and might look completely different for two attributes.
+A quick look around shows that there were about 100 different sites in the compiler where attributes were parsed,
+and few look alike.
+
+Importantly for us, attributes are not parsed before name resolution.
+So we cannot give parts of them `NodeId`s, and so we cannot name resolve them.
+
+## Rewriting attribute handling
+
+So, instead of implementing EII, I've been rewriting how attributes are processed.
+For more technical details, take a look at the [tracking issue](https://github.com/rust-lang/rust/issues/131229)
+The first thing I chose to work on does not actually have anything to do with name resolution.
+
+A large change that got merged in december, is one that simply gives the HIR its own data types to represent attributes.
+Lowering can then turn ast attributes into hir attributes.
+Another change is to refactor the `rustc_attr` crate.
+
+You'd think that this is where attributes are parsed.
+This was true, for about 10 of the 100 attributes.
+Other attributes were parsed in all kinds of other places.
+At the time of writing, the `rustc_attr` crate does not exist anymore.
+Instead, we have `rustc_attr_data_structures` and `rustc_attr_parsing`.
+
+The plan for the future is to move the parsing of every single built-in attribute to `rustc_attr_parsing`.
+`rustc_attr_data_structures` contains various structures that might be stored inside attributes,
+and this is going to have a much more important role in the future.
+
+I'm a big proponent of the [parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) rule.
+The situation described in this blog post is, I think, a perfect example of why this is so important.
+And with `rustc_attr_parsing`, this is the rule I'm trying to follow.
+When the AST is turned into the HIR (this step is called ast lowering),
+it would be great if *all* attributes are parsed with a parser in `rustc_attr_parsing`.
+All attributes need to be parsed into a useful data structure, forcing certain errors to be reported.
+
+So, in the future, `rustc_attr_data_structures` will contain the following enum:
+
+```rust
+pub enum AttributeKind {
+    DocComment(/* ... */),
+    Cfg(/* ... */),
+    Inline(/* ... */),
+    Stability(/* ... */),
+    Repr(/* ... */),
+
+    /* and about 95 more */
+}
+```
+
+*this* is what attributes should be parsed into.
+While parsing, we can already emit all kinds of diagnostics.
+I do unfortunately still see the need for another crate: `rustc_attr_validation`,
+but the great thing about having this enum is that we can exhaustively match on it.
+We can be sure that we *never forget* to validate any attribute.
+
+After that, we can start thinking about moving the parsing of some of these attributes upwards in the compiler.
+Even the AST can have an enum like `AttributeKind`.
+An attribute like `#[provides_implementation_for(core::panic_impl)]` can then be parsed *before* name resolution,
+which means we can give it a `NodeId` and actually resolve the path in it!
+
+With some luck, in another few months or so, we can then finally implement externally implementable items.
+
+
