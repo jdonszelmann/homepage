@@ -12,7 +12,7 @@ description: |
     Soon after starting, I got horrified by how built-attributes were implemented in the compiler,
     and got a little distracted trying to change this.
     So, after introducing EII a little, I'll show you what built-in attributes are, how they used to work,
-    why specifically resolving the definition of a path in an attribute and was near impossible, 
+    why specifically resolving the definition of a path in an attribute was near impossible,
     and what changes I'm making to improve the situation.
 draft: true
 time: "20 minutes"
@@ -237,7 +237,7 @@ That's it.
 
 While most parts of the AST are lowered to HIR after name resolution.
 Attributes were an exception, and were instead kept around as an unparsed sequence of tokens.
-This means that there wasn't no type called `hir::Attribute`.
+This means that there was no type called `hir::Attribute`.
 A `hir::Item` still contains a list of `ast::Attribute`s, creating a weird situation.
 
 This is especially clear, when you consider that attributes *did* need some processing during ast lowering.
@@ -441,7 +441,7 @@ pub enum AttributeKind {
 ```
 
 *This* is what attributes are parsed into.
-This servers as an exhaustive list of every possible built-in attribute.
+This serves as an exhaustive list of every possible built-in attribute.
 I do unfortunately still see the need for another crate: `rustc_attr_validation`,
 but in it we can exhaustively match on this enum to make sure that when a new one is added, we don't forget to validate.
 
