@@ -22,7 +22,7 @@ import User from '../../components/GithubUser.astro';
 
 ## Externally implementable items
 
-Let'sv start with some context.
+Let's start with some context.
 I promise we'll get to attributes soon.
 But how did we get here?
 
@@ -85,7 +85,7 @@ Some other examples that behave like externally implementable items are:
 - In a way, the `main` function is an EII. When a binary is executed, it expects an implementation of `main`
 - You could imagine a logger being registered this way
 
-Existing EII are all magically built into the compiler, often using lang items.
+Existing EII are all magically built into the compiler, often using what are called "lang items".
 However, the idea is that in the future any crate could declare an EII for another crate to implement.
 This is what [various](https://github.com/rust-lang/rfcs/pull/3632) [rfcs](https://github.com/rust-lang/rfcs/pull/3635) [were](https://github.com/rust-lang/rfcs/pull/3645 ) about:
 
