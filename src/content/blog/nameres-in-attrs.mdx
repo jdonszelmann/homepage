@@ -388,7 +388,8 @@ fn foo()
 
 Rust warns that `#[inline(always)]` is unused, and `#[inline(never)]` is the one that is applied.
 This is, in fact, wrong.
-`#[inline(always)]` is applied and `#[inline(never)]` is ignored.
+If you study the code above that parses `inline` attributes, you'll see that
+`#[inline(always)]` is the one that is actually applied, and `#[inline(never)]` is ignored.
 This is because in the place where `inline` is applied, is not the same place as where this warning is emitted.
 And the sequence of inline attributes is parsed differently in these two places.
 
