@@ -423,7 +423,7 @@ The plan for the future is to move the parsing of every single built-in attribut
 `rustc_attr_data_structures` contains various structures.
 These are the structures we parse into.
 
-By making sure we can produce values of these types, we are forced to valide all kinds of things, and emit diagnostics during parsing.
+By making sure we can produce values of these types, we are forced to validate all kinds of things, and emit diagnostics during parsing.
 When parsing has succeeded, the data types in `rustc_attr_data_structures` serve as a proof that their structure is correct.
 Code after parsing can safely ignore validation.
 This means that in the future, `rustc_attr_data_structures` will also contain an enum like this:
