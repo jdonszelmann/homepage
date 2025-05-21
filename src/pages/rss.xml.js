@@ -12,7 +12,7 @@ export async function GET(context) {
     }));
 
     return rss({
-        title: 'Jonathan\'s Blog',
+        title: 'Jana\'s Blog',
         description: 'Talking about random things, often Rust related',
         site: context.site,
         items,
