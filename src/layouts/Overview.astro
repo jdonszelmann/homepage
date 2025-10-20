@@ -1,35 +1,11 @@
 ---
-
+import Layout from "./Layout.astro";
 ---
 
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
+<Layout title="Blog posts">
+    <Fragment slot="head">
         <meta name="description" content="list of all blogposts" />
-        <meta name="viewport" content="width=device-width" />
-        <link rel="icon" type="image/png" href="/favicon.png" />
-        <title>Jana's Blog</title>
         <style lang="scss">
-            @font-face {
-                font-family: "JBM";
-                src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
-            }
-            @font-face {
-                font-family: "NF";
-                src: url("/fonts/SymbolsNerdFontMono-Regular.ttf")
-                    format("truetype");
-            }
-            @font-face {
-                font-family: "Fira Sans";
-                src: url("/fonts/FiraSans-Regular.otf") format("opentype");
-                font-weight: normal;
-            }
-            @font-face {
-                font-family: "Fira Sans";
-                src: url("/fonts/FiraSans-Bold.otf") format("opentype");
-                font-weight: bold;
-            }
             html,
             body {
                 margin: 0;
@@ -119,20 +95,8 @@
                 display: contents;
             }
         </style>
-    </head>
-
-    <body>
-        <nav>
-            <div class="menu">
-                <a href="/">Home</a>
-                <a href="/blog">Overview</a>
-                <a href="https://github.com/jdonszelmann/homepage/">Source</a>
-                <a href="/rss.xml">Feed</a>
-            </div>
-        </nav>
-        <main>
-            <!-- <p>{description}</p> -->
-            <slot />
-        </main>
-    </body>
-</html>
+    </Fragment>
+    <Fragment slot="main">
+        <slot />
+    </Fragment>
+</Layout>

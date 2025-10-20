@@ -10,6 +10,7 @@ import {
     faGraduationCap,
     faBriefcase,
     faLanguage,
+    faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
 import {
     faMastodon,
@@ -21,41 +22,141 @@ import matrix from "../../assets/images/matrix.svg?raw";
 ---
 
 <Layout title="Jana Dönszelmann">
-    <div class="main" slot="main">
+    <Fragment slot="head">
+        <style>
+            .title {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            i {
+                width: 1em;
+                height: 1em;
+                color: black;
+            }
+        </style>
+    </Fragment>
+
+    <Fragment slot="main">
         <div class="title">
             <h3>You have reached the homepage of</h3>
             <h1>Jana Dönszelmann</h1>
         </div>
+
+        <p>
+            Hi! I'm Jana (she/her). I'm a software developer from Delft, The
+            Netherlands. I work for my own company, <a href="https://hexcat.nl"
+                >Hexcat</a
+            > and the RustNL foundation. As part of my job, I mainly work on <a
+                href="https://github.com/rust-lang/rust"
+                >rustc, the rust compiler</a
+            >, being a member of the compiler team. Additionally, every year I
+            help co-organize <a href="https://rustweek.org">Rust Week</a>, the
+            largest rust conference. Before that, I used to teach computer
+            science and embedded systems at the University of Delft, giving and
+            developing courses called <i>Software Fundamentals</i>, <i
+                >Software Systems</i
+            >, and the <i>Embedded Systems Lab</i>. All these courses used Rust
+            as their primary programming language.
+        </p>
+        <p>
+            I speak Dutch, prefer English, and you can try your luck with French
+            but about that I make no guarantees.
+        </p>
+        <p>
+            You can find me elsewhere online at:
+
+            <ul>
+                <li>
+                    <Social link="https://github.com/jdonszelmann">
+                        <i set:html={icon(faGithub).html} />
+                        <span>jdonszelmann</span>
+                    </Social>
+                </li>
+                <li>
+                    <Social link="https://www.linkedin.com/in/jdonszelmann/">
+                        <i set:html={icon(faLinkedin).html} />
+                        <span>jdonszelmann</span>
+                    </Social>
+                </li>
+                <li>
+                    <Social link="https://donsz.nl">
+                        <i set:html={icon(faEarthEurope).html} />
+                        <span>https://donsz.nl</span>
+                    </Social>
+                </li>
+                <li>
+                    <Social link="https://crates.io/users/jdonszelmann">
+                        <i set:html={icon(faRust).html} />
+                        <span>jdonszelmann</span>
+                    </Social>
+                </li>
+                <li>
+                    <Social link="mailto://website+jana@donsz.nl">
+                        <i set:html={icon(faEnvelope).html} />
+                        <span>jana@donsz.nl</span>
+                    </Social>
+                </li>
+            </ul>
+
+            I'm also available on discord, mastodon and matrix but those I
+            prefer not to publish here. Feel free to ask me for those though!
+            And finally, if it's about rust, I'm active on <a
+                href="https://rust-lang.zulipchat.com/#user/370197"
+                >https://rust-lang.zulipchat.com</a
+            >
+        </p>
+
+        <p>
+            I occasionally write blog posts, mainly about Rust, which you can
+            find <a href="/blog">here</a>
+
+            You might also be interested in some websites I host:
+
+            <ul>
+                <li>
+                    A visualization of the work I did for my bachelor's thesis
+                    at <a href="https://mapf.donsz.nl">mapf.donsz.nl</a>, and an
+                    overview of it at <a href="https://mapfm-poster.donsz.nl"
+                        >mapfm-poster.donsz.nl</a
+                    >
+                </li>
+                <li>
+                    A work tracker specifically for the rust-lang/rust
+                    repository <a href="https://queue.donsz.nl"
+                        >queue.donsz.nl</a
+                    >
+                </li>
+                <li>
+                    Some excellent resources on compiler construction from when
+                    I studied at the TU Delft at <a
+                        href="https://compiler-construction-2021.donsz.nl"
+                        >compiler-construction-2021.donsz.nl</a
+                    >. Its author, my professor, unfortunately passed away far
+                    too early, and these resources slowly started to disappear.
+                </li>
+            </ul>
+        </p>
+
         <div class="websites grid"></div>
         <div class="projects grid"></div>
-    </div>
-    <div class="socials grid" slot="socials">
+
+        <!-- <div class="socials grid" slot="socials">
         <Social link="https://fedi.xirion.net/@jonathan">
             <i set:html={icon(faMastodon).html} />
             <span>@jonathan@xirion.net</span>
         </Social>
-        <Social link="https://github.com/jdonszelmann">
-            <i set:html={icon(faGithub).html} />
-            <span>jdonszelmann</span>
-        </Social>
-        <Social link="https://www.linkedin.com/in/jdonszelmann/">
-            <i set:html={icon(faLinkedin).html} />
-            <span>jdonszelmann</span>
-        </Social>
-        <Social link="https://donsz.nl">
-            <i set:html={icon(faEarthEurope).html} />
-            <span>https://donsz.nl</span>
-        </Social>
+
+
         <Social link="https://matrix.to/#/@jonathan:jdonszelmann.nl">
             <i>
                 <Fragment set:html={matrix} alt="matrix logo" />
             </i>
             <span>@jonathan:jdonszelmann.nl</span>
         </Social>
-        <Social link="https://crates.io/users/jdonszelmann">
-            <i set:html={icon(faRust).html} />
-            <span>jdonszelmann</span>
-        </Social>
+
     </div>
 
     <div class="situation grid" slot="situation">
@@ -110,60 +211,6 @@ import matrix from "../../assets/images/matrix.svg?raw";
         </Card>
     </div>
 
-    <a class="blog" slot="blog" href="/blog"> Blog </a>
+    <a class="blog" slot="blog" href="/blog"> Blog </a> -->
+    </Fragment>
 </Layout>
-
-<style lang="scss">
-    .blog {
-        background: black;
-        text-align: center;
-        font-size: 3em;
-        color: white;
-        display: block;
-        text-decoration: none;
-    }
-    .main {
-        display: flex;
-        flex-direction: column;
-
-        .title {
-            text-align: center;
-        }
-    }
-
-    .lang {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        grid-template-rows: 1fr 1fr;
-        gap: 0.2em;
-
-        i {
-            grid-row: 1 / span 2;
-
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-
-            height: 2.66em;
-            width: 2.66em;
-        }
-    }
-
-    .grid {
-        display: grid;
-        column-gap: 1em;
-        row-gap: 0.5em;
-        grid-template-columns: repeat(auto-fit, minmax(18em, 1fr));
-    }
-
-    ul {
-        padding-left: 0;
-        margin-top: 0.5em;
-        margin-bottom: 0.5em;
-    }
-
-    a {
-        color: unset;
-    }
-</style>

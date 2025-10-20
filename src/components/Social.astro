@@ -20,12 +20,10 @@ const { link } = Astro.props;
 
 <style lang="scss">
     .social {
-        display: grid;
+        display: flex;
+        gap: 0.5em;
         grid-template-columns: auto auto;
 
-        color: white;
-        text-decoration: none;
-        background: black;
         font-weight: bold;
         font-family: monospace;
         font-size: large;
@@ -34,6 +32,5 @@ const { link } = Astro.props;
         border-radius: 0.2em;
 
         align-items: center;
-        justify-content: space-between;
     }
 </style>

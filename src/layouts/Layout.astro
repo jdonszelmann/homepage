@@ -9,53 +9,167 @@ const { title } = Astro.props;
 <!doctype html>
 <html lang="en">
     <head>
+        <slot name="head" />
         <meta charset="UTF-8" />
-        <meta name="description" content="Jana's Homepage" />
         <meta name="viewport" content="width=device-width" />
         <link rel="icon" type="image/png" href="/favicon.png" />
-        <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
+        <style lang="scss" is:global>
+            @font-face {
+                font-family: "JBM";
+                src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+            }
+            @font-face {
+                font-family: "NF";
+                src: url("/fonts/SymbolsNerdFontMono-Regular.ttf")
+                    format("truetype");
+            }
+            @font-face {
+                font-family: "Fira Sans";
+                src: url("/fonts/FiraSans-Regular.otf") format("opentype");
+                font-weight: normal;
+            }
+            @font-face {
+                font-family: "Fira Sans";
+                src: url("/fonts/FiraSans-Bold.otf") format("opentype");
+                font-weight: bold;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                background: #f5f5f5;
+            }
+
+            /*ul {*/
+            /*list-style: square url("");*/
+            /*}*/
+
+            body {
+                display: grid;
+                grid-template-rows: auto;
+                grid-template-areas: "left nav middle right";
+
+                grid-template-columns: auto 15em min(40em, 70vw) auto;
+                gap: 1em;
+
+                font-family: "Fira Sans";
+            }
+
+            a {
+                color: #9c3574;
+            }
+
+            @media (width <= 900px) {
+                body {
+                    display: flex;
+                    flex-direction: column;
+                    padding: 0em 1em;
+                }
+
+                nav {
+                    padding-top: 1em;
+                    flex-direction: row !important;
+                }
+
+                .space {
+                    display: block;
+                    margin-left: auto;
+                }
+
+                .toc {
+                    display: none;
+                }
+
+                .authors {
+                    margin-right: 0.5em;
+                }
+
+                .reviewers {
+                    display: none !important;
+                }
+            }
+            @media (width > 900px) {
+                nav {
+                    padding-top: 1.5em;
+                    align-self: start;
+                    position: sticky;
+                    top: 0;
+                }
+                .toc {
+                    display: contents;
+                }
+                .space {
+                    display: none;
+                }
+            }
+
+            main {
+                grid-area: middle;
+                padding-bottom: 5em;
+            }
+
+            nav {
+                background: #f5f5f5;
+                grid-area: nav;
+                display: flex;
+                flex-direction: column;
+
+                justify-content: start;
+                align-items: center;
+
+                gap: 1em;
+            }
+
+            .menu {
+                display: contents;
+
+                a {
+                    text-decoration: none;
+                    color: black;
+                }
+            }
+
+            .reviewers {
+                display: contents;
+            }
+            blockquote {
+                border-left: 10px solid #ccc;
+                padding: 0 10px;
+                margin: 1em 0em;
+            }
+
+            img.gh-avatar {
+                display: inline-block;
+                margin-right: 0.3em;
+                height: 1.5em;
+                border-radius: 1em;
+            }
+        </style>
+        <style is:global>
+            @keyframes detect-scroll {
+                from,
+                to {
+                    --can-scroll:;
+                }
+            }
+        </style>
     </head>
+
     <body>
-        <header>
-            <slot name="nav" />
-        </header>
+        <nav>
+            <div class="menu">
+                <a href="/">Home</a>
+                <a href="/blog">Blog Posts</a>
+                <a href="/rss.xml">RSS Feed</a>
+            </div>
+
+            <div class="space"></div>
+
+            <slot name="extra-nav" />
+        </nav>
         <main>
             <slot name="main" />
-            <slot name="socials" />
-            <slot name="blog" />
-            <slot name="situation" />
         </main>
     </body>
-    <style is:global>
-        :root {
-        }
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            display: grid;
-            grid-template-columns: auto min(60em, 90vw) auto;
-            grid-template-rows: auto;
-            grid-template-areas: "left middle right";
-        }
-        body > * {
-            grid-area: middle;
-        }
-
-        main {
-            display: grid;
-            grid-template-rows: auto auto 4em auto 4em;
-            gap: 2em;
-        }
-    </style>
-    <style is:global>
-        i {
-            width: 1.33em;
-            height: 1.33em;
-            display: inline-block;
-        }
-    </style>
 </html>

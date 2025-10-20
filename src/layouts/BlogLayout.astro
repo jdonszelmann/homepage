@@ -2,6 +2,7 @@
 import TOCHeading from "../components/TOCHeading.astro";
 import {type HierarchicalHeading} from "../ts/HierarchicalHeading.ts";
 import { marked } from 'marked';
+import Layout from "./Layout.astro";
 
 interface Heading {
     slug: string,
@@ -11,6 +12,7 @@ interface Heading {
 
 export interface Props {
     headings: Heading[]
+    id: string,
     data: {
         authors: string[],
         reviewers: string[],
@@ -23,10 +25,10 @@ export interface Props {
 }
 
 const {
-data: {authors, description, reviewers = [], draft=false, title, pubDate, time},
+    data: {authors, description, reviewers = [], draft=false, title, pubDate, time},
     headings,
+    id
 } = Astro.props;
-
 
 const maxDepth = 2;
 
@@ -75,37 +77,10 @@ headings.splice(0, 0, {
 const hierarchicalHeadings = headings.length == 0? []: headings[0].depth == 1? parseHeadings(headings, 1): (() => {throw new Error("bad heading hierarchy (should start with h1)")})();
 
 ---
-
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
+<Layout title={`${title}`}>
+    <Fragment slot="head">
         <meta name="description" content={description} />
-        <meta name="viewport" content="width=device-width" />
-        <link rel="icon" type="image/png" href="/favicon.png" />
-        <title>{title}</title>
-        <style lang="scss">
-            @font-face {
-                font-family: "JBM";
-                src: url('/fonts/JetBrainsMono-Regular.ttf') format('truetype');
-            }
-            @font-face {
-                font-family: "NF";
-                src: url('/fonts/SymbolsNerdFontMono-Regular.ttf') format('truetype');
-            }
-            @font-face {
-                font-family: "Fira Sans";
-                src: url('/fonts/FiraSans-Regular.otf') format('opentype');
-                font-weight: normal;
-
-            } 
-            @font-face {
-                font-family: "Fira Sans";
-                src: url('/fonts/FiraSans-Bold.otf') format('opentype');
-                font-weight: bold;
-            }
-
-
+        <style>
             div.authors {
                 display: flex;
                 flex-direction: column;
@@ -128,183 +103,59 @@ const hierarchicalHeadings = headings.length == 0? []: headings[0].depth == 1? p
             a.author:last-child {
                 margin-right: 0;
             }
-
-            img.gh-avatar {
-                display: inline-block;
-                margin-right: 0.3em;
-                height: 1.5em;
-                border-radius: 1em;
-            }
-            html,
-            body {
-                margin: 0;
-                padding: 0;
-                background: #f5f5f5;
-            }
-
-            body {
-                display: grid;
-                grid-template-rows: auto;
-                grid-template-areas: "left nav middle right";
-
-                grid-template-columns: auto 15em min(40em, 70vw) auto;
-                gap: 1em;
-
-                font-family: "Fira Sans";
-            }
-
-            @media (width <= 900px) {
-                body {
-                    display: flex;
-                    flex-direction: column;
-                    padding: 0em 1em;
-                }
-
-                nav {
-                    padding-top: 1em;
-                    flex-direction: row !important;
-                }
-
-                .space {
-                    display: block;
-                    margin-left: auto;
-                }
-
-                .toc {
-                    display: none;
-                }
-
-                .authors {
-                    margin-right: 0.5em;
-                }
-
-                .reviewers {
-                   display: none !important;
-                }
-            }
-            @media (width > 900px) {
-                nav {
-                    padding-top: 1.5em;
-                    align-self: start;
-                    position: sticky;
-                    top: 0;
-                }
-                .toc {
-                    display: contents;
-                }
-                .space {
-                    display: none;
-                }
-            }
-
-            main {
-                grid-area: middle;
-                padding-bottom: 5em;
-            }
-
-            nav {
-                background: #f5f5f5;
-                grid-area: nav;
-                display: flex;
-                flex-direction: column;
-
-                justify-content: start;
-                align-items: center;
-
-                gap: 1em;
-            }
-
-            .menu {
-                display: contents;
-
-                a {
-                    text-decoration: none;
-                    color: black;
-                }
-            }
-
-            .reviewers {
-                display: contents;
-            }
-
         </style>
-        <style is:global>
-            blockquote {
-                border-left: 10px solid #ccc;
-                padding: 0 10px;
-                margin: 1em 0em;
+    </Fragment>
+    <Fragment slot="extra-nav">
+      <a href={`https://github.com/jdonszelmann/homepage/tree/main/src/content/blog/${id}`}>Article Source</a>
+
+        By:
+        <div class="authors">
+            {
+                authors.map((author: any) => (
+                    <a class="author" href=`https://github.com/${author}`>
+                        <img
+                            alt={`${author}'s github avatar`}
+                            class="gh-avatar"
+                            src={`https://github.com/${author}.png`}
+                        />
+                        {author}
+                    </a>
+                ))
             }
-
-            @keyframes detect-scroll {
-                from,
-                to {
-                    --can-scroll:;
-                }
-            }
-        </style>
-    </head>
-
-    <body>
-        <nav>
-            <div class="menu">
-                <a href="/">Home</a>
-                <a href="/blog">Overview</a>
-                <a href="https://github.com/jdonszelmann/homepage">Source</a>
-                <a href="/rss.xml">Feed</a>
-            </div>
-
-            <div class="space"></div>
-
-            By:
+        </div>
+        {reviewers.length > 0 && (
+            <div class="reviewers">
+            Reviewed by:
             <div class="authors">
                 {
-                    authors.map((author: any) => (
+                    reviewers.map((author: any) => (
                         <a class="author" href=`https://github.com/${author}`>
                             <img
-                                alt={`${author}'s github avatar`} 
+                                alt={`${author}'s github avatar`}
                                 class="gh-avatar"
                                 src={`https://github.com/${author}.png`}
                             />
                             {author}
                         </a>
                     ))
-                }
-            </div>
-            {reviewers.length > 0 && (
-                <div class="reviewers">
-                Reviewed by:
-                <div class="authors">
-                    {
-                        reviewers.map((author: any) => (
-                            <a class="author" href=`https://github.com/${author}`>
-                                <img
-                                    alt={`${author}'s github avatar`} 
-                                    class="gh-avatar"
-                                    src={`https://github.com/${author}.png`}
-                                />
-                                {author}
-                            </a>
-                        ))
-                        }
-                </div>
-
-
-            Published: {pubDate.toISOString().slice(0,10)}<br>
-                {time?`read time: ${time}`:""}
-            </div>
-            )}
-
-            <div class="toc">
-                <TOCHeading elems={hierarchicalHeadings}>
+                    }
             </div>
 
-        </nav>
-        <main>
-            <h1 id="title" class="title"}>{title} 
-                {draft && (<span>(Draft)</span>)}
-            </h1>
-            <p set:html={marked.parse(description || "")} />
-            <slot />
-        </main>
-    </body>
-</html>
+
+        Published: {pubDate.toISOString().slice(0,10)}<br>
+            {time?`read time: ${time}`:""}
+        </div>
+        )}
+
+        <div class="toc">
+            <TOCHeading elems={hierarchicalHeadings}>
+        </div>
+    </Fragment>
+    <Fragment slot="main">
+        <h1 id="title" class="title"}>{title}
+            {draft && (<span>(Draft)</span>)}
+        </h1>
+        <p set:html={marked.parse(description || "")} />
+        <slot />
+    </Fragment>
+</Layout>

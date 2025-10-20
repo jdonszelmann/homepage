@@ -4,7 +4,7 @@ import BlogLayout from "../../layouts/BlogLayout.astro";
 
 export async function getStaticPaths() {
     const blogEntries = await getCollection("blog");
-    console.log(blogEntries);
+    // console.log(blogEntries);
     return blogEntries.map((entry) => ({
         params: { slug: entry.slug },
         props: { entry },
@@ -15,6 +15,6 @@ const { entry } = Astro.props;
 const { Content, headings } = await entry.render();
 ---
 
-<BlogLayout data={entry.data} , headings={headings}>
+<BlogLayout data={entry.data} headings={headings} id={entry.id}>
     <Content />
 </BlogLayout>
