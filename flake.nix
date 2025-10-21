@@ -22,37 +22,32 @@
           '';
         nerdfonts =
           pkgs.nerdfonts.override { fonts = [ "NerdFontsSymbolsOnly" ]; };
-      in with pkgs; rec {
+        build = vars: name: (pkgs.buildNpmPackage {
+                  version = "22-05-2024";
+                  src = ./.;
+                  inherit nativeBuildInputs buildInputs npmDepsHash name;
+                  configurePhase = ''
+                    mkdir -p ./public/fonts
+                    ln -sf ${nerdfonts}/share/fonts/truetype/NerdFonts/* ./public/fonts/
+                    ln -sf ${pkgs.fira}/share/fonts/opentype/* ./public/fonts/
+                    ln -sf ${pkgs.jetbrains-mono}/share/fonts/truetype/* ./public/fonts/
+                    ln -sf ${pkgs.fira-mono}/share/fonts/opentype/* ./public/fonts/
+                  '';
+                  buildPhase = ''
+                    ${vars}
+                    ${pkgs.nodejs}/bin/npm run build
+                  '';
+                  installPhase = ''
+                    cp -pr dist $out
+                  '';
+                });
+      in rec {
         packages = rec {
-          website = pkgs.buildNpmPackage {
-            name = "homepage";
-            version = "22-05-2024";
-            src = ./.;
-            inherit nativeBuildInputs buildInputs npmDepsHash;
-            configurePhase = ''
-              mkdir -p ./public/fonts
-              ln -sf ${nerdfonts}/share/fonts/truetype/NerdFonts/* ./public/fonts/
-              ln -sf ${pkgs.fira}/share/fonts/opentype/* ./public/fonts/
-              ln -sf ${pkgs.jetbrains-mono}/share/fonts/truetype/* ./public/fonts/
-              ln -sf ${pkgs.fira-mono}/share/fonts/opentype/* ./public/fonts/
-            '';
-            buildPhase = ''
-              ${pkgs.nodejs}/bin/npm run build
-              mv dist normal
-              export GAY=1
-              ${pkgs.nodejs}/bin/npm run build
-              mv dist gay
-            '';
-            installPhase = ''
-              mkdir -p $out/normal
-              cp -pr normal $out/normal
-              mkdir -p $out/gay
-              cp -pr gay $out/gay
-            '';
-          };
+          website = build "" "homepage";
+          website-gay = build "export GAY=1" "homepage-gay";
           default = website;
         };
-        devShells.default = mkShell {
+        devShells.default = with pkgs; mkShell {
           buildInputs = buildInputs ++ [ dev prefetch yarn ];
           inherit nativeBuildInputs;
           packages = with pkgs; [ lychee (pkgs.writeShellScriptBin "watch" ''
