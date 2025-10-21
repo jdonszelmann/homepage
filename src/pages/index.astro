@@ -64,30 +64,44 @@ import matrix from "../../assets/images/matrix.svg?raw";
         </div>
 
         <p>
-            Hi! I'm Jana (she/her) {
-                import.meta.env.GAY && (
-                    <span> and have been described as "quite hot"</span>
+            Hi! I'm Jana (she/her)
+
+            {
+                import.meta.env.GAY ? (
+                    <span>
+                        I'm a girl from Delft, The Netherlands. Come on this has
+                        to be professional, I sometimes use computers, something
+                        something Rust, you get the gist. Quite gay, likes
+                        kitties, and cute girls who are sometimes also kitties
+                        etc. Has been described as "quite hot". Oh I have ADHD
+                        btw. Trans rights are human rights. Did I mention I like
+                        girls? Yeah, pretty gay. Warning: I bite.
+                    </span>
+                ) : (
+                    <span>
+                        I'm a software developer from Delft, The Netherlands. I
+                        work for my own company,
+                        <a href="https://hexcat.nl">Hexcat</a> and the RustNL
+                        foundation. A large part of my job is to work on
+                        <a href="https://github.com/rust-lang/rust">rustc</a>,
+                        the rust compiler, being a member of the compiler team.
+                        Additionally, every year I help co-organize
+                        <a href="https://rustweek.org">Rust Week</a>, the
+                        largest rust conference. Before that, I used to teach
+                        computer science and embedded systems at the University
+                        of Delft, giving and developing three courses called
+                        <i>Software Fundamentals</i>, <i>Software Systems</i>,
+                        and the <i>Embedded Systems Lab</i>. All these courses
+                        used Rust as their primary programming language.
+                    </span>
                 )
-            }. I'm a software developer from Delft, The Netherlands. I work for
-            my own company, <a href="https://hexcat.nl">Hexcat</a> and the RustNL
-            foundation. A large part of my job is to work on <a
-                href="https://github.com/rust-lang/rust">rustc</a
-            >, the rust compiler, being a member of the compiler team.
-            Additionally, every year I help co-organize <a
-                href="https://rustweek.org">Rust Week</a
-            >, the largest rust conference. Before that, I used to teach
-            computer science and embedded systems at the University of Delft,
-            giving and developing three courses called <i
-                >Software Fundamentals</i
-            >, <i>Software Systems</i>, and the <i>Embedded Systems Lab</i>. All
-            these courses used Rust as their primary programming language.
+            }
         </p>
         <p>
             I
             {import.meta.env.GAY && <span>regularly meow,</span>}
-            speak Dutch, prefer English, and you can try your luck with French but
-            about that I make no guarantees, and just maybe I understand some of
-            your German...
+            speak Dutch, prefer English, you can try your luck with French but about
+            that I make no guarantees, and just maybe I understand some of your German...
         </p>
         <p>
             You can find me elsewhere online as:
@@ -99,12 +113,16 @@ import matrix from "../../assets/images/matrix.svg?raw";
                         <span>jdonszelmann</span>
                     </Social>
                 </li>
-                <li>
-                    <Social link="https://www.linkedin.com/in/jdonszelmann/">
-                        <i set:html={icon(faLinkedin).html} />
-                        <span>jdonszelmann</span>
-                    </Social>
-                </li>
+                {
+                    !import.meta.env.GAY && (
+                        <li>
+                            <Social link="https://www.linkedin.com/in/jdonszelmann/">
+                                <i set:html={icon(faLinkedin).html} />
+                                <span>jdonszelmann</span>
+                            </Social>
+                        </li>
+                    )
+                }
                 <li>
                     <Social link="https://donsz.nl">
                         <i set:html={icon(faEarthEurope).html} />

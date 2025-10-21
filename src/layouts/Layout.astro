@@ -41,7 +41,9 @@ const gay = import.meta.env.GAY;
                 margin: 0;
                 padding: 0;
                 background: #f5f5f5;
-                height: 100%;
+
+                min-height: 100vh;
+                height: fit-content;
 
                 .gay {
                     background: linear-gradient(
@@ -60,7 +62,7 @@ const gay = import.meta.env.GAY;
 
             body {
                 display: grid;
-                grid-template-rows: auto;
+                grid-template-rows: 1fr;
                 grid-template-areas: "left nav middle right";
 
                 grid-template-columns: auto 15em min(40em, 70vw) auto;
