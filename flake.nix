@@ -38,9 +38,16 @@
             '';
             buildPhase = ''
               ${pkgs.nodejs}/bin/npm run build
+              mv dist normal
+              export GAY=1
+              ${pkgs.nodejs}/bin/npm run build
+              mv dist gay
             '';
             installPhase = ''
-              cp -pr dist $out/
+              mkdir -p $out/normal
+              cp -pr normal $out/normal
+              mkdir -p $out/gay
+              cp -pr gay $out/gay
             '';
           };
           default = website;

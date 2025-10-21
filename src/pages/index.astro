@@ -11,6 +11,7 @@ import {
     faBriefcase,
     faLanguage,
     faEnvelope,
+    faCat,
 } from "@fortawesome/free-solid-svg-icons";
 import {
     faMastodon,
@@ -49,15 +50,27 @@ import matrix from "../../assets/images/matrix.svg?raw";
 
     <Fragment slot="main">
         <div class="title">
-            <h3>You have reached the homepage of</h3>
+            {
+                import.meta.env.GAY ? (
+                    <h3>
+                        Hiiiii, this is the much better gay version of the
+                        homepage of
+                    </h3>
+                ) : (
+                    <h3>You have reached the homepage of</h3>
+                )
+            }
             <h1>Jana Dönszelmann</h1>
         </div>
 
         <p>
-            Hi! I'm Jana (she/her). I'm a software developer from Delft, The
-            Netherlands. I work for my own company, <a href="https://hexcat.nl"
-                >Hexcat</a
-            > and the RustNL foundation. A large part of my job is to work on <a
+            Hi! I'm Jana (she/her) {
+                import.meta.env.GAY && (
+                    <span> and have been described as "quite hot"</span>
+                )
+            }. I'm a software developer from Delft, The Netherlands. I work for
+            my own company, <a href="https://hexcat.nl">Hexcat</a> and the RustNL
+            foundation. A large part of my job is to work on <a
                 href="https://github.com/rust-lang/rust">rustc</a
             >, the rust compiler, being a member of the compiler team.
             Additionally, every year I help co-organize <a
@@ -70,12 +83,14 @@ import matrix from "../../assets/images/matrix.svg?raw";
             these courses used Rust as their primary programming language.
         </p>
         <p>
-            I speak Dutch, prefer English, and you can try your luck with French
-            but about that I make no guarantees, and just maybe I understand
-            some of your German...
+            I
+            {import.meta.env.GAY && <span>regularly meow,</span>}
+            speak Dutch, prefer English, and you can try your luck with French but
+            about that I make no guarantees, and just maybe I understand some of
+            your German...
         </p>
         <p>
-            You can find me elsewhere online at:
+            You can find me elsewhere online as:
 
             <ul class="nodots">
                 <li>
@@ -108,6 +123,16 @@ import matrix from "../../assets/images/matrix.svg?raw";
                         <span>jana@donsz.nl</span>
                     </Social>
                 </li>
+                {
+                    import.meta.env.GAY && (
+                        <li>
+                            <Social link="/">
+                                <i set:html={icon(faCat).html} />
+                                <span>mrow!</span>
+                            </Social>
+                        </li>
+                    )
+                }
             </ul>
 
             I'm also available on discord, mastodon and matrix but those I
@@ -148,6 +173,7 @@ import matrix from "../../assets/images/matrix.svg?raw";
                 </li>
             </ul>
         </p>
+        {import.meta.env.GAY && <p>meow meow mrrrp mrow meow :3 :3 &lt;3</p>}
 
         <div class="websites grid"></div>
         <div class="projects grid"></div>

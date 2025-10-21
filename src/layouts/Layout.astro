@@ -4,6 +4,8 @@ interface Props {
 }
 
 const { title } = Astro.props;
+
+const gay = import.meta.env.GAY;
 ---
 
 <!doctype html>
@@ -39,6 +41,21 @@ const { title } = Astro.props;
                 margin: 0;
                 padding: 0;
                 background: #f5f5f5;
+                height: 100%;
+
+                .gay {
+                    background: linear-gradient(
+                        90deg,
+                        #5bcefa 20%,
+                        #f5a9b8 20%,
+                        40%,
+                        #ffffff 40%,
+                        60%,
+                        #f5a9b8 60%,
+                        80%,
+                        #5bcefa 80%
+                    );
+                }
             }
 
             body {
@@ -58,6 +75,40 @@ const { title } = Astro.props;
                 font-weight: bold;
                 font-family: monospace;
                 font-size: large;
+
+                .gay & {
+                    background: linear-gradient(
+                        to right,
+                        rgb(255, 0, 0),
+                        rgb(255, 191, 0),
+                        rgb(128, 255, 0),
+                        rgb(0, 255, 64),
+                        rgb(0, 255, 255),
+                        rgb(0, 64, 255),
+                        rgb(128, 0, 255),
+                        rgb(255, 0, 191),
+                        rgb(255, 0, 0)
+                    );
+                    background-clip: text;
+                    color: transparent;
+                }
+            }
+
+            .gay h1 {
+                background: linear-gradient(
+                    to right,
+                    rgb(255, 0, 0),
+                    rgb(255, 191, 0),
+                    rgb(128, 255, 0),
+                    rgb(0, 255, 64),
+                    rgb(0, 255, 255),
+                    rgb(0, 64, 255),
+                    rgb(128, 0, 255),
+                    rgb(255, 0, 191),
+                    rgb(255, 0, 0)
+                );
+                background-clip: text;
+                color: transparent;
             }
 
             .sans a,
@@ -114,6 +165,10 @@ const { title } = Astro.props;
                 align-items: center;
 
                 gap: 1em;
+
+                .gay & {
+                    background: transparent;
+                }
             }
 
             .menu {
@@ -148,7 +203,7 @@ const { title } = Astro.props;
         </style>
     </head>
 
-    <body>
+    <body class:list={[gay ? "gay" : null]}>
         <nav>
             <div class="menu sans">
                 <a href="/">Home</a>
