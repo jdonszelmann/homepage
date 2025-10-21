@@ -1,38 +1,50 @@
 ---
 import TOCHeading from "../components/TOCHeading.astro";
-import {type HierarchicalHeading} from "../ts/HierarchicalHeading.ts";
-import { marked } from 'marked';
+import GithubUser from "../components/GithubUser.astro";
+import { type HierarchicalHeading } from "../ts/HierarchicalHeading.ts";
+import { marked } from "marked";
 import Layout from "./Layout.astro";
 
 interface Heading {
-    slug: string,
-    text: string,
-    depth: number,
+    slug: string;
+    text: string;
+    depth: number;
 }
 
 export interface Props {
-    headings: Heading[]
-    id: string,
+    headings: Heading[];
+    id: string;
     data: {
-        authors: string[],
-        reviewers: string[],
-        description: string,
-        draft: boolean,
-        title: string,
-        pubDate: Date,
-        time?: string,
-    }
+        authors: string[];
+        reviewers: string[];
+        description: string;
+        draft: boolean;
+        title: string;
+        pubDate: Date;
+        time?: string;
+    };
 }
 
 const {
-    data: {authors, description, reviewers = [], draft=false, title, pubDate, time},
+    data: {
+        authors,
+        description,
+        reviewers = [],
+        draft = false,
+        title,
+        pubDate,
+        time,
+    },
     headings,
-    id
+    id,
 } = Astro.props;
 
 const maxDepth = 2;
 
-function parseHeadings(headings: Heading[], depth: number): HierarchicalHeading[] {
+function parseHeadings(
+    headings: Heading[],
+    depth: number,
+): HierarchicalHeading[] {
     if (headings.length == 0) {
         return [];
     }
@@ -49,16 +61,19 @@ function parseHeadings(headings: Heading[], depth: number): HierarchicalHeading[
             acc.push(heading);
         } else if (heading.depth == depth) {
             if (acc.length != 0) {
-                result[result.length - 1].children = parseHeadings(acc, depth + 1);
+                result[result.length - 1].children = parseHeadings(
+                    acc,
+                    depth + 1,
+                );
                 acc = [];
             }
             result.push({
                 slug: heading.slug,
                 text: heading.text,
                 children: [],
-            })
+            });
         } else if (heading.depth < depth) {
-            throw new Error("bad heading hierarchy")
+            throw new Error("bad heading hierarchy");
         }
     }
 
@@ -73,18 +88,27 @@ headings.splice(0, 0, {
     slug: "title",
     text: title,
     depth: 1,
-})
-const hierarchicalHeadings = headings.length == 0? []: headings[0].depth == 1? parseHeadings(headings, 1): (() => {throw new Error("bad heading hierarchy (should start with h1)")})();
-
+});
+const hierarchicalHeadings =
+    headings.length == 0
+        ? []
+        : headings[0].depth == 1
+          ? parseHeadings(headings, 1)
+          : (() => {
+                throw new Error("bad heading hierarchy (should start with h1)");
+            })();
 ---
+
 <Layout title={`${title}`}>
     <Fragment slot="head">
         <meta name="description" content={description} />
-        <style>
-            div.authors {
+        <style is:global>
+            .authors,
+            .author-info {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                gap: 1em;
             }
 
             a.author {
@@ -98,64 +122,74 @@ const hierarchicalHeadings = headings.length == 0? []: headings[0].depth == 1? p
                 padding: 0.3em;
                 border-radius: 0.3em;
                 text-decoration: none;
+                box-sizing: border-box;
             }
 
-            a.author:last-child {
-                margin-right: 0;
+            .reviewers {
+                display: contents;
+            }
+
+            @media (width <= 900px) {
+                .author-info {
+                    display: none !important;
+                }
+
+                .toc {
+                    display: none;
+                }
+            }
+
+            @media (width > 900px) {
+                .toc {
+                    display: contents;
+                }
             }
         </style>
     </Fragment>
-    <Fragment slot="extra-nav">
-      <a href={`https://github.com/jdonszelmann/homepage/tree/main/src/content/blog/${id}`}>Article Source</a>
-
-        By:
-        <div class="authors">
-            {
-                authors.map((author: any) => (
-                    <a class="author" href=`https://github.com/${author}`>
-                        <img
-                            alt={`${author}'s github avatar`}
-                            class="gh-avatar"
-                            src={`https://github.com/${author}.png`}
-                        />
-                        {author}
-                    </a>
-                ))
-            }
-        </div>
-        {reviewers.length > 0 && (
-            <div class="reviewers">
-            Reviewed by:
+    <Fragment slot="menu">
+        <a
+            href={`https://github.com/jdonszelmann/homepage/tree/main/src/content/blog/${id}`}
+            >Source</a
+        >
+    </Fragment>
+    <Fragment slot="nav">
+        <div class="author-info">
+            By:
             <div class="authors">
                 {
-                    reviewers.map((author: any) => (
-                        <a class="author" href=`https://github.com/${author}`>
-                            <img
-                                alt={`${author}'s github avatar`}
-                                class="gh-avatar"
-                                src={`https://github.com/${author}.png`}
-                            />
-                            {author}
-                        </a>
+                    authors.map((author: any) => (
+                        <GithubUser name={author} large />
                     ))
-                    }
+                }
             </div>
+            {
+                reviewers.length > 0 && (
+                    <Fragment>
+                        Reviewed by:
+                        <div class="authors">
+                            {reviewers.map((reviewer: any) => (
+                                <GithubUser name={reviewer} large />
+                            ))}
+                        </div>
+                    </Fragment>
+                )
+            }
 
-
-        Published: {pubDate.toISOString().slice(0,10)}<br>
-            {time?`read time: ${time}`:""}
+            Published: {pubDate.toISOString().slice(0, 10)}<br />
+            {time ? `read time: ${time}` : ""}
         </div>
-        )}
 
-        <div class="toc">
-            <TOCHeading elems={hierarchicalHeadings}>
+        <div class="toc sans">
+            <TOCHeading elems={hierarchicalHeadings} />
         </div>
     </Fragment>
     <Fragment slot="main">
-        <h1 id="title" class="title"}>{title}
-            {draft && (<span>(Draft)</span>)}
+        <h1 id="title" class="title" }>
+            {title}
+            {draft && <span>(Draft)</span>}
         </h1>
         <p set:html={marked.parse(description || "")} />
+
         <slot />
     </Fragment>
 </Layout>

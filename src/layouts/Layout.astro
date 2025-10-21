@@ -41,10 +41,6 @@ const { title } = Astro.props;
                 background: #f5f5f5;
             }
 
-            /*ul {*/
-            /*list-style: square url("");*/
-            /*}*/
-
             body {
                 display: grid;
                 grid-template-rows: auto;
@@ -58,6 +54,17 @@ const { title } = Astro.props;
 
             a {
                 color: #9c3574;
+                text-decoration: none;
+                font-weight: bold;
+                font-family: monospace;
+                font-size: large;
+            }
+
+            .sans a,
+            a.sans {
+                font-family: "Fira Sans";
+                font-size: unset;
+                font-weight: normal;
             }
 
             @media (width <= 900px) {
@@ -75,18 +82,6 @@ const { title } = Astro.props;
                 .space {
                     display: block;
                     margin-left: auto;
-                }
-
-                .toc {
-                    display: none;
-                }
-
-                .authors {
-                    margin-right: 0.5em;
-                }
-
-                .reviewers {
-                    display: none !important;
                 }
             }
             @media (width > 900px) {
@@ -130,9 +125,6 @@ const { title } = Astro.props;
                 }
             }
 
-            .reviewers {
-                display: contents;
-            }
             blockquote {
                 border-left: 10px solid #ccc;
                 padding: 0 10px;
@@ -158,15 +150,16 @@ const { title } = Astro.props;
 
     <body>
         <nav>
-            <div class="menu">
+            <div class="menu sans">
                 <a href="/">Home</a>
-                <a href="/blog">Blog Posts</a>
-                <a href="/rss.xml">RSS Feed</a>
+                <a href="/blog">Blog</a>
+                <a href="/rss.xml">RSS</a>
+                <slot name="menu" />
             </div>
 
             <div class="space"></div>
 
-            <slot name="extra-nav" />
+            <slot name="nav" />
         </nav>
         <main>
             <slot name="main" />

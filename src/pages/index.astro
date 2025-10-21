@@ -29,12 +29,20 @@ import matrix from "../../assets/images/matrix.svg?raw";
                 flex-direction: column;
                 align-items: center;
                 text-align: center;
+
+                h3 {
+                    font-weight: lighter;
+                }
             }
 
             i {
                 width: 1em;
                 height: 1em;
                 color: black;
+            }
+
+            .nodots {
+                list-style-type: none;
             }
         </style>
     </Fragment>
@@ -49,26 +57,27 @@ import matrix from "../../assets/images/matrix.svg?raw";
             Hi! I'm Jana (she/her). I'm a software developer from Delft, The
             Netherlands. I work for my own company, <a href="https://hexcat.nl"
                 >Hexcat</a
-            > and the RustNL foundation. As part of my job, I mainly work on <a
-                href="https://github.com/rust-lang/rust"
-                >rustc, the rust compiler</a
-            >, being a member of the compiler team. Additionally, every year I
-            help co-organize <a href="https://rustweek.org">Rust Week</a>, the
-            largest rust conference. Before that, I used to teach computer
-            science and embedded systems at the University of Delft, giving and
-            developing courses called <i>Software Fundamentals</i>, <i
-                >Software Systems</i
-            >, and the <i>Embedded Systems Lab</i>. All these courses used Rust
-            as their primary programming language.
+            > and the RustNL foundation. A large part of my job is to work on <a
+                href="https://github.com/rust-lang/rust">rustc</a
+            >, the rust compiler, being a member of the compiler team.
+            Additionally, every year I help co-organize <a
+                href="https://rustweek.org">Rust Week</a
+            >, the largest rust conference. Before that, I used to teach
+            computer science and embedded systems at the University of Delft,
+            giving and developing three courses called <i
+                >Software Fundamentals</i
+            >, <i>Software Systems</i>, and the <i>Embedded Systems Lab</i>. All
+            these courses used Rust as their primary programming language.
         </p>
         <p>
             I speak Dutch, prefer English, and you can try your luck with French
-            but about that I make no guarantees.
+            but about that I make no guarantees, and just maybe I understand
+            some of your German...
         </p>
         <p>
             You can find me elsewhere online at:
 
-            <ul>
+            <ul class="nodots">
                 <li>
                     <Social link="https://github.com/jdonszelmann">
                         <i set:html={icon(faGithub).html} />
@@ -105,8 +114,8 @@ import matrix from "../../assets/images/matrix.svg?raw";
             prefer not to publish here. Feel free to ask me for those though!
             And finally, if it's about rust, I'm active on <a
                 href="https://rust-lang.zulipchat.com/#user/370197"
-                >https://rust-lang.zulipchat.com</a
-            >
+                >rust's zulip</a
+            > too.
         </p>
 
         <p>
@@ -142,75 +151,5 @@ import matrix from "../../assets/images/matrix.svg?raw";
 
         <div class="websites grid"></div>
         <div class="projects grid"></div>
-
-        <!-- <div class="socials grid" slot="socials">
-        <Social link="https://fedi.xirion.net/@jonathan">
-            <i set:html={icon(faMastodon).html} />
-            <span>@jonathan@xirion.net</span>
-        </Social>
-
-
-        <Social link="https://matrix.to/#/@jonathan:jdonszelmann.nl">
-            <i>
-                <Fragment set:html={matrix} alt="matrix logo" />
-            </i>
-            <span>@jonathan:jdonszelmann.nl</span>
-        </Social>
-
-    </div>
-
-    <div class="situation grid" slot="situation">
-        <Card>
-            <i slot="icon" set:html={icon(faEarthEurope).html} />
-            <div slot="description">
-                Delft, The Netherlands
-                <br />
-                They/Them
-                <div class="lang">
-                    <i set:html={icon(faLanguage).html} />
-                    <span>rw: Dutch, English</span>
-                    <span>r: French</span>
-                </div>
-            </div>
-        </Card>
-        <Card>
-            <i slot="icon" set:html={icon(faBriefcase).html} />
-            <div slot="description">
-                Lecturer @ TU Delft
-                <ul>
-                    <li>
-                        <a
-                            href="https://cese.ewi.tudelft.nl/software-fundamentals"
-                            >Software Fundamentals</a
-                        >
-                    </li>
-                    <li>
-                        <a href="https://cese.ewi.tudelft.nl/software-systems"
-                            >Software Systems</a
-                        >
-                    </li>
-                    <li>
-                        <a
-                            href="https://cese.ewi.tudelft.nl/embedded-systems-lab"
-                            >Embedded Systems Lab</a
-                        >
-                    </li>
-                </ul>
-            </div>
-        </Card>
-        <Card>
-            <i slot="icon" set:html={icon(faGraduationCap).html} />
-            <div slot="description">
-                <ul>
-                    <li>BSc Computer Science & Engineering</li>
-                    <li>MSc Embedded Systems</li>
-                    <li>Dutch Teaching Qualification</li>
-                </ul>
-                @ TU Delft
-            </div>
-        </Card>
-    </div>
-
-    <a class="blog" slot="blog" href="/blog"> Blog </a> -->
     </Fragment>
 </Layout>
