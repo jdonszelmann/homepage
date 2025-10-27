@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Social from "../components/Social.astro";
 import Card from "../components/Card.astro";
+import Keys from "../components/Keys.astro";
 
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
@@ -194,7 +195,9 @@ import matrix from "../../assets/images/matrix.svg?raw";
         </p>
         {import.meta.env.GAY && <p>meow meow mrrrp mrow meow :3 :3 &lt;3</p>}
 
-        <div class="websites grid"></div>
-        <div class="projects grid"></div>
+        <p>
+            <h3>SSH Keys</h3>
+            <Keys />
+        </p>
     </Fragment>
 </Layout>
