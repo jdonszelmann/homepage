@@ -1,0 +1,56 @@
+---
+interface Props {
+    name: string;
+}
+
+const { name }: Prpos = Astro.props;
+
+var hash = function (s) {
+    /* Simple hash function. */
+    var a = 1,
+        c = 0,
+        h,
+        o;
+    if (s) {
+        a = 0;
+        /*jshint plusplus:false bitwise:false*/
+        for (h = s.length - 1; h >= 0; h--) {
+            o = s.charCodeAt(h);
+            a = ((a << 6) & 268435455) + o + (o << 14);
+            c = a & 266338304;
+            a = c !== 0 ? a ^ (c >> 21) : a;
+        }
+    }
+    return String(a);
+};
+
+const nameHash = hash(name) % 360;
+---
+
+<a
+    class="tag"
+    style={`
+    color: hsl(${nameHash}deg 60% 10%);
+
+    background:   hsl(${nameHash}deg  80% 95%);
+    border-color: hsl(${nameHash}deg  100% 55%);
+    `}
+    href={`/tags/${name}`}
+>
+    {name}
+</a>
+
+<style lang="scss">
+    .tag {
+        padding: 0.125em 0.5em;
+        border-radius: 0.3em;
+        border: 1.5px solid;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: normal;
+        font-family: "Fira Sans";
+        font-size: unset;
+    }
+</style>

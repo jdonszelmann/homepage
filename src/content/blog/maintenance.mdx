@@ -1,0 +1,46 @@
+---
+title: 'Maintaining the Rust compiler'
+pubDate: 2025-10-28
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "rust", "maintenance" ]
+description: |
+  The rust compiler is a giant project. Hundreds of contributors help maintain it.
+  I consider myself quite lucky that this maintenance work has become my full time job.
+  Most of that time though, isn't spent to work on new language features, though there is a bit of that.
+  In fact, most maintenance is barely visible to users of the language.
+  So what does maintaining the compiler look like?
+draft: false
+time: "5 minutes"
+---
+import User from '../../components/GithubUser.astro';
+import Tag from '../../components/Tag.astro';
+
+I was talking to Mara (<User name="m-ou-se" />) today about what I was busy working on.
+I said that I was fixing weird behavior of `#[deprecated]` attributes.
+Last week <User name="WaffleLapkin" /> and I discovered some subtle bugs in that.
+Yesterday, I finished up a pull request that fixed unsizing coercions in the new trait solver.
+
+Both of these tiny projects I quite enjoyed, and they represent what most of my days are filled with.
+Subtle bugs, small inconveniences in the compiler's source, some slightly confusing error messages.
+And not just my days; there are hundreds, if not thousands of these small tasks that, one by one, improve the rust compiler just a bit.
+And so a large group of people work on these kinds of tasks, every day.
+
+When many small tasks, together result in new compiler features, then those are easily visible to end users.
+But the bug fixes and internal refactors required for them are not.
+We do often share those among other maintainers.
+For example, when a bug causes a small snippet of trivial code not to compile, we all laugh.
+How did we miss that? Why are there no tests for that? How did nobody notice that before?
+
+So, Mara convinced me to share some of that.
+From now on, I intend to write about some of the things I work on in the compiler.
+I'll tag them with <Tag name="maintenance" />.
+
+I've already written a couple!
+
+Note that these blog posts won't be super exciting.
+They won't fundamentally change Rust.
+There's the [rust blog](blog.rust-lang.org) for that already.
+However, sometimes they might show some interesting bugs,
+or show progress in a larger project.
+That's what compiler maintenance is like!

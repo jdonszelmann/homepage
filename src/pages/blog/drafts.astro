@@ -1,0 +1,9 @@
+---
+import OverviewLayout from "../../layouts/Overview.astro";
+import PostPreviews from "../../components/PostPreviews.astro";
+import { getCollection } from "astro:content";
+---
+
+<OverviewLayout>
+    <PostPreviews show_drafts />
+</OverviewLayout>

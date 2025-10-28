@@ -1,0 +1,52 @@
+---
+import PostPreview from "./PostPreview.astro";
+import { getCollection } from "astro:content";
+
+let blog = await getCollection("blog");
+blog.sort((a, b) => {
+    if (a.data.pubDate < b.data.pubDate) {
+        return 1;
+    } else {
+        return -1;
+    }
+});
+
+interface Props {
+    tag?: "all" | string;
+    show_drafts?: boolean;
+}
+
+const { tag = "all", show_drafts = false }: Props = Astro.props;
+---
+
+<div class="previews">
+    {
+        blog
+            .filter((i) => {
+                return !i.data.draft || import.meta.env.DEV || show_drafts;
+            })
+            .filter((i) => {
+                if (tag === "all") {
+                    return true;
+                }
+                for (const t of i.data.tags) {
+                    if (t == tag) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })
+            .map((post) => (
+                <PostPreview post={post as any} draft={post.data.draft} />
+            ))
+    }
+</div>
+<style>
+    .previews {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        margin-top: 1em;
+    }
+</style>

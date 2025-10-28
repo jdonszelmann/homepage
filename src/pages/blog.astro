@@ -1,35 +1,8 @@
 ---
-import Layout from "../layouts/Overview.astro";
-import PostPreview from "../components/PostPreview.astro";
-import { getCollection } from "astro:content";
-
-let blog = await getCollection("blog");
-blog.sort((a, b) => {
-    if (a.data.pubDate < b.data.pubDate) {
-        return 1;
-    } else {
-        return -1;
-    }
-});
+import OverviewLayout from "../layouts/Overview.astro";
+import PostPreviews from "../components/PostPreviews.astro";
 ---
 
-<Layout>
-    <div class="previews">
-        {
-            blog
-                .filter((i) => {
-                    return !i.data.draft;
-                })
-                .map((post) => <PostPreview post={post as any} />)
-        }
-    </div>
-</Layout>
-
-<style>
-    .previews {
-        display: flex;
-        flex-direction: column;
-        gap: 1em;
-        margin-top: 1em;
-    }
-</style>
+<OverviewLayout>
+    <PostPreviews />
+</OverviewLayout>

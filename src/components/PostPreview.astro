@@ -1,5 +1,6 @@
 ---
 import Gh from "./GithubUser.astro";
+import Tag from "./Tag.astro";
 import { marked } from "marked";
 
 export interface Props {
@@ -13,19 +14,24 @@ export interface Props {
         };
         slug: string;
     };
+    draft?: boolean;
 }
 
 const {
     post: {
-        data: { authors, description, title, pubDate },
+        data: { authors, tags, description, title, pubDate },
         slug,
     },
+    draft = false,
 }: Props = Astro.props;
 ---
 
-<div class="preview">
+<div class:list={["preview", draft ? "draft" : null]}>
     <a class="click-area" href=`/blog/${slug}`>
-        <h1 class="title">{title}</h1>
+        <h1 class="title">
+            {draft && <span>Draft:</span>}
+            {title}
+        </h1>
         <div
             class="first-paragraph"
             set:html={marked.parse(description || "")}
@@ -39,6 +45,9 @@ const {
         </div>
 
         Published: {pubDate.toISOString().slice(0, 10)}<br />
+    </div>
+    <div class="tags">
+        {tags.map((tag: any) => <Tag name={tag} />)}
     </div>
 </div>
 
@@ -60,6 +69,24 @@ const {
         flex-direction: row;
         gap: 1em;
         align-items: center;
+    }
+
+    .draft {
+        background:;
+        background: repeating-linear-gradient(
+            135deg,
+            color-mix(in hsl, #f5f5f5, white 0%),
+            color-mix(in hsl, #f5f5f5, white 0%) 20px,
+            color-mix(in hsl, #ffadb0, white 30%) 20px,
+            color-mix(in hsl, #ffadb0, white 30%) 40px
+        );
+    }
+
+    .tags {
+        margin-top: 0.5em;
+        display: flex;
+        flex-direction: row;
+        gap: 0.5em;
     }
 
     div.authors {

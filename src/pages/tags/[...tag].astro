@@ -1,0 +1,27 @@
+---
+import OverviewLayout from "../../layouts/Overview.astro";
+import PostPreviews from "../../components/PostPreviews.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+    const blogEntries = await getCollection("blog");
+    const tags = new Set();
+
+    for (const entry of blogEntries) {
+        for (const tag of entry.data.tags) {
+            tags.add(tag);
+        }
+    }
+
+    return Array.from(tags).map((tag) => ({
+        params: { tag },
+        props: { tag },
+    }));
+}
+
+const { tag } = Astro.props;
+---
+
+<OverviewLayout>
+    <PostPreviews show_drafts tag={tag} />
+</OverviewLayout>
