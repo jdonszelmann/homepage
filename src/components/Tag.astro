@@ -1,9 +1,10 @@
 ---
 interface Props {
     name: string;
+    wide?: boolean;
 }
 
-const { name }: Prpos = Astro.props;
+const { name, wide = false }: Prpos = Astro.props;
 
 var hash = function (s) {
     /* Simple hash function. */
@@ -28,7 +29,7 @@ const nameHash = hash(name) % 360;
 ---
 
 <a
-    class="tag"
+    class:list={["tag", wide ? "wide" : null]}
     style={`
     color: hsl(${nameHash}deg 60% 10%);
 
@@ -52,5 +53,9 @@ const nameHash = hash(name) % 360;
         font-weight: normal;
         font-family: "Fira Sans";
         font-size: unset;
+    }
+
+    .wide {
+        width: 100%;
     }
 </style>

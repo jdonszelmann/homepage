@@ -1,6 +1,7 @@
 ---
 import TOCHeading from "../components/TOCHeading.astro";
 import GithubUser from "../components/GithubUser.astro";
+import Tag from "../components/Tag.astro";
 import { type HierarchicalHeading } from "../ts/HierarchicalHeading.ts";
 import { marked } from "marked";
 import Layout from "./Layout.astro";
@@ -22,6 +23,7 @@ export interface Props {
         title: string;
         pubDate: Date;
         time?: string;
+        tags: string[];
     };
 }
 
@@ -34,6 +36,7 @@ const {
         title,
         pubDate,
         time,
+        tags,
     },
     headings,
     id,
@@ -130,11 +133,10 @@ const hierarchicalHeadings =
             }
 
             @media (width <= 900px) {
-                .author-info {
+                .author-info.main {
                     display: none !important;
                 }
-
-                .toc {
+                .toc.main {
                     display: none;
                 }
             }
@@ -143,6 +145,30 @@ const hierarchicalHeadings =
                 .toc {
                     display: contents;
                 }
+
+                .toc.below {
+                    display: none !important;
+                }
+                .author-info.below {
+                    display: none !important;
+                }
+            }
+
+            .tags {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5em;
+                width: 100%;
+            }
+
+            footer {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+
+                margin-top: 2em;
+                border-top: 1px solid black;
             }
         </style>
     </Fragment>
@@ -153,7 +179,7 @@ const hierarchicalHeadings =
         >
     </Fragment>
     <Fragment slot="nav">
-        <div class="author-info">
+        <div class="author-info main">
             By:
             <div class="authors">
                 {
@@ -177,9 +203,14 @@ const hierarchicalHeadings =
 
             Published: {pubDate.toISOString().slice(0, 10)}<br />
             {time ? `read time: ${time}` : ""}
+
+            <div class="tags">
+                Tags:
+                {tags.map((tag: any) => <Tag name={tag} wide />)}
+            </div>
         </div>
 
-        <div class="toc sans">
+        <div class="toc main sans">
             <TOCHeading elems={hierarchicalHeadings} />
         </div>
     </Fragment>
@@ -191,5 +222,41 @@ const hierarchicalHeadings =
         <p set:html={marked.parse(description || "")} />
 
         <slot />
+
+        <footer>
+            <div class="toc below sans">
+                <TOCHeading elems={hierarchicalHeadings} />
+            </div>
+            <div class="author-info below">
+                By:
+                <div class="authors">
+                    {
+                        authors.map((author: any) => (
+                            <GithubUser name={author} large />
+                        ))
+                    }
+                </div>
+                {
+                    reviewers.length > 0 && (
+                        <Fragment>
+                            Reviewed by:
+                            <div class="authors">
+                                {reviewers.map((reviewer: any) => (
+                                    <GithubUser name={reviewer} large />
+                                ))}
+                            </div>
+                        </Fragment>
+                    )
+                }
+
+                Published: {pubDate.toISOString().slice(0, 10)}<br />
+                {time ? `read time: ${time}` : ""}
+
+                <div class="tags">
+                    Tags:
+                    {tags.map((tag: any) => <Tag name={tag} wide />)}
+                </div>
+            </div>
+        </footer>
     </Fragment>
 </Layout>
