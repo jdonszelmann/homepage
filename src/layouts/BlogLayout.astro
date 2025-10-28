@@ -132,22 +132,6 @@ const hierarchicalHeadings =
                 display: contents;
             }
 
-            @media (width <= 900px) {
-                .wide {
-                    display: none !important;
-                }
-            }
-
-            @media (width > 900px) {
-                .toc {
-                    display: contents;
-                }
-
-                .narrow {
-                    display: none !important;
-                }
-            }
-
             .tags {
                 display: flex;
                 flex-direction: column;
@@ -166,6 +150,23 @@ const hierarchicalHeadings =
                 margin-top: 2em;
                 padding-top: 1em;
                 border-top: 1px solid black;
+            }
+        </style>
+        <style>
+            @media (width <= 900px) {
+                .wide {
+                    display: none !important;
+                }
+            }
+
+            @media (width > 900px) {
+                .toc {
+                    display: contents;
+                }
+
+                .narrow {
+                    display: none !important;
+                }
             }
         </style>
     </Fragment>
