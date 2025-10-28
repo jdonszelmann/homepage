@@ -133,11 +133,8 @@ const hierarchicalHeadings =
             }
 
             @media (width <= 900px) {
-                .author-info.main {
+                .wide {
                     display: none !important;
-                }
-                .toc.main {
-                    display: none;
                 }
             }
 
@@ -146,7 +143,7 @@ const hierarchicalHeadings =
                     display: contents;
                 }
 
-                footer {
+                .narrow {
                     display: none !important;
                 }
             }
@@ -158,13 +155,16 @@ const hierarchicalHeadings =
                 width: 100%;
             }
 
-            footer {
+            .center {
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 flex-direction: column;
+            }
 
+            footer {
                 margin-top: 2em;
+                padding-top: 1em;
                 border-top: 1px solid black;
             }
         </style>
@@ -176,7 +176,7 @@ const hierarchicalHeadings =
         >
     </Fragment>
     <Fragment slot="nav">
-        <div class="author-info main">
+        <div class="author-info wide">
             By:
             <div class="authors">
                 {
@@ -207,7 +207,11 @@ const hierarchicalHeadings =
             </div>
         </div>
 
-        <div class="toc main sans">
+        <div
+            class="toc wide sans"
+            role="navigation"
+            aria-label="Table of contents"
+        >
             <TOCHeading elems={hierarchicalHeadings} />
         </div>
     </Fragment>
@@ -218,12 +222,30 @@ const hierarchicalHeadings =
         </h1>
         <p set:html={marked.parse(description || "")} />
 
-        <slot />
-
-        <footer>
-            <div class="toc below sans">
+        <details class="center narrow">
+            <summary>Press for table of Contents</summary>
+            <div
+                class="toc sans"
+                role="navigation"
+                aria-label="Table of contents"
+            >
                 <TOCHeading elems={hierarchicalHeadings} />
             </div>
+        </details>
+
+        <slot />
+
+        <footer class="narrow center">
+            Table of contents:
+
+            <div
+                class="toc sans"
+                role="navigation"
+                aria-label="Table of contents"
+            >
+                <TOCHeading elems={hierarchicalHeadings} />
+            </div>
+
             <div class="author-info below">
                 By:
                 <div class="authors">
