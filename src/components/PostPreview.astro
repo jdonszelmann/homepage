@@ -20,10 +20,16 @@ export interface Props {
 const {
     post: {
         data: { authors, tags, description, title, pubDate },
-        slug,
+        slug: unprocessed_slug,
     },
     draft = false,
 }: Props = Astro.props;
+
+let slug = unprocessed_slug;
+if (slug.includes("/")) {
+    let split = slug.split("/");
+    slug = split[split.length - 1];
+}
 ---
 
 <div class:list={["preview", draft ? "draft" : null]}>

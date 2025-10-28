@@ -1,0 +1,198 @@
+---
+title: 'Deprecated on re-exports'
+pubDate: 2025-10-28
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "rust", "maintenance" ]
+description: |
+  Deprecated is an attribute you can put on items to mark them as, well, deprecated.
+  Any use of that item will give a warning, telling you that you're using something that's deprecated.
+  The thing is, it doesn't always work...
+draft: false
+time: "5 minutes"
+---
+import User from '../../../components/GithubUser.astro';
+import Tag from '../../../components/Tag.astro';
+import SpoilerGap from '../../../components/SpoilerGap.astro';
+
+## The `deprecated` attribute
+
+Let's start with some examples that work.
+Here, foo is clearly deprecated:
+
+```rust
+#[deprecated]
+fn foo() {}
+
+fn main() {
+    foo();
+    //~^ WARNING use of deprecated function `foo`
+}
+```
+
+The attribute is slightly more flexible;
+You can also give a version and a reason like so:
+
+```rust
+#[deprecated(
+    since = "5.2.0",
+    note = "foo was rarely used. Users should instead use bar"
+)]
+fn foo() {}
+```
+
+Or, just a reason:
+
+```rust
+#[deprecated = "foo was rarely used. Users should instead use bar"]
+fn foo() {}
+```
+
+Alright, makes sense.
+
+Now, [the reference](https://doc.rust-lang.org/reference/attributes/diagnostics.html#the-deprecated-attribute) says one more thing about the attribute:
+
+> When applied to an item containing other items, such as a module or implementation, all child items inherit the deprecation attribute.
+
+Let's take a look:
+
+```rust
+#[deprecated]
+mod a {
+  pub struct Foo;
+}
+
+fn main() {
+    let _x = a::Foo;
+    //~^ ERROR use of deprecated unit struct `a::Foo`
+}
+```
+
+The struct `Foo` is still deprecated, while the attribute only applies to `a`.
+And this doesn't just work for functions or structs.
+*pretty much* any kind of item works.
+I say prety much, since `use` items are not supported.
+However, if they were that'd be pretty useful.
+Just look at this example:
+
+```rust
+fn foo() {}
+
+#[deprecated]
+use foo as bar;
+
+fn main() {
+    bar();
+}
+```
+
+You might expect this to mean thattThe use of the name `bar` is deprecated, but `foo` isn't.
+But what does the rust compiler say?
+Make your best guess now!
+
+## Turns out: it doesn't work
+
+Believe it or not, the answer is: absolutely nothing.
+Nothing is deprecated, but the compiler is absolutely fine with the attribute being there.
+The reason is that after name resolution, the use of `bar` doesn't pass through the re-export anymore.
+It just resolves directly to `foo`.
+So, the fact that the use item is deprecated isn't noticed.
+
+<User name="WaffleLapkin" /> were planning to fix that.
+It seems reasonable that this should work, or otherwise at least warn that it doesn't do anything.
+What happened is that we found multiple other bugs with `#[deprecated]`.
+
+So, it's quiz time.
+Based on what you read sofar, and what you maybe already knew.
+How many deprecation warnings does this code produce?
+I've annotated lines that potentially use a deprecated item.
+
+```rust
+#[deprecated]
+pub mod a {
+    #[macro_export]
+    macro_rules! foo {() => {};}
+
+    pub fn bar() {}
+
+    macro_rules! foo_no_export {() => {};}
+    foo_no_export! {} // <-- 1
+}
+
+#[deprecated]
+macro_rules! baz {() => {};}
+baz! {} // <-- 2
+
+use a::bar as bar1; // <-- 3
+use foo as foo1; // <-- 4
+
+fn main() {
+    foo! {} // <-- 5
+    a::bar(); // <-- 6
+}
+```
+
+You might think: 6.
+There are 6 usages, so that's what I expected as well.
+Except, the answer is only 4.
+It turns out, the inheriting of `#[deprecated]` through modules doesn't work,
+so `1` and `5` don't produce a warning.
+Though what surprised us was that `4` *does* give a warning!
+
+What's going on here is that the reason inheriting doesn't work on macros,
+is that when a macro expands, we pretty much remove any trace of it from the AST.
+The macro is replaced by whatever the macro expanded to.
+Checking deprecation only happens later, once the macros are already gone, so their uses go unnoticed.
+
+So why does `2` work then?
+Turns out, there's special code to handle deprecated on macros.
+To make sure that in most cases it works as it is supposed to.
+But, that codepath only works when `#[deprecated]` is used directly on a macro.
+It doesn't look up.
+
+## There's more???
+
+While playing around with what does and doesn't work with `#[deprecated]`,
+we tried the following code.
+Again, I've annotated lines that potentially use a deprecated item.
+How many deprecation warnings do you think this produces?
+
+```rust
+#[deprecated]
+pub mod a {
+    pub struct Foo;
+    pub struct Bar();
+    pub struct Baz {}
+}
+
+
+use a::Foo; // <-- 1
+use a::Bar; // <-- 2
+use a::Baz; // <-- 3
+
+fn main() {
+  a::Foo; // <-- 4
+  a::Bar(); // <-- 5
+  a::Baz {}; // <-- 6
+}
+```
+
+This time, it's not fewer, it's more!
+Not 6, but 8.
+`1` and `2` count twice, since in a way they're exporting two things.
+Unit and tuple structs can be constructed without braces.
+The way that works is that the compiler effectively does the following transformation:
+
+```rust
+struct Foo
+// roughly expands to
+struct Foo {}
+const Foo: Foo = Foo{};
+```
+
+And `use` imports both definitions of `Foo`.
+Hence, two warnings.
+
+Structs with braces don't get this treatment, and `3` only produces one warning.
+
+This last bug is fixed with [this pr](https://github.com/rust-lang/rust/pull/147994).
