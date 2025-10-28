@@ -1,0 +1,109 @@
+---
+title: 'Testing the crate root'
+pubDate: 2025-10-28
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "rust", "maintenance" ]
+description: |
+  I woke up last weekend, and someone assigned me to a PR to review.
+  That's quite common.
+  It fixed a crash with attributes, something I've worked a lot on.
+  Some code crashed the compiler,
+  but the code to reproduce it used a specific nightly feature called "contract attributes",
+  and I didn't believe that that was the only way to reproduce the crash.
+  So, I tried to see if any currently stable attribute would the same so the reproducer was more general.
+  It turned out: I was wrong!
+  But playing with it I found a complely new way to crash the compiler in a single line of code.
+draft: false
+time: "10 minutes"
+---
+import User from '../../../components/GithubUser.astro';
+import Tag from '../../../components/Tag.astro';
+import SpoilerGap from '../../../components/SpoilerGap.astro';
+
+So the attribute I tried was `#[test]`.
+The compiler (broadly) provides two kinds of built-in attributes:
+
+1. Built-in attribute macros, they're like normal attribute macros but defined in the compiler's source code and they can do a few magic things user-defined attributes can't. For example, they don't need syn and quote since they can use the compiler's own parser.
+2. Built-in attributes which are not macros at all, and are instead hints to the compiler. `#[inline]` for example! Not a macro, there's nothing it could expand to do do the inlining. Instead it annotates a function to hint how code generation should work.
+
+What's noteworthy for this bug: built-in attributes (1) play no role in name resolution,
+while built-in attribute macros (2) *do*.
+The latter you could for example shadow, and thus redefine.
+And, in `core`, each built-in attribute macro has a stub definition.
+For `test` it looks like this:
+
+```rust
+#[allow_internal_unstable(test, rustc_attrs, coverage_attribute)]
+#[rustc_builtin_macro]
+pub macro test($item:item) {
+    /* compiler built-in */
+}
+```
+(yes, that comment is [really there](https://github.com/rust-lang/rust/blob/bc1d7273dfbc6f8a11c0086fa35f6748a13e8d3c/library/core/src/macros/mod.rs#L1649), and the fact that it's empty is also correct. The "real" definition of it lives in [`compiler/rustc_builtin_macros`](https://github.com/rust-lang/rust/blob/bc1d7273dfbc6f8a11c0086fa35f6748a13e8d3c/compiler/rustc_builtin_macros/src/lib.rs#L124))
+
+However, `#[test]` is interesting: it's treated as both categories.
+It's both listed as a built-in attribute and a macro.
+I'm not 100% sure why, this may be because `#[test]` already existed before macros did?
+Though don't quote me on that.
+
+Additionally, the fact that it's both mostly doesn't matter.
+Macros expand during name resolution.
+So, after name resolution,
+attribute macros mostly disappear from the source code and are replaced by their expansion.
+So, the fact that it's also a built-in attribute never really ends up mattering later on.
+
+One way I found it does matter though is a specific diagnostic to tell you that an attribute is not valid on the crate root. In other words, the compiler errors when you do this:
+
+```rust
+#![inline] // <-- not valid
+#![test] // <-- not valid
+
+fn main() {}
+```
+
+This check happens before expansion, so also occurs for `#[test]`.
+
+So, the code I accidentally stubled onto that ICEs the compiler is the following:
+
+```rust
+#![core::prelude::v1::test]
+```
+
+That's all!
+Try it out,
+it's [going to be fixed soon](https://github.com/rust-lang/rust/pull/147841) but on for example rust stable 1.90.0 this still crashes the compiler.
+So what's happening here?
+Because we're explicitly referring to the macro stub in core by its path,
+and macros are name resolved, this still acts as a `test` attribute macro.
+However, built-in attributes are matched *by name*.
+In other words, we never error out because you used `#![test]` on the root of a crate,
+since the name of the attribute isn't exactly the word `test`.
+It's a whole path.
+So we skip that check and blindly expand the macro.
+
+Next, the `#[test]` macro expands.
+It however does something funny.
+When you compile with `--tests` (like what happens when you run `cargo test`),
+tests should be compiled.
+But if you just run `cargo build` for example,
+it saves some time to not compile tests at all.
+So, the very first thing the `#[test]` macro does is to check whether we're in testing mode.
+If we're not, it replaces the entire item `#[test]` was used on from the syntax so we don't spend any further time compiling it.
+
+Try it out! This code doesn't raise a type error when running `cargo build`.
+It does when you run `cargo test`.
+
+```rust
+#[test]
+fn foo() -> u32 {
+    "not a u32"
+}
+```
+
+So, now you can maybe see where I'm going with this.
+We applied `#![test]` to the crate,
+and we managed to avoid the check whether the attribute was valid on a crate.
+We've just: deleted the entire crate.
+
+That seems like it could cause problems...
