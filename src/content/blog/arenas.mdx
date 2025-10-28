@@ -65,11 +65,11 @@ This indicates what kind of reference *to the arena* you need to allocate someth
 Some arenas directly give you references,
 but some are based on indices,
 and you might even need to have access to the arena to use these indices.
-"Gives Out" documents what kind of type you get to refer to an allocation. 
+"Gives Out" documents what kind of type you get to refer to an allocation.
 Sometimes it has a `'a` lifetime, refering to the fact that it is bound to the lifetime of the arena,
-or `T: 'static`, meaning the type given out must be `'static`. 
+or `T: 'static`, meaning the type given out must be `'static`.
 If no such lifetime is given, the index type is completely free from the arena's lifetime.
-"Deref Key" documents whether you need access to the arena to use the key, 
+"Deref Key" documents whether you need access to the arena to use the key,
 or whether the key directly gives access to the element.
 
 **Reuse Memory**
@@ -133,7 +133,7 @@ This roughly documentes how the library works.
 
 The others I think mostly make sense.
 
-> Note that there are instances where I left a cell blank. 
+> Note that there are instances where I left a cell blank.
 > That's on some new columns, for which I've not gone through all the crates yet,
 > so I don't have all the data yet. Feel free to help out!
 
