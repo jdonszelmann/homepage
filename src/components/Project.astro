@@ -1,0 +1,40 @@
+---
+interface Props {
+    title: string;
+    link?: string;
+    all?: boolean;
+}
+
+const { title, link = null, all = true } = Astro.props;
+---
+
+{
+    all && link ? (
+        <div class="project">
+            <a href={link}>
+                <h3 class="title">{title}</h3>
+                <slot />
+            </a>
+        </div>
+    ) : (
+        <div class="project">
+            <h3 class="title">
+                {link ? <a href={`${link}`}>{title}</a> : <span>{title}</span>}
+            </h3>
+            <slot />
+        </div>
+    )
+}
+
+<style>
+    a {
+        all: unset;
+        cursor: pointer;
+    }
+
+    .project {
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+        display: block;
+        padding: 1em;
+    }
+</style>

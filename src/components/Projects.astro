@@ -1,0 +1,31 @@
+---
+interface Props {}
+
+const {} = Astro.props;
+---
+
+<div class="projects">
+    <slot />
+</div>
+
+<style>
+    .projects {
+        align-self: center;
+        justify-self: center;
+        gap: 1em;
+    }
+
+    @media (width <= 700px) {
+        .projects {
+            display: flex;
+            flex-direction: column;
+        }
+    }
+    @media (width > 700px) {
+        .projects {
+            width: max(40em, 60vw);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+    }
+</style>

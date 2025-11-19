@@ -3,6 +3,8 @@ import Layout from "../layouts/Layout.astro";
 import Social from "../components/Social.astro";
 import Card from "../components/Card.astro";
 import Keys from "../components/Keys.astro";
+import Projects from "../components/Projects.astro";
+import Project from "../components/Project.astro";
 
 import { icon } from "@fortawesome/fontawesome-svg-core";
 
@@ -105,56 +107,56 @@ import matrix from "../../assets/images/matrix.svg?raw";
             speak Dutch, prefer English, you can try your luck with French but about
             that I make no guarantees, and just maybe I understand some of your German...
         </p>
+        <p>You can find me elsewhere online as:</p>
+
+        <ul class="nodots">
+            <li>
+                <Social link="https://github.com/jdonszelmann">
+                    <i set:html={icon(faGithub).html} />
+                    <span>jdonszelmann</span>
+                </Social>
+            </li>
+            {
+                !import.meta.env.GAY && (
+                    <li>
+                        <Social link="https://www.linkedin.com/in/jdonszelmann/">
+                            <i set:html={icon(faLinkedin).html} />
+                            <span>jdonszelmann</span>
+                        </Social>
+                    </li>
+                )
+            }
+            <li>
+                <Social link="https://donsz.nl">
+                    <i set:html={icon(faEarthEurope).html} />
+                    <span>https://donsz.nl</span>
+                </Social>
+            </li>
+            <li>
+                <Social link="https://crates.io/users/jdonszelmann">
+                    <i set:html={icon(faRust).html} />
+                    <span>jdonszelmann</span>
+                </Social>
+            </li>
+            <li>
+                <Social link="mailto://website+jana@donsz.nl">
+                    <i set:html={icon(faEnvelope).html} />
+                    <span>jana@donsz.nl</span>
+                </Social>
+            </li>
+            {
+                import.meta.env.GAY && (
+                    <li>
+                        <Social link="/">
+                            <i set:html={icon(faCat).html} />
+                            <span>mrow!</span>
+                        </Social>
+                    </li>
+                )
+            }
+        </ul>
+
         <p>
-            You can find me elsewhere online as:
-
-            <ul class="nodots">
-                <li>
-                    <Social link="https://github.com/jdonszelmann">
-                        <i set:html={icon(faGithub).html} />
-                        <span>jdonszelmann</span>
-                    </Social>
-                </li>
-                {
-                    !import.meta.env.GAY && (
-                        <li>
-                            <Social link="https://www.linkedin.com/in/jdonszelmann/">
-                                <i set:html={icon(faLinkedin).html} />
-                                <span>jdonszelmann</span>
-                            </Social>
-                        </li>
-                    )
-                }
-                <li>
-                    <Social link="https://donsz.nl">
-                        <i set:html={icon(faEarthEurope).html} />
-                        <span>https://donsz.nl</span>
-                    </Social>
-                </li>
-                <li>
-                    <Social link="https://crates.io/users/jdonszelmann">
-                        <i set:html={icon(faRust).html} />
-                        <span>jdonszelmann</span>
-                    </Social>
-                </li>
-                <li>
-                    <Social link="mailto://website+jana@donsz.nl">
-                        <i set:html={icon(faEnvelope).html} />
-                        <span>jana@donsz.nl</span>
-                    </Social>
-                </li>
-                {
-                    import.meta.env.GAY && (
-                        <li>
-                            <Social link="/">
-                                <i set:html={icon(faCat).html} />
-                                <span>mrow!</span>
-                            </Social>
-                        </li>
-                    )
-                }
-            </ul>
-
             I'm also available on discord, mastodon and matrix but those I
             prefer not to publish here. Feel free to ask me for those though!
             And finally, if it's about rust, I'm active on <a
@@ -164,39 +166,66 @@ import matrix from "../../assets/images/matrix.svg?raw";
         </p>
 
         <p>
-            I occasionally write blog posts, mainly about Rust, which you can
-            find <a href="/blog">here</a>
-
-            You might also be interested in some websites I host:
-
-            <ul>
-                <li>
-                    A visualization of the work I did for my bachelor's thesis
-                    at <a href="https://mapf.donsz.nl">mapf.donsz.nl</a>, and an
-                    overview of it at <a href="https://mapfm-poster.donsz.nl"
-                        >mapfm-poster.donsz.nl</a
-                    >
-                </li>
-                <li>
-                    A work tracker specifically for the rust-lang/rust
-                    repository <a href="https://queue.donsz.nl"
-                        >queue.donsz.nl</a
-                    >
-                </li>
-                <li>
-                    Some excellent resources on compiler construction from when
-                    I studied at the TU Delft at <a
-                        href="https://compiler-construction-2021.donsz.nl"
-                        >compiler-construction-2021.donsz.nl</a
-                    >. Its author, my professor, unfortunately passed away far
-                    too early, and these resources slowly started to disappear.
-                </li>
-            </ul>
+            You might be interested in some of the things I've worked on over
+            the past years.
         </p>
+
+        <Projects>
+            <Project title="blog" link="/blog">
+                I occasionally write blog posts, mainly about Rust.
+            </Project>
+            <Project
+                title="temporary directory manager"
+                link="https://github.com/jdonszelmann/t-rs"
+            >
+                A tool to manage tempororary directories, easily accessible in <code
+                    >~/tempdirs</code
+                >. Useful, for example, when you often pull git repositories
+                just to build their source and discard again.
+            </Project>
+            <Project
+                title="rust-lang/rust"
+                link="https://github.com/jdonszelmann/rust"
+            >
+                A cool programming language! You may have heard of it :3. I help
+                develop its compiler.
+            </Project>
+            <Project title="review queue" link="https://queue.donsz.nl">
+                A work tracker specifically for the rust-lang/rust repository.
+            </Project>
+            <Project
+                title="rust-scopegraphs"
+                link="https://github.com/metaborg/rust-scopegraphs"
+            >
+                An implementation of the <a
+                    href="https://dl.acm.org/doi/10.1145/3276484"
+                    >scopegraphs algorithm</a
+                > in Rust, which I worked on together with Aron Zwaan.
+            </Project>
+            <Project title="thesis" link="https://mapfm-poster.donsz.nl">
+                A visualization of the work I did for my bachelor's thesis at <a
+                    href="https://mapf.donsz.nl">mapf.donsz.nl</a
+                >, and an overview of it at <a
+                    href="https://mapfm-poster.donsz.nl"
+                    >mapfm-poster.donsz.nl</a
+                >
+            </Project>
+            <Project
+                title="compiler resources"
+                link="https://compiler-construction-2021.donsz.nl"
+            >
+                Some excellent resources on compiler construction from when I
+                studied at the TU Delft. <b>These are not mine!</b> Its author, my
+                professor, unfortunately passed away far too early, days after the
+                final exam. Over time, these resources slowly started to disappear.
+            </Project>
+        </Projects>
+
         {import.meta.env.GAY && <p>meow meow mrrrp mrow meow :3 :3 &lt;3</p>}
 
         <p>
             <h3>SSH Keys</h3>
+
             <Keys />
         </p>
     </Fragment>
