@@ -1,0 +1,86 @@
+---
+interface Props {
+    name: string;
+}
+
+const { name } = Astro.props;
+
+let org, repo, number, rest, tmp;
+
+tmp = name.split("/");
+switch (tmp.length) {
+    case 1:
+        org = "rust-lang";
+        rest = tmp[0];
+        break;
+    case 2:
+        org = tmp[0];
+        rest = tmp[1];
+        break;
+    default:
+        throw Error();
+}
+
+tmp = rest.split("#");
+switch (tmp.length) {
+    case 1:
+        repo = "rust";
+        number = tmp[0];
+        break;
+    case 2:
+        repo = tmp[0];
+        number = tmp[1];
+        break;
+    default:
+        throw Error();
+}
+---
+
+<a
+    class:list={["issue"]}
+    href=`https://github.com/${org}/${repo}/issues/${number}`
+>
+    <svg
+        aria-hidden="true"
+        height="16"
+        viewBox="0 0 16 16"
+        version="1.1"
+        width="16"
+        data-view-component="true"
+        fill="currentColor"
+    >
+        <path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path
+            d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"
+        ></path>
+    </svg>
+    {org}/{repo}#{number}
+</a>
+
+<style lang="scss">
+    a.issue {
+        display: inline-flex;
+        align-items: center;
+
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+
+        padding: 0 0.3em;
+        border-radius: 0.3em;
+        text-decoration: none;
+
+        vertical-align: middle;
+
+        &.large {
+            padding: 0.3em;
+            font-size: unset;
+            margin-right: 1em;
+        }
+    }
+
+    svg {
+        display: inline-block;
+        height: 1em;
+        border-radius: 1em;
+        margin-right: 0.3em;
+        transform: translateY(0.1em);
+    }
+</style>

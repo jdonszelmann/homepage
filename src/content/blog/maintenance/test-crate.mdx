@@ -20,6 +20,8 @@ time: "10 minutes"
 import User from '../../../components/GithubUser.astro';
 import Tag from '../../../components/Tag.astro';
 import SpoilerGap from '../../../components/SpoilerGap.astro';
+import Pr from '../../../components/GithubPr.astro';
+import Issue from '../../../components/GithubIssue.astro';
 
 So the attribute I tried was `#[test]`.
 The compiler (broadly) provides two kinds of built-in attributes:
@@ -72,7 +74,7 @@ So, the code I accidentally stubled onto that ICEs the compiler is the following
 
 That's all!
 Try it out,
-it's [going to be fixed soon](https://github.com/rust-lang/rust/pull/147841) but on for example rust stable 1.90.0 this still crashes the compiler.
+it's going to be fixed soon with <Pr name="#147841" /> but on for example rust stable 1.90.0 this still crashes the compiler.
 So what's happening here?
 Because we're explicitly referring to the macro stub in core by its path,
 and macros are name resolved, this still acts as a `test` attribute macro.

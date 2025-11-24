@@ -14,6 +14,8 @@ time: "10 minutes"
 import User from '../../../components/GithubUser.astro';
 import Tag from '../../../components/Tag.astro';
 import SpoilerGap from '../../../components/SpoilerGap.astro';
+import Pr from '../../../components/GithubPr.astro';
+import Issue from '../../../components/GithubIssue.astro';
 
 ## The `deprecated` attribute
 
@@ -195,4 +197,4 @@ Hence, two warnings.
 
 Structs with braces don't get this treatment, and `3` only produces one warning.
 
-This last bug is fixed with [this pr](https://github.com/rust-lang/rust/pull/147994).
+This last bug is fixed with <Pr name="#147994" />.

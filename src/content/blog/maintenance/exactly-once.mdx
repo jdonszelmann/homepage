@@ -15,6 +15,8 @@ draft: false
 time: "10 minutes"
 ---
 import User from '../../../components/GithubUser.astro';
+import Pr from '../../../components/GithubPr.astro';
+import Issue from '../../../components/GithubIssue.astro';
 import Crate from '../../../components/Crate.astro';
 import Tag from '../../../components/Tag.astro';
 
@@ -50,7 +52,7 @@ There are certainly ways to remove the mutable variable too, maybe with iterator
 Still, none of those solutions are particularly pretty.
 I think this is common enough that it's something the standard library could provide.
 Maybe not on `Vec`, or `&[]`, but on iterators so it's widely applicable.
-That's what I proposed in [https://github.com/rust-lang/libs-team/issues/676](https://github.com/rust-lang/libs-team/issues/676), 
+That's what I proposed in <Issue name="libs-team#676" />, 
 with which we could write the solution as:
 
 ```rust
@@ -59,7 +61,7 @@ get_all_spans().into_iter().exactly_one()
 
 ## Stabilizing methods on traits
 
-The implementation is rather trivial, this is the PR if you're interested anyway: [https://github.com/rust-lang/rust/pull/149270](https://github.com/rust-lang/rust/pull/149270).
+The implementation is rather trivial, this is the PR if you're interested anyway: <Pr name="#149270" />.
 The problem is that <Crate name="itertools" /> already has a method named `exactly_one`.
 With a different signature.
 And a blanket implementation for `T: Iterator`.
@@ -91,7 +93,7 @@ And if like me, you didn't already know about this: you should! It's cool!
 These internal compiler changes aren't always super visible,
 but the result is that we can stabilize parts of the standard library which *are* things you might notice.
 
-Only 3 weeks ago <User name="amanieu" /> opened the stabilization PR for a feature called [`supertrait_item_shadowing`](https://github.com/rust-lang/rust/pull/148605)
+Only 3 weeks ago <User name="amanieu" /> opened the stabilization PR for a feature called `supertrait_item_shadowing` <Pr name="rust-lang/rust#148605" />
 which makes changes rust's name resolution rules to:
 
 - When a type implements a trait, like `trait Iterator {...}`,

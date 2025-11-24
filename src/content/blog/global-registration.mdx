@@ -14,6 +14,8 @@ draft: false
 time: "15 minutes"
 ---
 import User from '../../components/GithubUser.astro';
+import Pr from '../../components/GithubPr.astro';
+import Issue from '../../components/GithubIssue.astro';
 
 [Criterion](https://docs.rs/criterion) is a custom benchmarking framework which provides great statistical analyses of performance.
 If you've ever used it before, you may have seen this pattern:
@@ -336,7 +338,7 @@ In any case, I now believe that *actually global* registration is not something 
 
 # An alternative design
 
-A fact is that [testing devex wants to make custom test frameworks a thing](https://github.com/rust-lang/testing-devex-team/issues/2), 
+A fact is that testing devex wants to make custom test frameworks a thing (<Issue name="testing-devex-team#2" />), 
 and I think it's safe to conclude that this same pattern is useful in other places too.
 Let's start from the beginning.
 
@@ -478,7 +480,7 @@ because right now there's a lot of compiler magic going on that's likely hard to
 # Externally Implementable Items
 
 Many of the things I've written about here come from discussions with <User name="m-ou-se" />, 
-as we thought that a feature she was working on ([Externally Implementable Items; EII](https://github.com/rust-lang/rust/issues/125418)) 
+as we thought that a feature she was working on (Externally Implementable Items; EII <Issue name="#125418" />) 
 would have a very similar implementation to global registration.
 
 Basically, externally implementable items are like registering a single element in a global registry.
@@ -495,4 +497,3 @@ A more explicit importing of elements from other crates leads to fewer surprises
 However, as you can see there are still some details that I'm not entirely sure about how to solve.
 Let me know if you have any ideas!
 Also, if you *do* have strong arguments for usecases which need truly global registration, I'd love to hear.
-

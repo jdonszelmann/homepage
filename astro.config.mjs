@@ -1,5 +1,5 @@
 import { defineConfig } from 'astro/config';
-import expressiveCode from "astro-expressive-code";
+import expressiveCode from "astro-xpressive-code";
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
 
 import mdx from "@astrojs/mdx";
