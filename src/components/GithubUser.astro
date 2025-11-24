@@ -33,12 +33,12 @@ const { name, large = false } = Astro.props;
 
         font-size: 10pt;
         vertical-align: middle;
-    }
 
-    a.author.large {
-        padding: 0.3em;
-        font-size: unset;
-        margin-right: 1em;
+        &.large {
+            padding: 0.3em;
+            font-size: unset;
+            margin-right: 1em;
+        }
     }
 
     a.author:last-child {
