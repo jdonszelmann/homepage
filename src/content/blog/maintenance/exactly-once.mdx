@@ -1,0 +1,108 @@
+---
+title: 'A small adventure in the standard library'
+pubDate: 2025-11-24
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "rust", "maintenance" ]
+description: |
+  While writing some machinery for dealing with spans on built-in attributes last month,
+  I was slightly bothered by a missing method on `Iterator`.
+  I usually work on the compiler, not the library, but I decided to write a little proposal, which was then accepted,
+  so today it was time to try and implement it.
+  In fairness, that implementation itself was mostly trivial, and yet right now there's no way to stabilize it.
+  What I actually want to share is the incredible compiler work going on as we speak that will unblock it. 
+draft: false
+time: "10 minutes"
+---
+import User from '../../../components/GithubUser.astro';
+import Crate from '../../../components/Crate.astro';
+import Tag from '../../../components/Tag.astro';
+
+## Why we need `#![feature(exact_length_collect)]`
+
+This is not the first time I ran into this: 
+let's say you have an api that returns a vector of elements:
+
+```rust
+fn get_all_spans() -> Vec<Span> { ... }
+```
+
+Then sometimes you want to do something when *exactly one* element is returned.
+You could write:
+
+```rust
+let mut elems = get_all_spans();
+if elems.len() != 1 {
+    return None
+} else {
+    return Some(elems.pop().expect("we just checked the length"))
+}
+```
+
+The expect is a bit unfortunate though. Maybe this is nicer?
+
+```rust
+let mut elems = get_all_spans();
+elems.pop().filter(|| elems.is_empty())
+```
+
+There are certainly ways to remove the mutable variable too, maybe with iterators.
+Still, none of those solutions are particularly pretty.
+I think this is common enough that it's something the standard library could provide.
+Maybe not on `Vec`, or `&[]`, but on iterators so it's widely applicable.
+That's what I proposed in [https://github.com/rust-lang/libs-team/issues/676](https://github.com/rust-lang/libs-team/issues/676), 
+with which we could write the solution as:
+
+```rust
+get_all_spans().into_iter().exactly_one()
+```
+
+## Stabilizing methods on traits
+
+The implementation is rather trivial, this is the PR if you're interested anyway: [https://github.com/rust-lang/rust/pull/149270](https://github.com/rust-lang/rust/pull/149270).
+The problem is that <Crate name="itertools" /> already has a method named `exactly_one`.
+With a different signature.
+And a blanket implementation for `T: Iterator`.
+
+So, there exists perfectly valid Rust code, in production right now, that looks like this:
+
+```rust
+// import the trait with a blanket implementation
+use itertools::Itertools;
+
+match foo.into_iter().exactly_one() {
+    Ok(_) => ...,
+    Err(_) => ...,
+}
+```
+
+Which will break as soon as we stabilize the method on `Iterator` which instead returns an `Option`.
+And that's not just a problem with `Iterator`.
+Any trait method we stabilize, that someone already added themselves through an extension trait with a blanket implementation, is a breaking change.
+Though the problem with methods we want on `Iterator`, which already existing in <Crate name="itertools" /> is apparently a common one.
+
+Not that this clueless girl knew that this morning.
+I only found out when CI failed on the implementation PR:
+the compiler itself couldn't compile with the updated standard library containing `exactly_one` because of a warning about a name resolution ambiguity.
+We use <Crate name="itertools" /> and its existing `exactly_one` method too, causing the exact same problem users will when we stabilize it.
+
+The good news is: this is being fixed!
+And if like me, you didn't already know about this: you should! It's cool!
+These internal compiler changes aren't always super visible,
+but the result is that we can stabilize parts of the standard library which *are* things you might notice.
+
+Only 3 weeks ago <User name="amanieu" /> opened the stabilization PR for a feature called [`supertrait_item_shadowing`](https://github.com/rust-lang/rust/pull/148605)
+which makes changes rust's name resolution rules to:
+
+- When a type implements a trait, like `trait Iterator {...}`,
+- as well as another trait which is a subtrait, like `trait Itertools: Iterator {...}`,
+- and when name resolution finds a reference to a name that exists in both, like `exactly_one`,
+- prefer the one from the subtrait, so the existing one from `Itertools`.
+
+And guess what, no less than 3 blocked PRs are mentioned about adding methods to `Iterator`!
+
+This whole issue reminds me of the issue we have with built-in attributes.
+Technically, every built-in attribute we add to rustc is a breaking change...
+I expect some day we need a similar change in name resolution there.
+
+So, to end off, let me repeat the acknowledgements from under that stabilization PR, by thanking <User name="compiler-errors" /> and <User name="lcdr" /> for making this possible.
