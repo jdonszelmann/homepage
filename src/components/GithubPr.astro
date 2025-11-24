@@ -28,7 +28,11 @@ switch (tmp.length) {
         number = tmp[0];
         break;
     case 2:
-        repo = tmp[0];
+        if (tmp[0].length == 0) {
+            repo = "rust";
+        } else {
+            repo = tmp[0];
+        }
         number = tmp[1];
         break;
     default:
