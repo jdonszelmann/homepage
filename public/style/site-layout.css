@@ -7,6 +7,10 @@
     src: url("/fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
 }
 @font-face {
+    font-family: "Noto Sans Mono";
+    src: url("/fonts/NotoSansMono[wdth\,wght].ttf") format("truetype");
+}
+@font-face {
     font-family: "Fira Sans";
     src: url("/fonts/FiraSans-Regular.otf") format("opentype");
     font-weight: normal;

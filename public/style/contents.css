@@ -2,8 +2,8 @@ main {
     a {
         color: #9c3574;
 
-        font-weight: bold;
-        font-family: "Fira Sans Mono";
+        font-family: "Noto Sans Mono";
+        font-weight: 600;
 
         font-size: 1em;
         text-decoration-thickness: 1px;

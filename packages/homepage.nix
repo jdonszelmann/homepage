@@ -5,6 +5,7 @@
   fira,
   jetbrains-mono,
   fira-mono,
+  noto-fonts,
   fetchurl,
   name,
   vars ? "",
@@ -31,6 +32,7 @@ in
     ln -sf ${fira}/share/fonts/opentype/* ./public/fonts/
     ln -sf ${jetbrains-mono}/share/fonts/truetype/* ./public/fonts/
     ln -sf ${fira-mono}/share/fonts/opentype/* ./public/fonts/
+    ln -sf ${noto-fonts}/share/fonts/noto/* ./public/fonts/
 
     cat > Keys.astro <<EOF
     ---
