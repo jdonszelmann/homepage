@@ -27,7 +27,11 @@ var hash = function (s) {
     return String(a);
 };
 
-const nameHash = hash(name) % 360;
+let nameHash = hash(name) % 360;
+
+if (name == "python") {
+    nameHash = 200;
+}
 ---
 
 <a

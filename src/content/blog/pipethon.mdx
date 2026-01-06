@@ -1,0 +1,365 @@
+---
+title: 'Pipes in Python'
+pubDate: 2026-01-06
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "python" ]
+description: |
+    A feature I've always liked in languages, is the pipe operator.
+    Some version of this can be achieved in haskell, elixir has it, and nix has a preview feature for it.
+    And, most well known I think, bash has a pipe operator, though the way it operates on io streams is somewhat unique.
+    Especially in interactive REPLs, like bash, the operator is super useful.
+    So, this week I created a patch to cpython, that you can try out, that actually adds that!
+    Though, to explain this, I think it's cool to talk a little about good syntax design, and what I call syntax that "goes with the direction of thought"!
+draft: false
+time: "15 minutes"
+---
+
+## Postfix await is *just better*
+
+To start, I'd like to consider the *syntax design* of the `await` operator.
+Many languages that support `async`, have a natural counterpart called `await`.
+This is often used as a prefix to some expressions.
+You might recognize this from javascript and python.
+
+To quote the [first example from the asyncio docs](https://docs.python.org/3/library/asyncio.html):
+```python
+import asyncio
+
+async def main():
+    print('Hello ...')
+    await asyncio.sleep(1) # <-- see! await used here!
+    print('... World!')
+
+asyncio.run(main())
+```
+
+And I think this is a terrible choice! 
+To show why, let's look at an alternative `await` syntax used by Rust.
+I remember that when learning Rust myself, around 2018, `async` and `await` just got added to the language.
+There was [quite some debate](https://github.com/rust-lang/rust/issues/57640) over how to spell this operator.
+In the end, Rust got a *postfix* await operator. 
+In other words:
+
+```rust
+#[tokio::main]
+async fn main() {
+    // await at the end!
+    tokio::time::sleep(Duration::from_secs(1)).await;
+}
+```
+
+At the time, it was already recognized that this is quite convenient when chaining `await`s together with method calls and field accesses.
+Though that's not the only reason I think it makes sense.
+It is very natural to write some expression, like the `tokio::time::sleep(...)`,
+and then at the *end* of writing that expression, decide that you should await it.
+If only for the fact that you might have been writing `tokio::time::sl` in your editor,
+and it pops up the documentation for `sleep` that says it's asynchronous so it makes sense then to await it.
+
+In javascript, I've often found myself annoyed by this.
+You write an expression that ends with an async function call, so you have to jump your cursor to the start of the line to add an `await`.
+Then you can go back to the end of the expression to add another method call to the result.
+Oh wait! You also have to add parentheses to make the `await` bind correctly. 
+Back to the start, add the parentheses, go back to the end.
+Ugh.
+
+## Syntax *with* the direction of thought
+
+This process of having to jump to the start of the line often breaks the flow of writing.
+When you're writing an expression, from left to right (at least in english), you're also constantly thinking about what to write *next*.
+Some editors recognize that not being able to do so is frustrating,
+so they have a feature to autocomplete little code transformations, often called snippets.
+For example, maybe you can suffix a javascript expression with `foo().await`,
+and then press autocomplete to do the transformation to `await foo()`.
+
+This might help with writing, though I'd argue that reading code has exactly the same problem.
+You read (in english) a line of code from left to right, and then you don't want to check back at the start whether it was awaited.
+Instead, if it's so much easier to autocomplete a snippet by writing a suffix, we can just *make that the syntax*.
+And that's the choice Rust made.
+
+When syntax works like this, from left to right, I like to describe it as going "with the direction of thought".
+Another example of syntax that in most languages goes with the direction of thought is field accesses.
+`a.b.c.d` means, start from some object `a`, and then walk your way through the object to `d`, in order.
+
+I don't think this is *just* a preference.
+From people I've talked to, or students I have taught programming to in the past, I think this works like this for a lot of people.
+Just for fun, imagine what field access would look like in the style of python and javascript's await syntax.
+It would become `d (c (b a))`, which I think most people would agree is much worse.
+I think that's an example of going *against* the direction of thought D:
+
+In zig, even [the deference operator](https://ziglang.org/documentation/master/#:~:text=Pointer%20Dereference) which is spelled `some_pointer.*` goes with the direction of thought.
+I don't agree with a lot of choices zig made in language design, but that one is great!!
+The alternative in C, C++ and Rust is a prefix.
+Of course, in Rust, the `.` operator performs automatic dereferencing, 
+and both C and C++, have a `->` operator that performs a dereference.
+I would argue that those "hacks", however useful they are, exist to make the syntax follow the direction of thought.
+
+Something similar goes for Scala's [postfix match](https://docs.scala-lang.org/tour/pattern-matching.html#syntax) which I learned today is also [experimentally proposed in Rust](https://github.com/rust-lang/rust/issues/121618).
+
+## Syntax *against* the direction of thought
+
+Let's look at some more examples of where I think syntax doesn't follow the direction of thought.
+In Rust, there's `if let` syntax. It works like this:
+
+```rust
+fn maybe_foo(opt: Option<u32>) {
+    if let Some(inner) = opt {
+        // do something with inner
+    }
+}
+```
+
+You can read this as a conditional `let` binding.
+Writing `let Some(inner) = opt` without the `if`, 
+would mean "destructure `opt` into `Some(...)`, and bind the contents".
+However, that destructuring could fail if `opt` is `None`.
+So, I like reading the `if` part in `if let` as, `if` the `let` binding succeeds, run some code on the result.
+
+Anyway, after years of trying to get used to this, I regularly find myself frustrated by it.
+I've seen that it ends up being very natural to first write some expression, and then decide what pattern it has to match it against.
+And I'm not alone!
+There's an [open RFC](http://github.com/rust-lang/rfcs/pull/3573) about the possibility of an `is` operator which would in theory allow you to write `if opt is Some(inner) {}`.
+And though there are some real concerns around this syntax, what I think it does right is to follow the direction of thought.
+
+Let's finish this section around syntax design with an example from Python.
+Though technically this example isn't even syntax, since it's a consequence of the design of the standard library.
+In theory, python could've done this differently!
+Let's look at what it looks like to compose iterators in python:
+
+```python
+from functools import reduce
+
+res = reduce(
+    lambda a, b: a + b, 
+    filter(
+        lambda x % 3 == 0, 
+        map(
+            lambda x: x * 2, 
+            range(100)
+        )
+    )
+)
+```
+
+And I know `sum` and list comprehensions exist, this is just an example.
+A good explanation of what it does, I think would be:
+It finds the first 100 integers, 
+doubles them to get the first 100 even integers, 
+takes only hose that are divisible by 3, 
+and calculates their sum.
+
+However, the direction I explained that in doesn't match the direction it was written in, does it!
+It's written as the sum of (the elements that are divisble by 3 of (the doubles of (the first 100 numbers))).
+The equivalent in Rust would be:
+
+```rust
+0..100
+    .map(|i| i * 2)
+    .filter(|x| x % 3 == 0)
+    .reduce(|a, b| a + b)
+```
+
+In my opinion: much clearer. That actually matches how I like to explain what the code does!
+It follows the direction of thought.
+
+## Pipes in Python
+
+I don't often use python for actual programs,
+but I almost permanently have one or two terminals open somewhere with a python REPL to use as a calculator.
+To make that experience better, I've made some [modifications to my python REPL](https://git.donsz.nl/jana/dotfiles/src/branch/main/scriptlib/scriptlib.py).
+For example, it automatically imports `numpy` and all `math` functions, as well as define some constants for unit conversion.
+
+In a REPL, direction-of-thought syntax matters even more.
+Ideally, you want to get an expression right in one go, press enter, and see the outcome.
+Scrolling left and right (with arrow keys) in what you just wrote is annoying.
+
+So, because `map` and `filter` and other iterator combinators from `itertools` go against this direction of thought so much,
+I feel like they're esentially useless to me.
+List comprehensions often work a bit better, but I think I would use `map` if it was easier to write.
+
+So this is where pipe operators come in.
+Imagine you could write:
+
+```python showLineNumbers=false
+range(100) | map(lambda x: x * 2) | filter(lambda x: x * 3 == 0) | reduce(lambda a, b: a + b)
+```
+
+The pipe operator would implicitly supply the last parameter of each function, 
+such that map gets passed the range, filter gets passed the mapped range, etc.
+I think that would completely reverse the way you think about these chains, letting them go *with* the direction of thought.
+
+I'm deliberately using the `|` operator here, since it already exists in python!
+It just means bitwise or...or does it?
+Python has super rich operator overloading available,
+so last year I realized that it might actually be possible to implement pipes like this *inside* normal Python.
+
+The only problem is that it'd require modifying every built-in function to accept fewer parameters than normal,
+so that the missing parameter could be piped in.
+So.... that's what I did!
+
+
+<details>
+    <summary>If you're ready for it, and I warn you: think carefully whether you are, <a>open this section...</a></summary>
+
+```python showLineNumbers=false
+import sys
+import ctypes
+import inspect
+
+def maybe_defer(orig, *args, **kwargs):
+    try:
+        return orig(*args, **kwargs)
+    except TypeError as e:
+        if "argument" in str(e):
+            return lambda *new_args, **new_kwargs: maybe_defer(orig, *args, *new_args, **kwargs, **new_kwargs)
+        else:
+            raise
+
+def make_init(cls):
+    def __init__(self, *args, **kwargs):
+        self._old = maybe_defer(cls, *args, **kwargs)
+    return __init__
+
+class Wrapper(BaseException):
+    def __init__(self, old):
+        self._old = old
+    def __getattribute__(self, attr):
+        if attr == "__call__":
+            return object.__getattribute__(self, attr)
+        elif attr == "__or__":
+            return object.__getattribute__(self, attr)
+        else:
+            return object.__getattribute__(object.__getattribute__(self, "_old"), attr)
+    def __len__(self, *args, **kwargs):
+        return object.__getattribute__(object.__getattribute__(self, "_old"), "__len__")(*args, **kwargs)
+    def __iter__(self, *args, **kwargs):
+        return object.__getattribute__(object.__getattribute__(self, "_old"), "__iter__")(*args, **kwargs)
+    def __repr__(self, *args, **kwargs):
+        return object.__getattribute__(object.__getattribute__(self, "_old"), "__repr__")(*args, **kwargs)
+    def __contains__(self, *args, **kwargs):
+        return object.__getattribute__(object.__getattribute__(self, "_old"), "__contains__")(*args, **kwargs)
+    def __hasattr__(self, *args, **kwargs):
+        return object.__getattribute__(object.__getattribute__(self, "_old"), "__hasattr__")(*args, **kwargs)
+    def __getitem__(self, *args, **kwargs):
+        return object.__getattribute__(object.__getattribute__(self, "_old"), "__getitem__")(*args, **kwargs)
+    def __setitem__(self, *args, **kwargs):
+        return object.__getattribute__(object.__getattribute__(self, "_old"), "__setitem__")(*args, **kwargs)
+    def __or__(self, other):
+        return Wrapper(other(self))
+    def __ror__(self, other):
+        return Wrapper(Wrapper(self)(other))
+    def __call__(self, *args, **kwargs):
+        return maybe_defer(object.__getattribute__(object.__getattribute__(self, "_old"), "__call__"), *args, **kwargs)
+
+def modify_iterator_functions(item_dict):
+    if item_dict is None:
+        return
+    for k in item_dict:
+        if not (k in ["object", "type", "StopIteration"] or "Exception" in k or "Error" in k):
+            if inspect.isclass(item_dict[k]) or repr(item_dict[k]).startswith("<class"):
+                (lambda o: ctypes.cast(id(o)+type(o).__dictoffset__, ctypes.POINTER(ctypes.py_object)).contents.value)(sys.modules['builtins'])[k] = item_dict[k].__class__(
+                    f"Wrapper of {k}",
+                    (),
+                    Wrapper.__dict__ | {"__init__": make_init(item_dict[k])}
+                )
+            else:
+                item_dict[k] = Wrapper(item_dict[k])
+
+
+modify_iterator_functions(__builtins__.__dict__)
+modify_iterator_functions(locals())
+
+x = [1, 2, 3]
+res = x | map(lambda x: x + 3) | max()
+print(res) # actually prints 4, 5, 6 🤯
+```
+
+Told ya it's terrible ...
+
+</details>
+
+Anyway, that was just a joke from half a year ago, oh wait, apparently almost a year and a half ago.
+It barely hangs together,
+and if you look at it wrong it segfaults the interpreter (that part is not a joke).
+The only way to actually do this, would be to modify python itself.
+
+Which, I am delighted to tell you, is not that hard, as I found out this morning!
+Apparently, you can just do things.
+So, I wrote a small patch file, in total less than 100 lines changed, that actually implements this, to try out what it'd be like.
+And honestly, you do you, but I think I'll be keeping this for my calculator.
+ITS SO GOOD!
+
+Instead of a `|`, I chose to add a new operator that didn't previously exist in python.
+That way it couldn't conflict with anything.
+
+I added this new grammar rule, just below the bitwise `|` operator's precedence level:
+
+> Note, the monospace font I like turns `|` followed by `>` into a `|>` ligature.
+> Honestly, I think it works super well here, but note that I'm not using some special unicode character below.
+
+```
+pipe[expr_ty]:
+    | lhs=pipe '|>' rhs=primary_nocall b=genexp {
+      ...
+    }
+    | lhs=pipe '|>' rhs=primary_nocall '(' arg=[arguments] ')' {
+      ...
+    }
+    | bitwise_or
+```
+
+This means, to parse a pipe, first parse a pipe (it's left recursive), and then, look for a segment in the shape of a call.
+That is, first a `primary`, except exclude those that could be themselves function calls.
+And then, parse the argument list.
+
+And then, the only logic we do in the place of the `...` above is to effectively swap the order around.
+So, `foo |> bar(a, b, c)` is turned into `bar(a, b, c, foo)`.
+That's all!
+
+But with that you can already write the following:
+```python
+[1, 2, 3] |> map(lambda x: x+1) |> filter(lambda x: x>2) |> list()
+#> [3, 4]
+```
+
+Playing around with it though, I realized that since the parentheses of the argument list are always required when piping,
+it isn't ambiguous to instead put a variable name there instead.
+Wouldn't it be cool if you could also put a variable name there, to write to it?
+Well, trying it, I think it is!
+
+```python
+[1, 2, 3] |> map(lambda x: x+1) |> list() |> mapped |> filter(lambda x: x>2) |> list()
+#> [3, 4]
+
+print(mapped) # prints [2, 3, 4]
+```
+
+The transformation that's happening here is that `foo|>NAME` is turned into `NAME := foo`.
+
+Finally, I added a tiny bit more logic to recognize when you use an underscore in the right hand side.
+In that case, that argument is replaced.
+So, with that, you can write:
+
+```python
+def sub(x, y):
+    return x - y
+
+3 |> sub(_, 5) # prints -2
+3 |> sub(5, _) # prints 2
+```
+
+Earlier I posted about it [on mastodon too](https://fedi.xirion.net/@jana/115842824481742425) with some examples.
+
+## Conclusion
+
+If you're interested in trying it out, I've publishd the patch [here](https://git.donsz.nl/jana/pipethon),
+together with a nix package to easily get a build of it.
+In that let me know, if it also helps you write code "with the direction of thought".
+
+I've found some small limitations of this approach,
+like the way `_` is technically a variable name you could want to write,
+so this is by no means a (ready) proposal for the python language.
+
+However, I've been using this for a little bit now, and I've been loving it.
+For me this really solves the problem with using `map` and `filter`.
+Well enough that I think I'll keep using this daily.
