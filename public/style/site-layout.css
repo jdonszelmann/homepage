@@ -1,0 +1,146 @@
+@font-face {
+    font-family: "JBM";
+    src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+}
+@font-face {
+    font-family: "NF";
+    src: url("/fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
+}
+@font-face {
+    font-family: "Fira Sans";
+    src: url("/fonts/FiraSans-Regular.otf") format("opentype");
+    font-weight: normal;
+}
+@font-face {
+    font-family: "Fira Sans";
+    src: url("/fonts/FiraSans-Bold.otf") format("opentype");
+    font-weight: bold;
+}
+@font-face {
+    font-family: "Fira Sans Mono";
+    src: url("/fonts/FiraMono-Medium.otf") format("opentype");
+    font-weight: bold;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: #f5f5f5;
+
+    min-height: 100vh;
+    height: fit-content;
+
+    font-variant-ligatures: additional-ligatures;
+}
+
+body {
+    display: grid;
+    grid-template-rows: 1fr;
+    grid-template-areas: "left nav middle right";
+
+    grid-template-columns: auto 15em min(45em, 70vw) auto;
+    gap: 1em;
+
+    font-family: "Fira Sans";
+}
+
+main {
+    grid-area: middle;
+    padding-bottom: 5em;
+
+    display: flex;
+    flex-direction: column;
+}
+
+nav {
+    background: #f5f5f5;
+    grid-area: nav;
+    display: flex;
+    flex-direction: column;
+
+    justify-content: start;
+    align-items: center;
+
+    gap: 1em;
+
+    .gay & {
+        background: transparent;
+    }
+}
+
+.space {
+    margin-left: auto;
+}
+
+.menu {
+    display: contents;
+
+    a {
+        text-decoration: none;
+        color: black;
+    }
+}
+
+.contents {
+    display: contents;
+}
+
+.sans {
+    font-family: "Fira Sans";
+    font-weight: inherit;
+}
+
+.mono {
+    font-family: "JBM";
+}
+
+.no-ligatures {
+    font-variant-ligatures: none;
+}
+
+details {
+    ::marker {
+        font-size: large;
+    }
+    summary {
+        cursor: pointer;
+    }
+}
+
+@media (width <= 900px) {
+    body {
+        display: flex;
+        flex-direction: column;
+        padding: 0em 1em;
+    }
+
+    nav {
+        padding-top: 1em;
+        flex-direction: row !important;
+    }
+
+    .only-narrow {
+        display: block;
+    }
+    .only-wide {
+        display: none;
+    }
+}
+@media (width > 900px) {
+    nav {
+        padding-top: 1.5em;
+        align-self: start;
+        position: sticky;
+        top: 0;
+    }
+    .toc {
+        display: contents;
+    }
+    .only-narrow {
+        display: none;
+    }
+    .only-wide {
+        display: block;
+    }
+}

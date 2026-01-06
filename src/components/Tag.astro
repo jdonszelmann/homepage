@@ -4,9 +4,9 @@ interface Props {
     wide?: boolean;
 }
 
-const { name, wide = false }: Prpos = Astro.props;
+const { name, wide = false }: Props = Astro.props;
 
-var hash = function (s) {
+var hash = function (s: string): string {
     /* Simple hash function. */
     var a = 1,
         c = 0,
@@ -27,7 +27,7 @@ var hash = function (s) {
     return String(a);
 };
 
-let nameHash = hash(name) % 360;
+let nameHash = (hash(name) as any) % 360;
 
 if (name == "python") {
     nameHash = 200;
@@ -59,6 +59,7 @@ if (name == "python") {
         font-weight: normal;
         font-family: "Fira Sans";
         font-size: unset;
+        text-decoration: none;
     }
 
     .wide {

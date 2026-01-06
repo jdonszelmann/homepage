@@ -15,234 +15,18 @@ const gay = import.meta.env.GAY;
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width" />
         <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="stylesheet" href="/style/site-layout.css" />
+        <link rel="stylesheet" href="/style/gay.css" />
+        <link rel="stylesheet" href="/style/contents.css" />
+
         <title>{title}</title>
-        <style lang="scss" is:global>
-            @font-face {
-                font-family: "JBM";
-                src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
-            }
-            @font-face {
-                font-family: "NF";
-                src: url("/fonts/SymbolsNerdFontMono-Regular.ttf")
-                    format("truetype");
-            }
-            @font-face {
-                font-family: "Fira Sans";
-                src: url("/fonts/FiraSans-Regular.otf") format("opentype");
-                font-weight: normal;
-            }
-            @font-face {
-                font-family: "Fira Sans";
-                src: url("/fonts/FiraSans-Bold.otf") format("opentype");
-                font-weight: bold;
-            }
-            html,
-            body {
-                margin: 0;
-                padding: 0;
-                background: #f5f5f5;
-
-                min-height: 100vh;
-                height: fit-content;
-
-                .gay {
-                    background: linear-gradient(
-                        90deg,
-                        #5bcefa 20%,
-                        #f5a9b8 20%,
-                        40%,
-                        #ffffff 40%,
-                        60%,
-                        #f5a9b8 60%,
-                        80%,
-                        #5bcefa 80%
-                    );
-                }
-            }
-
-            body {
-                display: grid;
-                grid-template-rows: 1fr;
-                grid-template-areas: "left nav middle right";
-
-                grid-template-columns: auto 15em min(45em, 70vw) auto;
-                gap: 1em;
-
-                font-family: "Fira Sans";
-            }
-
-            a {
-                color: #9c3574;
-                text-decoration: none;
-                font-weight: bold;
-                font-family: monospace;
-                font-size: large;
-
-                .gay & {
-                    background: linear-gradient(
-                        to right,
-                        rgb(255, 0, 0),
-                        rgb(255, 191, 0),
-                        rgb(128, 255, 0),
-                        rgb(0, 255, 64),
-                        rgb(0, 255, 255),
-                        rgb(0, 64, 255),
-                        rgb(128, 0, 255),
-                        rgb(255, 0, 191),
-                        rgb(255, 0, 0)
-                    );
-                    background-clip: text;
-                    color: transparent;
-                }
-            }
-
-            .gay h1 {
-                background: linear-gradient(
-                    to right,
-                    rgb(255, 0, 0),
-                    rgb(255, 191, 0),
-                    rgb(128, 255, 0),
-                    rgb(0, 255, 64),
-                    rgb(0, 255, 255),
-                    rgb(0, 64, 255),
-                    rgb(128, 0, 255),
-                    rgb(255, 0, 191),
-                    rgb(255, 0, 0)
-                );
-                background-clip: text;
-                color: transparent;
-            }
-
-            .sans a,
-            a.sans {
-                font-family: "Fira Sans";
-                font-size: unset;
-                font-weight: normal;
-            }
-
-            @media (width <= 900px) {
-                body {
-                    display: flex;
-                    flex-direction: column;
-                    padding: 0em 1em;
-                }
-
-                nav {
-                    padding-top: 1em;
-                    flex-direction: row !important;
-                }
-
-                .space {
-                    display: block;
-                    margin-left: auto;
-                }
-            }
-            @media (width > 900px) {
-                nav {
-                    padding-top: 1.5em;
-                    align-self: start;
-                    position: sticky;
-                    top: 0;
-                }
-                .toc {
-                    display: contents;
-                }
-                .space {
-                    display: none;
-                }
-            }
-
-            main {
-                grid-area: middle;
-                padding-bottom: 5em;
-
-                display: flex;
-                flex-direction: column;
-            }
-
-            nav {
-                background: #f5f5f5;
-                grid-area: nav;
-                display: flex;
-                flex-direction: column;
-
-                justify-content: start;
-                align-items: center;
-
-                gap: 1em;
-
-                .gay & {
-                    background: transparent;
-                }
-            }
-
-            .menu {
-                display: contents;
-
-                a {
-                    text-decoration: none;
-                    color: black;
-                }
-            }
-
-            blockquote {
-                border-left: 10px solid #9c3574;
-                padding: 0 5px;
-                margin: 1em 0em;
-
-                p {
-                    margin: 0.5em;
-                }
-            }
-
-            details {
-                ::marker {
-                    font-size: large;
-                }
-                summary {
-                    cursor: pointer;
-                }
-            }
-
-            img.gh-avatar {
+        <style is:global>
+            /*img.gh-avatar {
                 display: inline-block;
                 margin-right: 0.3em;
                 height: 1.5em;
                 border-radius: 1em;
-            }
-
-            .keys {
-                list-style-type: none;
-                padding-left: 0;
-                font-family: JBM;
-                font-size: 9pt;
-
-                li {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-
-                    user-select: all;
-                    overflow-wrap: anywhere;
-                    text-align: center;
-
-                    color: #212529;
-                    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-
-                    margin-top: 0.5em;
-                    margin-bottom: 0.5em;
-
-                    padding: 0.25em 0.3em;
-                    border-radius: 0.3em;
-                    text-decoration: none;
-                }
-            }
-
-            code {
-                font-family: JBM;
-                font-size: 1em;
-                color: #000000;
-            }
+            }*/
         </style>
         <style is:global>
             @keyframes detect-scroll {
@@ -263,7 +47,7 @@ const gay = import.meta.env.GAY;
                 <slot name="menu" />
             </div>
 
-            <div class="space"></div>
+            <div class="space only-wide"></div>
 
             <slot name="nav" />
         </nav>

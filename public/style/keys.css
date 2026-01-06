@@ -1,0 +1,26 @@
+.keys {
+    list-style-type: none;
+    padding-left: 0;
+    font-family: JBM;
+    font-size: 9pt;
+
+    li {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        user-select: all;
+        overflow-wrap: anywhere;
+        text-align: center;
+
+        color: #212529;
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+
+        padding: 0.25em 0.3em;
+        border-radius: 0.3em;
+        text-decoration: none;
+    }
+}

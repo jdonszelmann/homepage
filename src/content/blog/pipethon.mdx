@@ -13,9 +13,12 @@ description: |
     Though, to explain this, I think it's cool to talk a little about good syntax design, and what I call syntax that "goes with the direction of thought"!
 draft: false
 time: "15 minutes"
+ligatures: false
 ---
 
 ## Postfix await is *just better*
+
+(I think, don't @me)
 
 To start, I'd like to consider the *syntax design* of the `await` operator.
 Many languages that support `async`, have a natural counterpart called `await`.
@@ -152,7 +155,7 @@ However, the direction I explained that in doesn't match the direction it was wr
 It's written as the sum of (the elements that are divisble by 3 of (the doubles of (the first 100 numbers))).
 The equivalent in Rust would be:
 
-```rust
+```rust showLineNumbers=false
 0..100
     .map(|i| i * 2)
     .filter(|x| x % 3 == 0)
@@ -180,7 +183,7 @@ List comprehensions often work a bit better, but I think I would use `map` if it
 So this is where pipe operators come in.
 Imagine you could write:
 
-```python showLineNumbers=false
+```python
 range(100) | map(lambda x: x * 2) | filter(lambda x: x * 3 == 0) | reduce(lambda a, b: a + b)
 ```
 
@@ -201,7 +204,7 @@ So.... that's what I did!
 <details>
     <summary>If you're ready for it, and I warn you: think carefully whether you are, <a>open this section...</a></summary>
 
-```python showLineNumbers=false
+```python
 import sys
 import ctypes
 import inspect
@@ -294,9 +297,6 @@ That way it couldn't conflict with anything.
 
 I added this new grammar rule, just below the bitwise `|` operator's precedence level:
 
-> Note, the monospace font I like turns `|` followed by `>` into a `|>` ligature.
-> Honestly, I think it works super well here, but note that I'm not using some special unicode character below.
-
 ```
 pipe[expr_ty]:
     | lhs=pipe '|>' rhs=primary_nocall b=genexp {
@@ -334,7 +334,7 @@ Well, trying it, I think it is!
 print(mapped) # prints [2, 3, 4]
 ```
 
-The transformation that's happening here is that `foo|>NAME` is turned into `NAME := foo`.
+The transformation that's happening here is that `foo |> NAME` is turned into `NAME := foo`.
 
 Finally, I added a tiny bit more logic to recognize when you use an underscore in the right hand side.
 In that case, that argument is replaced.
@@ -352,7 +352,7 @@ Earlier I posted about it [on mastodon too](https://fedi.xirion.net/@jana/115842
 
 ## Conclusion
 
-If you're interested in trying it out, I've publishd the patch [here](https://git.donsz.nl/jana/pipethon),
+If you're interested in trying it out, [I've published the patch here](https://git.donsz.nl/jana/pipethon),
 together with a nix package to easily get a build of it.
 In that let me know, if it also helps you write code "with the direction of thought".
 

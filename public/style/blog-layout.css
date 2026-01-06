@@ -1,0 +1,45 @@
+.authors,
+.author-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+
+    a.author {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 1em;
+
+        color: #212529;
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+
+        padding: 0.3em;
+        border-radius: 0.3em;
+        text-decoration: none;
+        box-sizing: border-box;
+    }
+}
+
+.reviewers {
+    display: contents;
+}
+
+.tags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    width: 100%;
+}
+
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+footer {
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid black;
+}

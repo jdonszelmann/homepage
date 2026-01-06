@@ -8,7 +8,7 @@ const { name, large = false } = Astro.props;
 ---
 
 <a
-    class:list={["author", large ? "large" : null, "sans"]}
+    class:list={["author", large ? "large" : null, large ? "sans" : null]}
     href=`https://github.com/${name}`
 >
     <img
@@ -19,24 +19,28 @@ const { name, large = false } = Astro.props;
     {name}
 </a>
 
-<style lang="scss">
+<style>
     a.author {
         display: inline-flex;
         align-items: center;
-
-        color: #212529;
-        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-
-        padding: 0 0.3em;
-        border-radius: 0.3em;
         text-decoration: none;
-
         vertical-align: middle;
+
+        &:not(.large) {
+            margin-bottom: 0.2em;
+        }
 
         &.large {
             padding: 0.3em;
             font-size: unset;
             margin-right: 1em;
+
+            box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+            padding: 0 0.3em;
+            border-radius: 0.3em;
+            color: #212529;
+
+            font-size: unset;
         }
     }
 

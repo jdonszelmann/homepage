@@ -1,0 +1,51 @@
+main {
+    a {
+        color: #9c3574;
+
+        font-weight: bold;
+        font-family: "Fira Sans Mono";
+
+        font-size: 1em;
+        text-decoration-thickness: 1px;
+
+        code {
+            display: inline;
+            font-size: inherit;
+            color: inherit;
+        }
+    }
+
+    p:empty {
+        display: none;
+    }
+
+    p {
+        margin-top: 0.75em;
+        margin-bottom: 0.75em;
+    }
+
+    p + p {
+        margin-top: 0em;
+    }
+
+    code {
+        font-family: JBM;
+        font-size: 1em;
+        color: #000000;
+
+        --lnWidth: 2ch;
+        .ec-line .gutter .ln {
+            padding-inline: 0.5ch;
+        }
+    }
+
+    blockquote {
+        border-left: 5px solid #9c3574;
+        padding: 0 5px;
+        margin: 1em 0em;
+
+        p {
+            margin: 0.5em;
+        }
+    }
+}

@@ -34,6 +34,7 @@ in
 
     cat > Keys.astro <<EOF
     ---
+    import "../../public/style/keys.css"
     ---
     <ul class="keys">
     EOF

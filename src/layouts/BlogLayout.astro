@@ -24,6 +24,7 @@ export interface Props {
         pubDate: Date;
         time?: string;
         tags: string[];
+        ligatures?: boolean;
     };
 }
 
@@ -37,6 +38,7 @@ const {
         pubDate,
         time,
         tags,
+        ligatures = true,
     },
     headings,
     id,
@@ -105,53 +107,7 @@ const hierarchicalHeadings =
 <Layout title={`${title}`}>
     <Fragment slot="head">
         <meta name="description" content={description} />
-        <style is:global>
-            .authors,
-            .author-info {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 1em;
-
-                a.author {
-                    display: inline-flex;
-                    align-items: center;
-                    margin-right: 1em;
-
-                    color: #212529;
-                    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-
-                    padding: 0.3em;
-                    border-radius: 0.3em;
-                    text-decoration: none;
-                    box-sizing: border-box;
-                }
-            }
-
-            .reviewers {
-                display: contents;
-            }
-
-            .tags {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5em;
-                width: 100%;
-            }
-
-            .center {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-            }
-
-            footer {
-                margin-top: 2em;
-                padding-top: 1em;
-                border-top: 1px solid black;
-            }
-        </style>
+        <link rel="stylesheet" href="/style/blog-layout.css" />
         <style>
             @media (width <= 900px) {
                 .wide {
@@ -234,7 +190,9 @@ const hierarchicalHeadings =
             </div>
         </details>
 
-        <slot />
+        <div class:list={[ligatures ? null : "no-ligatures", "contents"]}>
+            <slot />
+        </div>
 
         <footer class="narrow center">
             Table of contents:
