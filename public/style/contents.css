@@ -24,7 +24,7 @@ main {
         margin-bottom: 0.75em;
     }
 
-    p + p {
+    p+p {
         margin-top: 0em;
     }
 
@@ -34,14 +34,15 @@ main {
         color: #000000;
 
         --lnWidth: 2ch;
+
         .ec-line .gutter .ln {
             padding-inline: 0.5ch;
         }
     }
 
     blockquote {
-        border-left: 5px solid #9c3574;
-        padding: 0 5px;
+        border-left: 3px solid #9c3574;
+        padding: 0 0.75em;
         margin: 1em 0em;
 
         p {
