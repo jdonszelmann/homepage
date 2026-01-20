@@ -15,7 +15,7 @@ let
   npmDepsHash = "sha256-xhw+CutTTQzQCci+TUWifez0JofIYU+izySnlPfVBJE=";
   keys = fetchurl {
     url = "https://github.com/jdonszelmann.keys";
-    sha256 = "sha256:1sla88pmh16jg9zx7kacca96599j38b2c340hlkdvzgjpclys28c";
+    sha256 = "sha256-zKL99PzMQ74pn0V2IwdFRgBQJdHnyDDGCDzMMBeSV54=";
   };
 in
 (buildNpmPackage {
