@@ -1,9 +1,10 @@
 ---
 interface Props {
     title: string;
+    wide?: boolean;
 }
 
-const { title } = Astro.props;
+const { title, wide = false } = Astro.props;
 
 const gay = import.meta.env.GAY;
 ---
@@ -38,7 +39,7 @@ const gay = import.meta.env.GAY;
         </style>
     </head>
 
-    <body class:list={[gay ? "gay" : null]}>
+    <body class:list={[gay ? "gay" : null, wide ? "wide" : null]}>
         <nav>
             <div class="menu sans">
                 <a href="/">Home</a>

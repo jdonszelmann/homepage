@@ -47,6 +47,10 @@ body {
     gap: 1em;
 
     font-family: "Fira Sans";
+
+    &.wide {
+        grid-template-columns: auto 15em min(65em, 90vw) auto;
+    }
 }
 
 main {
@@ -112,6 +116,48 @@ details {
     }
 }
 
+@media (width <= 1300px) {
+    body.wide {
+        display: flex;
+        flex-direction: column;
+        padding: 0em 1em;
+    }
+
+    body.wide {
+        nav {
+            padding-top: 1em;
+            flex-direction: row !important;
+        }
+
+        .only-narrow {
+            display: block;
+        }
+        .only-wide {
+            display: none;
+        }
+    }
+}
+
+@media (width > 1300px) {
+    body.wide {
+        nav {
+            padding-top: 1.5em;
+            align-self: start;
+            position: sticky;
+            top: 0;
+        }
+        .toc {
+            display: contents;
+        }
+        .only-narrow {
+            display: none;
+        }
+        .only-wide {
+            display: block;
+        }
+    }
+}
+
 @media (width <= 900px) {
     body {
         display: flex;
@@ -132,19 +178,21 @@ details {
     }
 }
 @media (width > 900px) {
-    nav {
-        padding-top: 1.5em;
-        align-self: start;
-        position: sticky;
-        top: 0;
-    }
-    .toc {
-        display: contents;
-    }
-    .only-narrow {
-        display: none;
-    }
-    .only-wide {
-        display: block;
+    body:not(.wide) {
+        nav {
+            padding-top: 1.5em;
+            align-self: start;
+            position: sticky;
+            top: 0;
+        }
+        .toc {
+            display: contents;
+        }
+        .only-narrow {
+            display: none;
+        }
+        .only-wide {
+            display: block;
+        }
     }
 }

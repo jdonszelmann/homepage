@@ -6,6 +6,8 @@ import { type HierarchicalHeading } from "../ts/HierarchicalHeading.ts";
 import { marked } from "marked";
 import Layout from "./Layout.astro";
 
+type Variant = "normal" | "music";
+
 interface Heading {
     slug: string;
     text: string;
@@ -17,7 +19,7 @@ export interface Props {
     id: string;
     data: {
         authors: string[];
-        reviewers: string[];
+        reviewers?: string[];
         description: string;
         draft: boolean;
         title: string;
@@ -25,6 +27,7 @@ export interface Props {
         time?: string;
         tags: string[];
         ligatures?: boolean;
+        variant?: Variant;
     };
 }
 
@@ -39,6 +42,7 @@ const {
         time,
         tags,
         ligatures = true,
+        variant = "normal",
     },
     headings,
     id,
@@ -104,11 +108,17 @@ const hierarchicalHeadings =
             })();
 ---
 
-<Layout title={`${title}`}>
+<Layout title={`${title}`} wide={variant === "music"}>
     <Fragment slot="head">
         <meta name="description" content={description} />
         <link rel="stylesheet" href="/style/blog-layout.css" />
         <style>
+            @media (width <= 1300px) {
+                body.wide .wide {
+                    display: none !important;
+                }
+            }
+
             @media (width <= 900px) {
                 .wide {
                     display: none !important;
@@ -143,7 +153,7 @@ const hierarchicalHeadings =
                 }
             </div>
             {
-                reviewers.length > 0 && (
+                variant !== "music" && reviewers.length > 0 && (
                     <Fragment>
                         Reviewed by:
                         <div class="authors">
@@ -164,13 +174,17 @@ const hierarchicalHeadings =
             </div>
         </div>
 
-        <div
-            class="toc wide sans"
-            role="navigation"
-            aria-label="Table of contents"
-        >
-            <TOCHeading elems={hierarchicalHeadings} />
-        </div>
+        {
+            variant !== "music" && (
+                <div
+                    class="toc wide sans"
+                    role="navigation"
+                    aria-label="Table of contents"
+                >
+                    <TOCHeading elems={hierarchicalHeadings} />
+                </div>
+            )
+        }
     </Fragment>
     <Fragment slot="main">
         <h1 id="title" class="title" }>
@@ -179,31 +193,40 @@ const hierarchicalHeadings =
         </h1>
         <p set:html={marked.parse(description || "")} />
 
-        <details class="center narrow">
-            <summary>Press for table of Contents</summary>
-            <div
-                class="toc sans"
-                role="navigation"
-                aria-label="Table of contents"
-            >
-                <TOCHeading elems={hierarchicalHeadings} />
-            </div>
-        </details>
+        {
+            variant !== "music" && (
+                <details class="center narrow">
+                    <summary>Press for table of Contents</summary>
+                    <div
+                        class="toc sans"
+                        role="navigation"
+                        aria-label="Table of contents"
+                    >
+                        <TOCHeading elems={hierarchicalHeadings} />
+                    </div>
+                </details>
+            )
+        }
 
         <div class:list={[ligatures ? null : "no-ligatures", "contents"]}>
             <slot />
         </div>
 
         <footer class="narrow center">
-            Table of contents:
-
-            <div
-                class="toc sans"
-                role="navigation"
-                aria-label="Table of contents"
-            >
-                <TOCHeading elems={hierarchicalHeadings} />
-            </div>
+            {
+                variant !== "music" && (
+                    <Fragment>
+                        Table of contents:
+                        <div
+                            class="toc sans"
+                            role="navigation"
+                            aria-label="Table of contents"
+                        >
+                            <TOCHeading elems={hierarchicalHeadings} />
+                        </div>
+                    </Fragment>
+                )
+            }
 
             <div class="author-info below">
                 By:
@@ -215,7 +238,7 @@ const hierarchicalHeadings =
                     }
                 </div>
                 {
-                    reviewers.length > 0 && (
+                    variant !== "music" && reviewers.length > 0 && (
                         <Fragment>
                             Reviewed by:
                             <div class="authors">
@@ -226,10 +249,9 @@ const hierarchicalHeadings =
                         </Fragment>
                     )
                 }
-
-                Published: {pubDate.toISOString().slice(0, 10)}<br />
+                Published: {pubDate.toISOString().slice(0, 10)}
+                <br />
                 {time ? `read time: ${time}` : ""}
-
                 <div class="tags">
                     Tags:
                     {tags.map((tag: any) => <Tag name={tag} wide />)}
