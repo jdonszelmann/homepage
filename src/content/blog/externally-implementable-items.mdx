@@ -1,0 +1,256 @@
+---
+title: "Writing the code is the easy part"
+pubDate: 2026-03-16
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "rust"]
+description: |
+    Over the past two years,
+    I've been involved with designig and implementing a new feature of rustc,
+    called "externally implementable items".
+    This is not a finished feature, though if you'd like you can try it on nightly already!
+    This is the story of how externally impelmentable items were invented, implemented,
+    and how some day it might be stabilized.
+    I'm sure that is interesting to some of those who read this.
+    Though what I want to highlight is that at every step of this two year journey,
+    the more interesting and important problem to solve was not technical, but a social problem.
+
+    This is a written-out version of a talk I gave at Rust in Paris 2026.
+draft: true
+time: "30 minutes"
+---
+import User from '../../components/GithubUser.astro';
+import Pr from '../../components/GithubPr.astro';
+import Issue from '../../components/GithubIssue.astro';
+
+## The design
+
+Almost two years ago, in the days after [RustNL 2024](https://2024.rustnl.org/),
+an RFC was opened by <User name="m-ou-se" /> called [Externally Implementable Functions](https://github.com/rust-lang/rfcs/pull/3632),
+which was actively being discussed.
+The idea is as follows:
+
+In Rust, the ordering of modules doesn't matter.
+As long as a function is visible enough (using `pub` qualifiers),
+any function can call any other function,
+regardless of definition order or location in the module tree.
+
+That's not the way that, for example, C works though.
+In C, the global scope is **not** order-independent, and declarations are processed top-top-bottom.
+that means that you can only call a function *after* it's declared.
+The way to work around this is by using what's called a forward declaration:
+you can declare the type of a function first, without giving a definition.
+Then, other functions can use the declaration as a proof that a definition of a certain type will exist somewhere,
+and finally the definition can be given satisfying the declaration.
+In C it is common to group such forward declarations in header files,
+but in Rust we don't need header files since the global scope is order-independent.
+
+While rust's global scope is order-independent, the crate graph is *not*, which instead must be a directed acyclic graph.
+Oops! Now we actually have the exact same problem as C does.
+You might imagine that a crate would want to "forward declare" a function, which another crate can implement.
+But in Rust we currently can't, and that's what "Externally Implementable Functions" solves, by introducing an `extern impl fn`:
+
+```rust
+// In a crate called `log`
+extern impl fn logger() -> Logger;
+```
+
+These can be implemented in another crate using
+
+```rust
+// In a dependent of `log`
+impl fn log::logger() -> Logger {
+    Logger::to_stdout().with_colors()
+}
+```
+
+As RFCs regularly do, this one too turned from a Request For Comments into Rustaceans Commenting Forever.
+Both on the RFC PR and in-person, since so many of us were together at the conference.
+Only a few days later, *another* RFC was opened, called [Externally Definable Statics](https://github.com/rust-lang/rfcs/pull/3635).
+It proposes introducing an `extern static`.
+This would be equally powerful, since a static can contain a function pointer,
+or alternatively just a struct with methods on it:
+
+```rust
+// In a crate called `log`
+extern static LOGGER: Logger;
+```
+
+Another crate can then assign to this static:
+
+```rust
+// In a dependent of `log`
+impl fn log::logger() -> Logger {
+    Logger::to_stdout().with_colors()
+}
+```
+
+When a crate defines externally implementable items, either in the form of statics of functions,
+it's kind of as if a crate exports a trait, with several associated items.
+A downstream crate has to implement that trait for compilation to succeed.
+Both of the proposals sofar even use the same keyword, `impl`.
+So, after even more discussion, a third proposal was made, in yet another RFC called [Externally Implementable Traits](https://github.com/rust-lang/rfcs/pull/3645),
+where a crate can define an `extern trait`;
+
+```rust
+// In a crate called `log`
+extern trait GlobalLogger {
+    fn logger();
+}
+```
+
+Which another crate can then implement:
+
+```rust
+extern impl log::GlobalLogger {
+    fn logger() -> Logger {
+        Logger::to_stdout().with_colors()
+    }
+}
+```
+
+## Let the bikeshedding begin
+
+Now, the first social problem to navigate was how to proceed from here!
+None of the three proposals is obviously better, with most of the differences being syntactic.
+And without an actual implementation, we were mostly bikeshedding, which wouldn't get us anywhere.
+So in the summer of 2024, to sidestep that discussion completely,
+<User name="m-ou-se" /> and I sat down, came up with a _fourth_ impelementation,
+which we immediately started implementing _without_ writing an RFC.
+
+Yes, yes, competing standards and all that.
+But design-by-committee is hard, and nobody actually knew all the parameters involved.
+Instead, by having an implementation to play around with we could have a much more meaningful discussion,
+instead of speculating about arbitrary tradeoffs.
+A year later, at RustWeek 2025 I ended up having some of those discussions with some of the people who cared about the implementation of this feature.
+Those people included, for example, <User name="ojeda" /> from the Rust for Linux project which had some specific design constraints.
+
+## A way forward
+
+If you didn't know, there are actually already two externally implementable items in Rust.
+If you've done embedded development before you'll have certainly encountered them.
+These are the panic handler, and the global allocator.
+
+Every program in Rust must have a panic handler, which gets executed when a program panics.
+`panic!()` is defined in core, but `core` doesn't necessarily know what to do when a panic happens.
+Instead, *one* crate in the crate graph must provide a panic handler to core, marked with the `#[panic_handler]` attribute.
+What `core` _does_ know however, is what the signature of the panic handler will be.
+
+So what happens is that any code that panics, will call a function with a known linker symbol.
+When rustc finds a function that's annotated with `#[panic_handler]`, it checks that the signature is correct,
+and that no other panic handler already exists.
+Then, it generates that function with that same known linker symbol.
+Finally, the linker sees the two symbols, and makes sure that the final program runs.
+
+So in a way, `core` is using a forward declaration of the panic handler.
+
+The allocator works similarly, with the `#[global_allocator]` attribute.
+This attribute actually corresponds with four individual "externally implementable functions" that also get known linker symbols:
+
+```rust
+fn __rust_alloc(size: usize, align: usize) -> *mut u8;
+fn __rust_dealloc(ptr: *mut u8, size: usize, align: usize);
+fn __rust_realloc(ptr: *mut u8, old_size: usize, align: usize, new_size: usize) -> *mut u8;
+fn __rust_alloc_zeroed(size: usize, align: usize) -> *mut u8;
+```
+
+Both the panic handler and global allocator have their own, dedicated, codepaths in the compiler.
+So the way we started implementing Externally Implementable Items (which I will from now on call EIIs),
+was by generalizing these existing codepaths.
+
+An externally implementable function, is a function signature without a body, plus an attribute that marks another that provides the body.
+In the case of the panic handler, `core` would write:
+
+```rust
+#[eii] // <- mark this signature as externally implementable
+fn panic_handler(_: &PanicInfo) -> !;
+```
+
+And now other code can write:
+
+```rust
+#[core::panic::panic_handler]
+fn my_panic_handler(_: &PanicInfo) -> ! {
+    loop {}
+}
+```
+
+What's neat about this, I think, is that it's backwards compabile with the current panic handler attribute
+(we would add `#[panic_handler]` to the prelude, i.e. imported from `core` by default).
+
+`#[eii]` would expand to two parts, a foreign function and an attribute macro:
+
+```rust
+unsafe extern "Rust" {
+    safe fn panic_handler(_: &PanicInfo) -> !;
+}
+
+macro panic_handler() { /* compiler generated */ }
+```
+
+This `macro` syntax might be unfamilliar to you.
+We might never stabilize that syntax, but inside the compiler it gives us a consistent way to define attribute macros.
+Rust allows the same name to be in scope multiple times, as long as they are in different namespaces.
+So, the fact that there's now a macro and a function with the same name is actually not a problem.
+When you call `panic_handler`, you call the foreign function, and when you write `#[panic_handler]`, you refer to the macro.
+
+To name resolve EIIs properly, there's one last step missing: name resultion has to understand that this macro and foreign function belong together somehow.
+So, the actual expansion looks more like:
+
+```rust {5}
+unsafe extern "Rust" {
+    safe fn function_panic_handler(_: &PanicInfo) -> !;
+}
+
+#[eii_macro_for(function_panic_handler)] // link the two together
+macro macro_panic_handler() { /* compiler generated */ }
+```
+
+## Shaving a yak while we're at it
+
+It turns out, that implementing `#[eii_macro_for()]` is anything but simple.
+In fact, Rust somewhat fundamentally _doesn't support_ doing name resolution inside an attribute.
+Attributes themselves can be resolved, but nothing in their contents,
+since the contents of attributes is represented as raw tokenstreams, similar to what proc macros get.
+
+In Rust, name resolution works by giving every identifier an id, called a node id.
+We then construct a hashmap that links references to definitions, identified by these ids.
+Giving every token in a tokenstream a node id turned out to be completely infeasible.
+We'd need to completely redo how attributes were represented in the compiler.
+
+So, naturally... that's what we did!
+
+I've given a talk about this project [at Eurorust](https://youtu.be/zglja1i709Q?si=pCz-PlxMk_u_sZvA) in 2025 if you're interested.
+So this attempt at avoiding RFC-bikeshedding turned into one of the larger yaks I've ever shaved.
+
+The intital PR took about a week of implementation work, and then a month of convincing various people to actually go forward with this.
+That involved finding the right reviewers for this massive change;
+figuring out in what order to merge things since a single PR was much larger than could be asked from someone to review;
+convincing people that a rewrite would actually be good, since the initial PRs actually temporarily made the situation _worse_,
+which meant promising that I wouldn't just disappear after the initial PR merged.
+
+At the time of writing, March 2026,
+we've finally [converted the parsing infrastructure](https://github.com/rust-lang/rust/issues/131229#issuecomment-2971351163) for all of rust's roughly 200 different built-in attributes over the course of 250 or so pull requests,
+created through the combined effort of more than 20 people.
+What's awesome, I think, is that this refactor was an amazing source of "good first issues", tasks that beginners could solve.
+Of those 20 people, several had never or rarely contributed to the rust compiler before.
+And through the attribute refactor, one of those (<User name="jonathanbrouwer" />) is now one of our newest compiler team members,
+starting their own projects in the rust compiler.
+I've seen other first-contributors contribute more as well, and I wouldn't be surprised if the compiler team will grow more as a result.
+
+I'm no big fan of large language models, for various reasons.
+Still, I'm sure some of these smaller issues could have been solved by an LLM.
+But clearly, that wouldn't have had the same effect here!
+Open source contribution isn't just about solving bugs.
+Naturally, people come and go at public projects like the rust project,
+and sometimes that creates problems where there's nobody around who knows how to work on some corner of the compiler.
+As a result, constantly teaching new contributors is a large part of what keeps us going,
+making sure that enough new people learn enough about various parts of the codebase to continue maintaining it.
+
+Reviewing a PR is a learning opportunity, for both the author and the reviewer.
+If the author is an LLM, this becomes entirely one-sided, and that's simply noty how we keep rust going.
+I'm much more willing to invest my time knowing that another party is learning from it.
+Maybe that's why I liked [being a teacher before I worked on rustc](http://localhost:4321/#:~:text=I%20used%20to%20teach%20computer%20science%20and%20embedded%20systems) :3
+
+## 
+
