@@ -88,6 +88,8 @@ nav {
     a {
         text-decoration: none;
         color: black;
+        min-width: 5em;
+        text-align: center;
     }
 }
 
