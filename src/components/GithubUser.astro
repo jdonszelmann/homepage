@@ -16,7 +16,7 @@ const { name, large = false } = Astro.props;
         class="gh-avatar"
         src={`https://github.com/${name}.png`}
     />
-    {name}
+    <span>{name}</span>
 </a>
 
 <style>
@@ -27,7 +27,9 @@ const { name, large = false } = Astro.props;
         vertical-align: middle;
 
         &:not(.large) {
-            margin-bottom: 0.2em;
+            span {
+                margin-bottom: 0.18em;
+            }
         }
 
         &.large {

@@ -43,7 +43,7 @@ body {
     grid-template-rows: 1fr;
     grid-template-areas: "left nav middle right";
 
-    grid-template-columns: auto 15em min(45em, 70vw) auto;
+    grid-template-columns: auto 15em min(55em, 70vw) auto;
     gap: 1em;
 
     font-family: "Fira Sans";
@@ -66,6 +66,7 @@ nav {
     grid-area: nav;
     display: flex;
     flex-direction: column;
+    justify-self: end;
 
     justify-content: start;
     align-items: center;
@@ -138,7 +139,22 @@ details {
     }
 }
 
+@media (width > 1400px) {
+    body {
+        grid-template-columns: auto 25em min(55em, 70vw) auto;
+    }
+}
+@media (width > 1200px) {
+    body {
+        grid-template-columns: auto 20em min(55em, 70vw) auto;
+    }
+}
+
+
 @media (width > 1300px) {
+    body {
+        grid-template-columns: auto 25em min(55em, 70vw) auto;
+    }
     body.wide {
         nav {
             padding-top: 1.5em;
