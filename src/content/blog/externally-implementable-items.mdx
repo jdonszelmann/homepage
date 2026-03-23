@@ -1,12 +1,12 @@
 ---
-title: "Writing the code is the easy part"
+title: "writing the code is the easy part"
 pubDate: 2026-03-16
 authors: ['jdonszelmann']
 reviewers: []
 tags: [ "rust"]
 description: |
     Over the past two years,
-    I've been involved with designig and implementing a new feature of rustc,
+    I've been involved with designing and implementing a new feature of rustc,
     called "externally implementable items".
     This is not a finished feature, though if you'd like you can try it on nightly already!
     This is the story of how externally impelmentable items were invented, implemented,
@@ -45,7 +45,7 @@ and finally the definition can be given satisfying the declaration.
 In C it is common to group such forward declarations in header files,
 but in Rust we don't need header files since the global scope is order-independent.
 
-While rust's global scope is order-independent, the crate graph is *not*, which instead must be a directed acyclic graph.
+While rust's global scope is order-independent, the crate graph is *not*, which instead must be a directed acyclic graph (DAG).
 Oops! Now we actually have the exact same problem as C does.
 You might imagine that a crate would want to "forward declare" a function, which another crate can implement.
 But in Rust we currently can't, and that's what "Externally Implementable Functions" solves, by introducing an `extern impl fn`:
@@ -55,7 +55,7 @@ But in Rust we currently can't, and that's what "Externally Implementable Functi
 extern impl fn logger() -> Logger;
 ```
 
-These can be implemented in another crate using
+These can be implemented in another crate using:
 
 ```rust
 // In a dependent of `log`
@@ -238,7 +238,7 @@ And through the attribute refactor, one of those (<User name="jonathanbrouwer" /
 starting their own projects in the rust compiler.
 I've seen other first-contributors contribute more as well, and I wouldn't be surprised if the compiler team will grow more as a result.
 
-I'm no big fan of large language models, for various reasons.
+I'm not a big fan of large language models, for various reasons.
 Still, I'm sure some of these smaller issues could have been solved by an LLM.
 But clearly, that wouldn't have had the same effect here!
 Open source contribution isn't just about solving bugs.
@@ -252,5 +252,192 @@ If the author is an LLM, this becomes entirely one-sided, and that's simply noty
 I'm much more willing to invest my time knowing that another party is learning from it.
 Maybe that's why I liked [being a teacher before I worked on rustc](http://localhost:4321/#:~:text=I%20used%20to%20teach%20computer%20science%20and%20embedded%20systems) :3
 
-## 
+## Linking it all together
+
+Externally implementable items are, fundamentally, a linker feature.
+In rust, rustc processes each crate one by one,
+passing down only a `.rmeta` file down to the next crate with metadata for crates that depend on it.
+This is why rust's crate graph has to be a DAG.
+There's no way to pass any information back *up* the graph.
+
+Rust has to deal with this at various points.
+For example, with generics, rust does what's called monomorphization.
+It re-instantiates every generic function with its type parameters, and re-codegens it.
+Since an upstream crate doesn't yet know what instatiations will exist downstream,
+it cannot do codegen for generic functions.
+Thus, one thing `.rmeta` files contains is information on how to instantiate and codegen all generic functions of a crate.
+
+EIIs are like forward declarations.
+An upstream crate has to _assume_ a downstream one provides the item,
+and worst case it will only find out whether it was provided when linking it all together.
+To avoid linker errors, we pass information down the crate graph of whether we've already seen an implementation.
+If a crate sees that two different crates provide an EII, then we error out with a nice rust error,
+avoiding the linker error.
+
+### Defaults
+
+This gets slightly trickier when you introduce EII-defaults,
+Let's use logging as an example again though; using an EII default would look like simply adding a body to the declaration:
+
+```rust
+#[eii]
+fn logger() -> Logger {
+    Logger::default()
+}
+```
+
+If the user never implements the EII, the default is used.
+This is a feature we'd need for the global allocator.
+By default, rust uses the system allocator, unless user code overrides that.
+
+What makes this harder is that there needs to be a point, at the end of compilation,
+where we decide "oh, we haven't seen an explicit implementation", and decide to compile the default function instead.
+At first I hoped this would be as easy as looking at the crate type, classifying them into "final" and "non-final".
+A crate that generates a binary is final for example, so when we're compiling a binary crate, and we haven't seen an explicit implementation yet, put the default in.
+
+Now that breaks down when you consider that there are other crate types.
+For example, what do we do for a cdylib?
+Is it final?
+We do still intend to link it to other code, but not necessarily with the rust compiler.
+So if we don't insert the default, we might not get the chance again.
+But if we do, it might cause linker errors down the line.
+
+Now this gets worse when you consider that Rust can sometimes, in _one_ go, generate *both* an `rlib` and a `cdylib`.
+It is very hard to make it such that Rust inserts symbols in only one of the two.
+It's either both, or none.
+
+### Asking the linker, nicely
+
+Now sofar, these are _technically_ solvable challenges, with more engineering time.
+But during Rust Week 2025, I sat down with the people from Rust for Linux.
+They're using rustc a little bit like a C compiler:
+Generating object files, which they then link themselves to C code from the kernel.
+Or, I think that's roughly what was going on.
+I also learned that this is a concern in other places, <User name="amanieu" /> told me google is doing things similarly?
+In fact, anytime you're using a custom external build system like bazel or buck2 that wants to be in charge of creating the the final binary, this strategy doesn't work.
+
+So our only option seems to be to resolve EII defaults when linking.
+Fortunately, almost all linkers support what's called weak linker symbols.
+Weak symbols are simply de-prioritized by the linker, and when another non-weak symbol of the same name is found it is preferred.
+This avoids duplicate definition errors, and neatly matches the behavior of defaults for EIIs.
+
+Several months later, I was talking to <User name="cramertj" />.
+She was interested in how EIIs would interact with foreign function interfaces (FFI).
+Specifically compatibility with C++.
+We concluded that it would be extremely desirable if we can guarantee that EIIs desugar to weak linker symbols.
+That way, code written in C and C++ can easily interact with EIIs, even implement them from over an FFI,
+since all the resolution actually happens when the C and Rust code are linked together.
+
+These are the kinds of discussions that make the various Rust conferences, and having an all-hands again in may, so useful.
+Furthermore, I think that these stories are actually great news.
+Where a year earlier we were bikeshedding and speculating, now we are having focussed discussions about requirements of the final implementation.
+
+## Merging the first code to main
+
+At the end of december, this version of EIIs, with weak symbols for defaults, merged into the main branch of the compiler.
+That means that it's available on nightly, just add `#![feature(extern_item_impls)]`.
+Though keep in mind that it currently only works on linux and macOS.
+The latter turned out to be a little trickier since Mach-O binaries support code for multiple targets in a single file.
+
+Now that there is a base implementation, it's also much easier for people to contribute to the project going forward.
+In fact, there's a *Tracking Issue* on the rust-lang/rust repository](https://github.com/rust-lang/rust/issues/125418) to track what still needs to happen.
+And simply by communicating the list of TODOs clearly, just like before with attributes,
+people indeed started helping out again.
+And I once again have been enjoying that thoroughly, seeing people learn to contribute to new parts of the compiler.
+
+I think that's such an important part of the rust project, that in December I restarted organising what's called the "compiler office hours".
+Because all the people that work on the compiler live spread-out all over the world, we don't end up talking to each other too much except in reviews.
+Unlike working together in an office, rust has no hallway where people talk about what they've been busy with today.
+
+So now we have a call, twice a week, if with whoever can make it.
+All kinds of people join, some I had never talked to before. Not the same people every week, but that's what makes it fun.
+Every time we meet, I learn a tiny bit of what people are up to, the things that people have been proud of working on, or are completely stuck on.
+Bits of progress, related to codegen backends, LTO, miri, reflection, the never type, automatic differentiation, pattern matching, rustdoc, or just Ben's pepper plants.
+Several of the discussions about how to continue with EIIs as a feature, have taken place here.
+
+### Windows
+
+For example, I've been chatting with <User name="bjorn3" /> somewhat regularly.
+His knowledge about compiling for windows, and linkers and code generation in general has been absolutely invaluable.
+One of the issues that's still open with EIIs is how we handle windows
+On Windows, weak symbols _are_ supported, but they work slightly differently than on other platforms.
+
+Weak symbols have to be named explicitly in flags, passed to the linker.
+Giving those is mostly doable, since windows allows you to pass linker flags in the headers of binaries.
+Except, LLVM can apparently sometimes further mangle the names of symbols.
+And the linker flag must exactly match the final, changed, name that LLVM will generate.
+So we will likely need to make Rust do the same mangling, and predict those symbol names.
+
+Unfortunately, we will have to work this out before we can switch the global allocator to use EIIs.
+Though I might try and convert the panic handler to an EII soon ish.
+The big difference with the panic handler is that it doesn't require any defaults.
+
+### Dynamic linking
+
+Office hours is also where we first discussed dynamic linking.
+Rust's story around dynamic linking isn't great.
+In general, Rust can provide very few guarantees about the code that is dynamically linked in.
+In theory, some of that can be mitigated as long as the dynamic linking happens at program startup (when the program is loaded into memory).
+But especially with `dlopen`, it's easy to create unsoundness.
+
+In fact, setting Rust's global allocator is in fact currently unsound in combination with `dlopen`.
+It becomes possible to allocate an object in one allocator using `Box::new`,
+pass it to the `dlopen`ed dynamic library,
+where it will be deallocated on a different allocator.
+
+However, it came up, in the office hours, that it would be cool if we could use EIIs for rustc's query system.
+This is the abstraction layer that allows rust to do incremental compilation.
+And if EIIs don't support dynamic linking, that would be a problem, because the rust compiler itself _is_ a dynamically linked library.
+Try it yourself!
+
+```bash
+du -h ~/.rustup/toolchains/<toolchain-version>/bin/rustc
+```
+
+For me returns `644K`, which is way too small to be an entire compiler.
+But if you then run `ldd` on it:
+
+```bash
+ldd ~/.rustup/toolchains/1.92-x86_64-unknown-linux-gnu/bin/rustc
+	linux-vdso.so.1 (0x00007f9e05e1d000)
+	librustc_driver-d31eb41759495bb2.so => /home/jana/.rustup/toolchains/1.92-x86_64-unknown-linux-gnu/bin/../lib/librustc_driver-d31eb41759495bb2.so (0x00007f9dfd800000)
+	libdl.so.2 => /nix/store/l0l2ll1lmylczj1ihqn351af2kyp5x19-glibc-2.42-51/lib/libdl.so.2 (0x00007f9e05e10000)
+	librt.so.1 => /nix/store/l0l2ll1lmylczj1ihqn351af2kyp5x19-glibc-2.42-51/lib/librt.so.1 (0x00007f9e05e0b000)
+	libpthread.so.0 => /nix/store/l0l2ll1lmylczj1ihqn351af2kyp5x19-glibc-2.42-51/lib/libpthread.so.0 (0x00007f9e05e06000)
+	libc.so.6 => /nix/store/l0l2ll1lmylczj1ihqn351af2kyp5x19-glibc-2.42-51/lib/libc.so.6 (0x00007f9dfd400000)
+	libLLVM.so.21.1-rust-1.92.0-stable => /home/jana/.rustup/toolchains/1.92-x86_64-unknown-linux-gnu/bin/../lib/../lib/libLLVM.so.21.1-rust-1.92.0-stable (0x00007f9df3400000)
+	libgcc_s.so.1 => /nix/store/r7vdyf8pwlqsgd5ydak9fmq3q1i5nm3m-xgcc-15.2.0-libgcc/lib/libgcc_s.so.1 (0x00007f9e05dd7000)
+	libm.so.6 => /nix/store/l0l2ll1lmylczj1ihqn351af2kyp5x19-glibc-2.42-51/lib/libm.so.6 (0x00007f9e05cdf000)
+	/nix/store/wb6rhpznjfczwlwx23zmdrrw74bayxw4-glibc-2.42-47/lib/ld-linux-x86-64.so.2 => /nix/store/l0l2ll1lmylczj1ihqn351af2kyp5x19-glibc-2.42-51/lib64/ld-linux-x86-64.so.2 (0x00007f9e05e1f000)
+	libz.so.1 => /nix/store/ri9paa3mri4kqakljak8ldvbcp7lpmif-zlib-1.3.1/lib/libz.so.1 (0x00007f9e05cc1000)
+```
+
+The second entry is `librustc_driver.so`, which is 150MiB large.
+*That* is where the compiler lives.
+Rust works this way so `clippy` and `rustfmt`, can also call into the compiler.
+In addition to `librustc_driver.so`, Rust uses `dlopen` to dynamically open codegen backends like cranelift, or gcc.
+So, if EIIs didn't support dynamic linking, that would _in general_ be fine-ish, but we wouldn't be able to use EIIs in the compiler itself.
+
+And office hours was exactly the kind of space where we could chat about various solutions to this.
+Together with <User name="jyn514" />, we thought of an approach where we optionally desugar EIIs to thread-locals,
+and resolve either the default or explicit implementation at runtime.
+This would trade some amount of performance for full support of dynamic linking, including `dlopen`!
+
+## Going forward
+
+In the end, I must admit that there is a chance we will never even stabilize EIIs.
+I would be fine with that, actually.
+I'm certain we'll use them in the standard library and compiler at some point,
+since they unify the codepaths of the panic handler and the allocator.
+We might make it easier to change the behavior on specific kinds of panics.
+Like integer overflow.
+But we'll have to decide, after an RFC, whether this is something we want users to interact with directly.
+
+This blog post isn't really about that though.
+It's not just about the technical challenges, though maybe you found some of the things I mentioned interesting.
+It's also to give you an example, of a relatively small feature, and how many people are involved with that.
+Every step of the way.
+It's about how many people, from inside and outside the rust project,
+have all the various bits of knowledge required to come to a single implementation.
+And how important it therefore is that we maintain this community, where we keep learning from eachother, from human to human.
 

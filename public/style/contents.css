@@ -1,5 +1,9 @@
 main {
-    h1, h2, h3, h4 {
+
+    h1,
+    h2,
+    h3,
+    h4 {
         margin-top: 6mm;
         margin-bottom: 2mm;
     }
@@ -12,13 +16,17 @@ main {
 
         font-size: 4mm;
         text-decoration-thickness: 1px;
-        line-height: 4mm;
 
         code {
             display: inline;
             font-size: inherit;
             color: inherit;
         }
+    }
+
+    p a {
+        font-size: 4mm;
+        line-height: 4mm;
     }
 
     p:empty {
@@ -44,6 +52,11 @@ main {
         .ec-line .gutter .ln {
             padding-inline: 0.5ch;
         }
+    }
+
+    .expressive-code {
+        margin-bottom: 0.5em;
+        margin-top: 0em;
     }
 
     blockquote {
