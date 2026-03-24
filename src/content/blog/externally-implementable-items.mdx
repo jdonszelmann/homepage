@@ -1,5 +1,5 @@
 ---
-title: "writing the code is the easy part"
+title: "It's the people that matter"
 pubDate: 2026-03-16
 authors: ['jdonszelmann']
 reviewers: []
@@ -9,11 +9,15 @@ description: |
     I've been involved with designing and implementing a new feature of rustc,
     called "externally implementable items".
     This is not a finished feature, though if you'd like you can try it on nightly already!
-    This is the story of how externally impelmentable items were invented, implemented,
+    This is the story of how externally implementable items were invented, implemented,
     and how some day it might be stabilized.
     I'm sure that is interesting to some of those who read this.
-    Though what I want to highlight is that at every step of this two year journey,
-    the more interesting and important problem to solve was not technical, but a social problem.
+
+    That's not what this blog post is about.
+    Instead, I'm using it as an example, to show you how the Rust project operates.
+    Of how many people are involved with a change, how they learn from each other, how I've learned so much from them myself.
+    An example of how important _social_ interaction is to open source.
+    Much more than writing the code itself.
 
     This is a written-out version of a talk I gave at Rust in Paris 2026.
 draft: true
@@ -25,8 +29,8 @@ import Issue from '../../components/GithubIssue.astro';
 
 ## The design
 
-Almost two years ago, in the days after [RustNL 2024](https://2024.rustnl.org/),
-an RFC was opened by <User name="m-ou-se" /> called [Externally Implementable Functions](https://github.com/rust-lang/rfcs/pull/3632),
+This story starts, almost two years ago, in the days after [RustNL 2024](https://2024.rustnl.org/).
+An RFC was opened by <User name="m-ou-se" /> called [Externally Implementable Functions](https://github.com/rust-lang/rfcs/pull/3632),
 which was actively being discussed.
 The idea is as follows:
 
@@ -37,7 +41,7 @@ regardless of definition order or location in the module tree.
 
 That's not the way that, for example, C works though.
 In C, the global scope is **not** order-independent, and declarations are processed top-top-bottom.
-that means that you can only call a function *after* it's declared.
+That means that you can only call a function *after* it's declared.
 The way to work around this is by using what's called a forward declaration:
 you can declare the type of a function first, without giving a definition.
 Then, other functions can use the declaration as a proof that a definition of a certain type will exist somewhere,
@@ -64,12 +68,13 @@ impl fn log::logger() -> Logger {
 }
 ```
 
-As RFCs regularly do, this one too turned from a Request For Comments into Rustaceans Commenting Forever.
+This proposal caused a lot of opinions.
+As RFCs sometimes tend do, what started as a Request For Comments turned into Rustaceans Commenting Forever.
 Both on the RFC PR and in-person, since so many of us were together at the conference.
-Only a few days later, *another* RFC was opened, called [Externally Definable Statics](https://github.com/rust-lang/rfcs/pull/3635).
+Only a few days later, this discussion led to *another* RFC to be opened, called [Externally Definable Statics](https://github.com/rust-lang/rfcs/pull/3635).
 It proposes introducing an `extern static`.
 This would be equally powerful, since a static can contain a function pointer,
-or alternatively just a struct with methods on it:
+or alternatively just a `struct` with methods on it:
 
 ```rust
 // In a crate called `log`
@@ -85,10 +90,10 @@ impl fn log::logger() -> Logger {
 }
 ```
 
-When a crate defines externally implementable items, either in the form of statics of functions,
-it's kind of as if a crate exports a trait, with several associated items.
+When a crate defines externally implementable items, either in the form of statics or functions,
+you could see this as if a crate exports a trait, with several associated items.
 A downstream crate has to implement that trait for compilation to succeed.
-Both of the proposals sofar even use the same keyword, `impl`.
+Both of the proposals so far even use the same keyword, `impl`.
 So, after even more discussion, a third proposal was made, in yet another RFC called [Externally Implementable Traits](https://github.com/rust-lang/rfcs/pull/3645),
 where a crate can define an `extern trait`;
 
@@ -109,21 +114,20 @@ extern impl log::GlobalLogger {
 }
 ```
 
-## Let the bikeshedding begin
+What this gains us is that it allows externally implementable items to be grouped together.
 
-Now, the first social problem to navigate was how to proceed from here!
+### Avoiding shedding bikes
+
+At this point, I think the discussion saturated a little.
 None of the three proposals is obviously better, with most of the differences being syntactic.
 And without an actual implementation, we were mostly bikeshedding, which wouldn't get us anywhere.
 So in the summer of 2024, to sidestep that discussion completely,
-<User name="m-ou-se" /> and I sat down, came up with a _fourth_ impelementation,
-which we immediately started implementing _without_ writing an RFC.
-
+<User name="m-ou-se" /> and I sat down, came up with a _fourth_ implementation.
 Yes, yes, competing standards and all that.
-But design-by-committee is hard, and nobody actually knew all the parameters involved.
-Instead, by having an implementation to play around with we could have a much more meaningful discussion,
-instead of speculating about arbitrary tradeoffs.
-A year later, at RustWeek 2025 I ended up having some of those discussions with some of the people who cared about the implementation of this feature.
-Those people included, for example, <User name="ojeda" /> from the Rust for Linux project which had some specific design constraints.
+
+But I don't think requesting more comments at that point were helpful.
+If we had an implementation to play around with we could have a much more meaningful discussion,
+instead of speculating about arbitrary trade-offs.
 
 ## A way forward
 
@@ -131,12 +135,13 @@ If you didn't know, there are actually already two externally implementable item
 If you've done embedded development before you'll have certainly encountered them.
 These are the panic handler, and the global allocator.
 
-Every program in Rust must have a panic handler, which gets executed when a program panics.
+Every program in Rust must have a panic handler, which is the function that gets executed when a program panics.
 `panic!()` is defined in core, but `core` doesn't necessarily know what to do when a panic happens.
-Instead, *one* crate in the crate graph must provide a panic handler to core, marked with the `#[panic_handler]` attribute.
-What `core` _does_ know however, is what the signature of the panic handler will be.
+Instead, **one** crate in the crate graph must provide a panic handler to core, marked with the `#[panic_handler]` attribute.
+If you've done embedded programming you may have seen this, though usually the implementation of the panic handler is given by `std`.
+There's one thing that `core` _does_ know however, which is the function signature that the panic handler will have.
 
-So what happens is that any code that panics, will call a function with a known linker symbol.
+So what happens is that any code that panics, will call a function with predetermined linker symbol.
 When rustc finds a function that's annotated with `#[panic_handler]`, it checks that the signature is correct,
 and that no other panic handler already exists.
 Then, it generates that function with that same known linker symbol.
@@ -154,11 +159,19 @@ fn __rust_realloc(ptr: *mut u8, old_size: usize, align: usize, new_size: usize) 
 fn __rust_alloc_zeroed(size: usize, align: usize) -> *mut u8;
 ```
 
-Both the panic handler and global allocator have their own, dedicated, codepaths in the compiler.
+Both the panic handler and global allocator have their own, dedicated, code paths in the compiler.
 So the way we started implementing Externally Implementable Items (which I will from now on call EIIs),
-was by generalizing these existing codepaths.
+was by generalizing these existing two code paths.
 
-An externally implementable function, is a function signature without a body, plus an attribute that marks another that provides the body.
+What this gains us is twofold: we have less complexity spread throughout the compiler,
+and the declaration of these EIIs becomes explicit in `core`.
+Instead of being compiler magic, we can document the signature, refer to it by name.
+That last point is important actually, by making EIIs participate in name resolution we can properly mangle their symbol names.
+They no longer have to be predetermined.
+
+### The design
+
+An externally implementable function, is a function signature without a body, plus an attribute that marks another function that provides the body.
 In the case of the panic handler, `core` would write:
 
 ```rust
@@ -175,10 +188,10 @@ fn my_panic_handler(_: &PanicInfo) -> ! {
 }
 ```
 
-What's neat about this, I think, is that it's backwards compabile with the current panic handler attribute
+What's neat about this, I think, is that it's backwards compatible with the existing panic handler attribute
 (we would add `#[panic_handler]` to the prelude, i.e. imported from `core` by default).
 
-`#[eii]` would expand to two parts, a foreign function and an attribute macro:
+`#[eii]` itself expands into two parts, a foreign function and an attribute macro:
 
 ```rust
 unsafe extern "Rust" {
@@ -188,13 +201,28 @@ unsafe extern "Rust" {
 macro panic_handler() { /* compiler generated */ }
 ```
 
-This `macro` syntax might be unfamilliar to you.
+This `macro` syntax might be unfamiliar to you.
+It's an unstable alternative to `macro_rules!`, that has more sane name resolution behavior.
+That's nice since it's automatically generated by the `#[eii]` attribute.
+We use this syntax in some places in `core` and `std` as well, though there's a chance it will never be stabilized.
 We might never stabilize that syntax, but inside the compiler it gives us a consistent way to define attribute macros.
+
 Rust allows the same name to be in scope multiple times, as long as they are in different namespaces.
 So, the fact that there's now a macro and a function with the same name is actually not a problem.
 When you call `panic_handler`, you call the foreign function, and when you write `#[panic_handler]`, you refer to the macro.
+If you want to explicitly avoid the ambiguity though, we also support `#[eii(macro_name)]` to explicitly set the macro's name.
+For example:
 
-To name resolve EIIs properly, there's one last step missing: name resultion has to understand that this macro and foreign function belong together somehow.
+```rust
+#[eii(panic_handler)] // <-- still generates the `#[panic_handler]` attribute
+fn call_to_panic(_: &PanicInfo) -> !;
+```
+
+This also makes it possible to re-export the macro and not the function, or the other way around.
+
+## Shaving a yak while we're at it
+
+To name resolve EIIs properly, there's one last step missing: name resolution has to understand that this macro and foreign function belong together somehow.
 So, the actual expansion looks more like:
 
 ```rust {5}
@@ -205,8 +233,6 @@ unsafe extern "Rust" {
 #[eii_macro_for(function_panic_handler)] // link the two together
 macro macro_panic_handler() { /* compiler generated */ }
 ```
-
-## Shaving a yak while we're at it
 
 It turns out, that implementing `#[eii_macro_for()]` is anything but simple.
 In fact, Rust somewhat fundamentally _doesn't support_ doing name resolution inside an attribute.
@@ -220,10 +246,10 @@ We'd need to completely redo how attributes were represented in the compiler.
 
 So, naturally... that's what we did!
 
+This attempt at avoiding RFC-bikeshedding turned into one of the larger yaks I've ever shaved.
 I've given a talk about this project [at Eurorust](https://youtu.be/zglja1i709Q?si=pCz-PlxMk_u_sZvA) in 2025 if you're interested.
-So this attempt at avoiding RFC-bikeshedding turned into one of the larger yaks I've ever shaved.
 
-The intital PR took about a week of implementation work, and then a month of convincing various people to actually go forward with this.
+The initial PR took about a week of implementation work, and then a month of convincing various people to actually go forward with this.
 That involved finding the right reviewers for this massive change;
 figuring out in what order to merge things since a single PR was much larger than could be asked from someone to review;
 convincing people that a rewrite would actually be good, since the initial PRs actually temporarily made the situation _worse_,
@@ -243,13 +269,26 @@ Still, I'm sure some of these smaller issues could have been solved by an LLM.
 But clearly, that wouldn't have had the same effect here!
 Open source contribution isn't just about solving bugs.
 Naturally, people come and go at public projects like the rust project,
-and sometimes that creates problems where there's nobody around who knows how to work on some corner of the compiler.
-As a result, constantly teaching new contributors is a large part of what keeps us going,
-making sure that enough new people learn enough about various parts of the codebase to continue maintaining it.
+and sometimes that creates problems where there's sometimes nobody around who knows how to work on some corner of the compiler.
+Therefore, to keep maintenance feasible, it's important that new people are constantly being taught about how to work on the compiler.
 
-Reviewing a PR is a learning opportunity, for both the author and the reviewer.
-If the author is an LLM, this becomes entirely one-sided, and that's simply noty how we keep rust going.
-I'm much more willing to invest my time knowing that another party is learning from it.
+One of the moments where this happens is in pull request review,
+which I see as a learning opportunity for both the author and the reviewer.
+I really enjoyed being added to the review rotation of rustc, because it meant that I got to see some parts of the compiler I had never seen before.
+If the author is an LLM, or in large parts defers to LLMs, this becomes entirely one-sided.
+As a reviewer, you're not teaching a person, you're talking to an LLM.
+And it's the other way around too. If review often defers to an LLM, they don't learn either.
+
+And sure, it's different when an author literally defers all input to an LLM than when they just use it as a tool.
+Maybe to generate some boilerplate code, or to search and summarize something.
+But I truly believe that if we generate all our boilerplate code with an LLM, we stop investing in tools to reduce _having_ to type boilerplate.
+And time and time again, it's been shown that you learn much more from summarizing yourself.
+That's true in general, but was also recently shown by the [TU Eindhoven in the context of large language models](https://www.tue.nl/en/our-university/library/library-news/24-02-2026-are-ai-generated-summaries-suitable-for-studying-and-research).
+
+I hope this story shows you that we can't operate like that.
+That's now how we can keep maintaining the Rust project, or any open source project for that matter.
+If we stop learning from each other, the world grinds to a halt.
+And that's what makes me more willing to invest my time knowing that another party is learning from it.
 Maybe that's why I liked [being a teacher before I worked on rustc](http://localhost:4321/#:~:text=I%20used%20to%20teach%20computer%20science%20and%20embedded%20systems) :3
 
 ## Linking it all together
@@ -263,7 +302,7 @@ There's no way to pass any information back *up* the graph.
 Rust has to deal with this at various points.
 For example, with generics, rust does what's called monomorphization.
 It re-instantiates every generic function with its type parameters, and re-codegens it.
-Since an upstream crate doesn't yet know what instatiations will exist downstream,
+Since an upstream crate doesn't yet know what instantiations will exist downstream,
 it cannot do codegen for generic functions.
 Thus, one thing `.rmeta` files contains is information on how to instantiate and codegen all generic functions of a crate.
 
@@ -296,7 +335,7 @@ At first I hoped this would be as easy as looking at the crate type, classifying
 A crate that generates a binary is final for example, so when we're compiling a binary crate, and we haven't seen an explicit implementation yet, put the default in.
 
 Now that breaks down when you consider that there are other crate types.
-For example, what do we do for a cdylib?
+For example, what do we do for a `cdylib`?
 Is it final?
 We do still intend to link it to other code, but not necessarily with the rust compiler.
 So if we don't insert the default, we might not get the chance again.
@@ -308,8 +347,8 @@ It's either both, or none.
 
 ### Asking the linker, nicely
 
-Now sofar, these are _technically_ solvable challenges, with more engineering time.
-But during Rust Week 2025, I sat down with the people from Rust for Linux.
+Now, so far, these are _technically_ solvable challenges, with more engineering time.
+But during Rust Week 2025, I sat down with <User name="ojeda" />, from Rust for Linux.
 They're using rustc a little bit like a C compiler:
 Generating object files, which they then link themselves to C code from the kernel.
 Or, I think that's roughly what was going on.
@@ -332,7 +371,7 @@ These are the kinds of discussions that make the various Rust conferences, and h
 Furthermore, I think that these stories are actually great news.
 Where a year earlier we were bikeshedding and speculating, now we are having focussed discussions about requirements of the final implementation.
 
-## Merging the first code to main
+## The road to stabilization
 
 At the end of december, this version of EIIs, with weak symbols for defaults, merged into the main branch of the compiler.
 That means that it's available on nightly, just add `#![feature(extern_item_impls)]`.
@@ -349,7 +388,7 @@ I think that's such an important part of the rust project, that in December I re
 Because all the people that work on the compiler live spread-out all over the world, we don't end up talking to each other too much except in reviews.
 Unlike working together in an office, rust has no hallway where people talk about what they've been busy with today.
 
-So now we have a call, twice a week, if with whoever can make it.
+So now we have a call, twice a week, with whoever can make it.
 All kinds of people join, some I had never talked to before. Not the same people every week, but that's what makes it fun.
 Every time we meet, I learn a tiny bit of what people are up to, the things that people have been proud of working on, or are completely stuck on.
 Bits of progress, related to codegen backends, LTO, miri, reflection, the never type, automatic differentiation, pattern matching, rustdoc, or just Ben's pepper plants.
@@ -369,7 +408,7 @@ And the linker flag must exactly match the final, changed, name that LLVM will g
 So we will likely need to make Rust do the same mangling, and predict those symbol names.
 
 Unfortunately, we will have to work this out before we can switch the global allocator to use EIIs.
-Though I might try and convert the panic handler to an EII soon ish.
+Though I might try and convert the panic handler to an EII soon-ish.
 The big difference with the panic handler is that it doesn't require any defaults.
 
 ### Dynamic linking
@@ -428,16 +467,16 @@ This would trade some amount of performance for full support of dynamic linking,
 In the end, I must admit that there is a chance we will never even stabilize EIIs.
 I would be fine with that, actually.
 I'm certain we'll use them in the standard library and compiler at some point,
-since they unify the codepaths of the panic handler and the allocator.
+since they unify the code paths of the panic handler and the allocator.
 We might make it easier to change the behavior on specific kinds of panics.
 Like integer overflow.
 But we'll have to decide, after an RFC, whether this is something we want users to interact with directly.
 
-This blog post isn't really about that though.
+But as I said in the intro, this blog post isn't really about that.
 It's not just about the technical challenges, though maybe you found some of the things I mentioned interesting.
 It's also to give you an example, of a relatively small feature, and how many people are involved with that.
 Every step of the way.
 It's about how many people, from inside and outside the rust project,
 have all the various bits of knowledge required to come to a single implementation.
-And how important it therefore is that we maintain this community, where we keep learning from eachother, from human to human.
+And how important it therefore is that we maintain this community, where we keep learning from each other, from human to human.
 
