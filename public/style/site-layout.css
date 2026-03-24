@@ -2,24 +2,29 @@
     font-family: "JBM";
     src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
 }
+
 @font-face {
     font-family: "NF";
     src: url("/fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
 }
+
 @font-face {
     font-family: "Noto Sans Mono";
     src: url("/fonts/NotoSansMono[wdth\,wght].ttf") format("truetype");
 }
+
 @font-face {
     font-family: "Fira Sans";
     src: url("/fonts/FiraSans-Regular.otf") format("opentype");
     font-weight: normal;
 }
+
 @font-face {
     font-family: "Fira Sans";
     src: url("/fonts/FiraSans-Bold.otf") format("opentype");
     font-weight: bold;
 }
+
 @font-face {
     font-family: "Fira Sans Mono";
     src: url("/fonts/FiraMono-Medium.otf") format("opentype");
@@ -41,15 +46,15 @@ body {
 body {
     display: grid;
     grid-template-rows: 1fr;
-    grid-template-areas: "left nav middle right";
+    grid-template-areas: "left nav middle empty right";
 
-    grid-template-columns: auto 15em min(55em, 70vw) auto;
+    grid-template-columns: auto 15em min(55em, 70vw) 0em auto;
     gap: 1em;
 
     font-family: "Fira Sans";
 
     &.wide {
-        grid-template-columns: auto 15em min(65em, 90vw) auto;
+        grid-template-columns: auto 15em min(65em, 90vw) 0em auto;
     }
 }
 
@@ -70,6 +75,9 @@ nav {
 
     justify-content: start;
     align-items: center;
+
+
+    align-self: start;
 
     gap: 1em;
 
@@ -114,12 +122,13 @@ details {
     ::marker {
         font-size: large;
     }
+
     summary {
         cursor: pointer;
     }
 }
 
-@media (width <= 1300px) {
+@media (width <=1300px) {
     body.wide {
         display: flex;
         flex-direction: column;
@@ -135,28 +144,24 @@ details {
         .only-narrow {
             display: block;
         }
+
         .only-wide {
             display: none;
         }
     }
 }
 
-@media (width > 1400px) {
-    body {
-        grid-template-columns: auto 25em min(55em, 70vw) auto;
-    }
-}
 @media (width > 1200px) {
     body {
-        grid-template-columns: auto 20em min(55em, 70vw) auto;
+        grid-template-columns: auto 15em min(55em, 70vw) 0em auto;
     }
 }
-
 
 @media (width > 1300px) {
     body {
-        grid-template-columns: auto 25em min(55em, 70vw) auto;
+        grid-template-columns: auto 15em min(55em, 70vw) 0em auto;
     }
+
     body.wide {
         nav {
             padding-top: 1.5em;
@@ -164,19 +169,29 @@ details {
             position: sticky;
             top: 0;
         }
+
         .toc {
             display: contents;
         }
+
         .only-narrow {
             display: none;
         }
+
         .only-wide {
             display: block;
         }
     }
 }
 
-@media (width <= 900px) {
+@media (width > 1400px) {
+    body {
+        grid-template-columns: auto 25em min(55em, 70vw) 10em auto;
+    }
+}
+
+
+@media (width <=900px) {
     body {
         display: flex;
         flex-direction: column;
@@ -191,10 +206,12 @@ details {
     .only-narrow {
         display: block;
     }
+
     .only-wide {
         display: none;
     }
 }
+
 @media (width > 900px) {
     body:not(.wide) {
         nav {
@@ -203,12 +220,15 @@ details {
             position: sticky;
             top: 0;
         }
+
         .toc {
             display: contents;
         }
+
         .only-narrow {
             display: none;
         }
+
         .only-wide {
             display: block;
         }
