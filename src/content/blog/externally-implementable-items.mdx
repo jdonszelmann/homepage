@@ -137,7 +137,16 @@ These are the panic handler, and the global allocator.
 
 Every program in Rust must have a panic handler, which is the function that gets executed when a program panics.
 `panic!()` is defined in core, but `core` doesn't necessarily know what to do when a panic happens.
-Instead, **one** crate in the crate graph must provide a panic handler to core, marked with the `#[panic_handler]` attribute.
+Instead, **one** crate in the crate graph must provide a panic handler to core, marked with the `#[panic_handler]` attribute, like this:
+
+```rust
+#[panic_handler]
+fn my_panic_handler(pi: &PanicInfo) -> ! {
+    loop {}
+}
+```
+
+
 If you've done embedded programming you may have seen this, though usually the implementation of the panic handler is given by `std`.
 There's one thing that `core` _does_ know however, which is the function signature that the panic handler will have.
 
@@ -304,7 +313,7 @@ For example, with generics, rust does what's called monomorphization.
 It re-instantiates every generic function with its type parameters, and re-codegens it.
 Since an upstream crate doesn't yet know what instantiations will exist downstream,
 it cannot do codegen for generic functions.
-Thus, one thing `.rmeta` files contains is information on how to instantiate and codegen all generic functions of a crate.
+Thus, one thing `.rmeta` files contain is information on how to instantiate and codegen all generic functions of a crate.
 
 EIIs are like forward declarations.
 An upstream crate has to _assume_ a downstream one provides the item,
