@@ -27,7 +27,7 @@ import User from '../../components/GithubUser.astro';
 import Pr from '../../components/GithubPr.astro';
 import Issue from '../../components/GithubIssue.astro';
 
-## The design
+# The problem
 
 This story starts, almost two years ago, in the days after [RustNL 2024](https://2024.rustnl.org/).
 An RFC was opened by <User name="m-ou-se" /> called [Externally Implementable Functions](https://github.com/rust-lang/rfcs/pull/3632),
@@ -116,7 +116,7 @@ extern impl log::GlobalLogger {
 
 What this gains us is that it allows externally implementable items to be grouped together.
 
-### Avoiding shedding bikes
+## Avoiding shedding bikes
 
 At this point, I think the discussion saturated a little.
 None of the three proposals is obviously better, with most of the differences being syntactic.
@@ -129,7 +129,7 @@ But I don't think requesting more comments at that point were helpful.
 If we had an implementation to play around with we could have a much more meaningful discussion,
 instead of speculating about arbitrary trade-offs.
 
-## The 4th design
+# Going forward with option 4
 
 If you didn't know, there are actually already two externally implementable items in Rust.
 If you've done embedded development before you'll have certainly encountered them.
@@ -169,7 +169,7 @@ Instead of being compiler magic, we can document the signature, refer to it by n
 That last point is important actually, by making EIIs participate in name resolution we can properly mangle their symbol names.
 They no longer have to be predetermined.
 
-### The design
+## The design
 
 An externally implementable function, is a function signature without a body, plus an attribute that marks another function that provides the body.
 In the case of the panic handler, `core` would write:
@@ -220,7 +220,7 @@ fn call_to_panic(_: &PanicInfo) -> !;
 
 This also makes it possible to re-export the macro and not the function, or the other way around.
 
-## Shaving a yak while we're at it
+# Shaving a yak while we're at it
 
 To name resolve EIIs properly, there's one last step missing: name resolution has to understand that this macro and foreign function belong together somehow.
 So, the actual expansion looks more like:
@@ -291,7 +291,7 @@ If we stop learning from each other, the world grinds to a halt.
 And that's what makes me more willing to invest my time knowing that another party is learning from it.
 Maybe that's why I liked [being a teacher before I worked on rustc](http://localhost:4321/#:~:text=I%20used%20to%20teach%20computer%20science%20and%20embedded%20systems) :3
 
-## Linking it all together
+# Linking it all together
 
 Externally implementable items are, fundamentally, a linker feature.
 In rust, rustc processes each crate one by one,
@@ -313,7 +313,7 @@ To avoid linker errors, we pass information down the crate graph of whether we'v
 If a crate sees that two different crates provide an EII, then we error out with a nice rust error,
 avoiding the linker error.
 
-### Defaults
+## Defaults
 
 This gets slightly trickier when you introduce EII-defaults,
 Let's use logging as an example again though; using an EII default would look like simply adding a body to the declaration:
@@ -371,7 +371,7 @@ These are the kinds of discussions that make the various Rust conferences, and h
 Furthermore, I think that these stories are actually great news.
 Where a year earlier we were bikeshedding and speculating, now we are having focussed discussions about requirements of the final implementation.
 
-## The road to stabilization
+# The road to stabilization
 
 At the end of december, this version of EIIs, with weak symbols for defaults, merged into the main branch of the compiler.
 That means that it's available on nightly, just add `#![feature(extern_item_impls)]`.
@@ -394,7 +394,7 @@ Every time we meet, I learn a tiny bit of what people are up to, the things that
 Bits of progress, related to codegen backends, LTO, miri, reflection, the never type, automatic differentiation, pattern matching, rustdoc, or just Ben's pepper plants.
 Several of the discussions about how to continue with EIIs as a feature, have taken place here.
 
-### Windows
+## Windows
 
 For example, I've been chatting with <User name="bjorn3" /> somewhat regularly.
 His knowledge about compiling for windows, and linkers and code generation in general has been absolutely invaluable.
@@ -411,7 +411,7 @@ Unfortunately, we will have to work this out before we can switch the global all
 Though I might try and convert the panic handler to an EII soon-ish.
 The big difference with the panic handler is that it doesn't require any defaults.
 
-### Dynamic linking
+## Dynamic linking
 
 Office hours is also where we first discussed dynamic linking.
 Rust's story around dynamic linking isn't great.
@@ -462,7 +462,7 @@ Together with <User name="jyn514" />, we thought of an approach where we optiona
 and resolve either the default or explicit implementation at runtime.
 This would trade some amount of performance for full support of dynamic linking, including `dlopen`!
 
-## Going forward
+# Going forward
 
 In the end, I must admit that there is a chance we will never even stabilize EIIs.
 I would be fine with that, actually.
