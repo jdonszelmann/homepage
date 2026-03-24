@@ -373,13 +373,13 @@ Where a year earlier we were bikeshedding and speculating, now we are having foc
 
 # The road to stabilization
 
-At the end of december, this version of EIIs, with weak symbols for defaults, merged into the main branch of the compiler.
+At the end of December, this version of EIIs, with weak symbols for defaults, merged into the main branch of the compiler.
 That means that it's available on nightly, just add `#![feature(extern_item_impls)]`.
 Though keep in mind that it currently only works on linux and macOS.
 The latter turned out to be a little trickier since Mach-O binaries support code for multiple targets in a single file.
 
 Now that there is a base implementation, it's also much easier for people to contribute to the project going forward.
-In fact, there's a *Tracking Issue* on the rust-lang/rust repository](https://github.com/rust-lang/rust/issues/125418) to track what still needs to happen.
+In fact, there's a [*Tracking Issue* on the rust-lang/rust repository](https://github.com/rust-lang/rust/issues/125418) to track what still needs to happen.
 And simply by communicating the list of TODOs clearly, just like before with attributes,
 people indeed started helping out again.
 And I once again have been enjoying that thoroughly, seeing people learn to contribute to new parts of the compiler.
