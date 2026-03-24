@@ -38,6 +38,17 @@ In Rust, the ordering of modules doesn't matter.
 As long as a function is visible enough (using `pub` qualifiers),
 any function can call any other function,
 regardless of definition order or location in the module tree.
+Though it's probably not a great idea to call into this cide, the following code _does_ compiles in rust:
+
+```rust
+fn foo() {
+    bar();
+}
+
+fn bar() {
+    foo();
+}
+```
 
 That's not the way that, for example, C works though.
 In C, the global scope is **not** order-independent, and declarations are processed top-top-bottom.
@@ -46,6 +57,23 @@ The way to work around this is by using what's called a forward declaration:
 you can declare the type of a function first, without giving a definition.
 Then, other functions can use the declaration as a proof that a definition of a certain type will exist somewhere,
 and finally the definition can be given satisfying the declaration.
+
+In C, you'd have to write the following to achieve something similar to the earlier Rust example:
+
+```c
+// forward declaration, no body
+void bar();
+
+void foo() {
+    bar(); // use the forward declaration
+}
+
+// definition, with a body
+void bar() {
+    foo();
+}
+```
+
 In C it is common to group such forward declarations in header files,
 but in Rust we don't need header files since the global scope is order-independent.
 
@@ -197,7 +225,7 @@ fn my_panic_handler(_: &PanicInfo) -> ! {
 }
 ```
 
-What's neat about this, I think, is that it's backwards compatible with the existing panic handler attribute
+What's neat about this is that it's backwards compatible with the existing panic handler attribute
 (we would add `#[panic_handler]` to the prelude, i.e. imported from `core` by default).
 
 `#[eii]` itself expands into two parts, a foreign function and an attribute macro:

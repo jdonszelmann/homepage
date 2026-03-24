@@ -18,4 +18,8 @@ export default defineConfig({
     }),
     mdx(),
   ],
+ redirects: {
+    "/eii": "/blog/externally-implementable-items",
+    "/blog/eii": "/blog/externally-implementable-items"
+  },
 });
