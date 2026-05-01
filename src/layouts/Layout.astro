@@ -43,6 +43,9 @@ const gay = import.meta.env.GAY;
         <nav>
             <div class="menu sans">
                 <a href="/">Home</a>
+                {
+                    Astro.locals.session && (<a href="/dashboard">Dashboard</a>)
+                }
                 <a href="/blog">Blog</a>
                 <a href="/rss.xml">RSS</a>
                 <slot name="menu" />

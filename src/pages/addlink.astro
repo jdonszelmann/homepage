@@ -1,0 +1,143 @@
+---
+import Layout from "../layouts/Layout.astro";
+import {getLinks} from "../lib/urls.ts";
+import { marked } from "marked";
+
+export const prerender = false;
+
+let session;
+if (Astro.locals.session) {
+    session = Astro.locals.session;
+} else {
+    // Redirect to login page if the user is not authenticated
+    return Astro.redirect(`/login?return=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+---
+
+<Layout title="dashboard">
+    <Fragment slot="main">
+        <form action="/api/urls" method="POST" class="add-link">
+            <h2>Add blog post</h2>
+            <label for="link">link</label>
+            <input name="link" type="url" required />
+            <label for="note">description</label>
+            <textarea name="note" />
+            <button type="submit">Add</button>
+        </form>
+
+        <hr />
+
+        <div class="links">
+            {
+                getLinks(100_000, true).map((link) => {
+                    const note = marked.parse(link.note);
+                    return (
+                        <Fragment>
+                            <div><a href={link.link} class:list={[link.hidden?"hidden":null]}>{link.link}</a></div>
+                            <div set:html={note}></div>
+                            <div class="controls">
+                                <form action="/api/urls/delete" method="POST">
+                                    <input type="hidden" name="id" value={link.id} />
+                                    <button type="submit">delete</button>
+                                </form>
+                                <form action="/api/urls/hide" method="POST">
+                                    <input type="hidden" name="id" value={link.id} />
+                                    <input type="hidden" name="hide" value={!link.hidden} />
+                                    <button type="submit">{link.hidden?"show":"hide"}</button>
+                                </form>
+                            </div>
+                            <hr class="terminator"/>
+                        </Fragment>
+                    )
+                })
+            }
+        </div>
+
+    </Fragment>
+</Layout>
+
+<style>
+
+hr {
+    width: 100%;
+}
+
+.links {
+    display: grid;
+    width: 100%;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.5em;
+
+    p:first-child {
+        margin-top: 0;
+    }
+    p:last-child {
+        margin-bottom: 0;
+    }
+
+    .hidden {
+        text-decoration: line-through;
+    }
+
+    .terminator {
+        display: none;
+    }
+
+    .controls {
+        display: flex;
+        flex-direction: row;
+        gap: 0.5em;
+
+        form {
+            display: inline;
+        }
+    }
+
+    @media (width <=900px) {
+        & {
+            display: flex;
+            flex-direction: column;
+        }
+        .terminator {
+            display: inline;
+        }
+    }
+}
+
+
+.add-link {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5em;
+
+    input,textarea {
+        padding: 0.5em;
+    }
+
+    input:invalid {
+        background: pink !important;
+    }
+
+    h2 {
+        grid-column: 1/span 2;
+    }
+    button {
+        grid-column: 1/span 2;
+        width: fit-content;
+        justify-self: center;
+    }
+}
+
+@media (width <=900px) {
+    .add-link {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+input[type="hidden"] {
+    display: none;
+}
+
+</style>

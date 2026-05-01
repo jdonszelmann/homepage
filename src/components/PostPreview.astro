@@ -13,7 +13,7 @@ export interface Props {
             pubDate: Date;
             tags: string[];
         };
-        slug: string;
+        id: string;
     };
     draft?: boolean;
 }
@@ -21,10 +21,11 @@ export interface Props {
 const {
     post: {
         data: { authors, tags, description, title, pubDate },
-        slug: unprocessed_slug,
+        id: unprocessed_slug,
     },
     draft = false,
 }: Props = Astro.props;
+
 
 let slug = unprocessed_slug;
 if (slug.includes("/")) {

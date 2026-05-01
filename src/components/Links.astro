@@ -1,0 +1,34 @@
+---
+import {Link as LinkType} from "../lib/urls.ts";
+import Link from "./Link.astro";
+
+interface Props {
+    links: LinkType[];
+    expand?: boolean,
+}
+
+const {links, expand = false}: Props = Astro.props;
+
+
+---
+<div class:list={["items", expand?"expand":null]}>
+{
+    links.map((link) => {
+        return (<Link link={link} expand={expand}/>);
+    })
+}
+</div>
+
+<style>
+.items {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 1em;
+
+    align-items: start;
+
+    &.expand {
+        grid-template-columns: auto 1fr auto;
+    }
+}
+</style>

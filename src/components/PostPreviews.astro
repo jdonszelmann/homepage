@@ -1,6 +1,10 @@
 ---
 import PostPreview from "./PostPreview.astro";
 import { getCollection } from "astro:content";
+import Links from "./Links.astro";
+import {getLinks} from "../lib/urls.ts";
+
+export const prerender = false;
 
 let blog = await getCollection("blog");
 blog.sort((a, b) => {
@@ -17,29 +21,48 @@ interface Props {
 }
 
 const { tag = "all", show_drafts = false }: Props = Astro.props;
+
+const posts = blog
+    .filter((i) => {
+        return !i.data.draft || import.meta.env.DEV || show_drafts;
+    })
+    .filter((i) => {
+        if (tag === "all") {
+            return true;
+        }
+        for (const t of i.data.tags) {
+            if (t == tag) {
+                return true;
+            }
+        }
+
+        return false;
+    });
+
+const first = posts.shift();
+const links = getLinks(5);
+
 ---
 
 <div class="previews">
-    {
-        blog
-            .filter((i) => {
-                return !i.data.draft || import.meta.env.DEV || show_drafts;
-            })
-            .filter((i) => {
-                if (tag === "all") {
-                    return true;
-                }
-                for (const t of i.data.tags) {
-                    if (t == tag) {
-                        return true;
-                    }
-                }
+    <PostPreview post={first as any} draft={first.data.draft} />
+    <div class="urls">
+        <h1>Posts on the internet I enjoyed</h1>
 
-                return false;
-            })
-            .map((post) => (
-                <PostPreview post={post as any} draft={post.data.draft} />
-            ))
+        <Links links={getLinks(5)} />
+
+        <div class="buttons">
+        <a href="/links">More links</a>
+        {
+            Astro.locals.session &&
+            (<a href="/addlink">Add</a>)
+        }
+        </div>
+    </div>
+    {
+        posts.map((post) => (
+            <PostPreview post={post as any} draft={post.data.draft} />
+        ))
     }
 </div>
 <style>
@@ -48,5 +71,18 @@ const { tag = "all", show_drafts = false }: Props = Astro.props;
         flex-direction: column;
         gap: 1em;
         margin-top: 1em;
+    }
+
+   .urls {
+        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+        display: block;
+        padding: 1em;
+
+        .buttons {
+            display: flex;
+            flex-direction: row;
+            gap: 0.5em;
+            margin-top: 1em;
+        }
     }
 </style>

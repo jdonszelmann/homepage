@@ -2,22 +2,31 @@
     "name": "homepage",
     "type": "module",
     "version": "0.0.1",
+    "engines": {
+        "node": ">=22.0.0"
+    },
     "scripts": {
         "dev": "astro dev",
         "start": "astro dev",
         "build": "astro build",
         "preview": "astro preview",
-        "astro": "node ./node-modules/astro/astro.js"
+        "astro": "node ./node_modules/astro/astro.js"
     },
     "dependencies": {
-        "@astrojs/check": "^0.3.4",
-        "@astrojs/mdx": "^3.1.2",
-        "@astrojs/rss": "^4.0.7",
+        "@astrojs/check": "^0.9.9",
+        "@astrojs/mdx": "^5.0.4",
+        "@astrojs/node": "^10.0.6",
+        "@astrojs/rss": "^4.0.18",
         "@expressive-code/plugin-line-numbers": "^0.35.3",
-        "astro": "^4.1.1",
-        "astro-expressive-code": "^0.35.3",
-        "marked": "^13.0.2",
-        "typescript": "^5.3.3"
+        "astro": "^6.1.10",
+        "astro-expressive-code": "^0.41",
+        "better-auth": "^1.6.9",
+        "better-sqlite3": "^12.9.0",
+        "marked": "^13.0.3",
+        "node-addon-api": "^8.7.0",
+        "node-gyp": "^12.3.0",
+        "typescript": "^5.3.3",
+        "uuid": "^14.0.0"
     },
     "devDependencies": {
         "@fortawesome/fontawesome-svg-core": "^6.5.2",

@@ -1,0 +1,22 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Links from "../components/Links.astro";
+import {getLinks} from "../lib/urls.ts";
+
+export const prerender = false;
+
+const links = getLinks();
+
+---
+
+<Layout title="links">
+    <Fragment slot="main">
+        <h1>Other people's posts I enjoyed!</h1>
+        <Links links={links} expand>
+    </Fragment>
+</Layout>
+
+<style>
+
+
+</style>

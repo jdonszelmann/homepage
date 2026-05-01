@@ -6,7 +6,7 @@ export async function GET(context) {
   const items = blog
     .filter((post) => !post.data.draft)
     .map((post) => {
-      let slug = post.slug;
+      let slug = post.id;
       if (slug.includes("/")) {
         let split = slug.split("/");
         slug = split[split.length - 1];

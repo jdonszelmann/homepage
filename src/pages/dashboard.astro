@@ -1,0 +1,36 @@
+---
+import Layout from "../layouts/Layout.astro";
+import {getLinks} from "../lib/urls.ts";
+import Projects from "../components/Projects.astro";
+import Project from "../components/Project.astro";
+
+export const prerender = false;
+
+let session;
+if (Astro.locals.session) {
+    session = Astro.locals.session;
+} else {
+    // Redirect to login page if the user is not authenticated
+    return Astro.redirect(`/login?return=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+---
+
+<Layout title="dashboard">
+    <Fragment slot="main">
+        <h1>Dashboard</h1>
+        <Projects small>
+            <Project title="add link to post" link="/addlink">
+                Add a link to a post on the internet to the website.
+            </Project>
+            <Project title="media server" link="https://media.donsz.nl">
+                jellyfin media server
+            </Project>
+        </Projects>
+    </Fragment>
+</Layout>
+
+<style>
+
+
+</style>

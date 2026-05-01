@@ -1,18 +1,23 @@
 {
-  nodejs,
+  nodejs_24,
   buildNpmPackage,
-  nerdfonts,
   fira,
   jetbrains-mono,
   fira-mono,
   noto-fonts,
   fetchurl,
   name,
+  sqlite,
+  bash,
+  node-gyp,
+  pkg-config,
+  vips,
+  python3,
+  gcc,
   vars ? "",
 }:
 let
-  nerdfonts-symbols = nerdfonts.override { fonts = [ "NerdFontsSymbolsOnly" ]; };
-  npmDepsHash = "sha256-xhw+CutTTQzQCci+TUWifez0JofIYU+izySnlPfVBJE=";
+  npmDepsHash = "sha256-6cKyzXrjiuLB/eI61nPgJ6VmjsksClkrJOHFdN/WCSI=";
   keys = fetchurl {
     url = "https://github.com/jdonszelmann.keys";
     sha256 = "sha256-zKL99PzMQ74pn0V2IwdFRgBQJdHnyDDGCDzMMBeSV54=";
@@ -21,14 +26,27 @@ in
 (buildNpmPackage {
   version = "22-05-2024";
   src = ../.;
-  nativeBuildInputs = [ ];
-  buildInputs = [ nodejs ];
+  nativeBuildInputs = [
+    node-gyp
+    pkg-config
+    python3
+    gcc
+  ];
+  buildInputs = [
+    nodejs_24
+    sqlite
+    vips
+  ];
+
+  npmFlags = [
+    "--build-from-source"
+    "--sqlite=${sqlite.dev}"
+  ];
   inherit npmDepsHash name;
   configurePhase = ''
     mkdir -p ./public/fonts
     mkdir -p ./src/components
 
-    ln -sf ${nerdfonts-symbols}/share/fonts/truetype/NerdFonts/* ./public/fonts/
     ln -sf ${fira}/share/fonts/opentype/* ./public/fonts/
     ln -sf ${jetbrains-mono}/share/fonts/truetype/* ./public/fonts/
     ln -sf ${fira-mono}/share/fonts/opentype/* ./public/fonts/
@@ -44,11 +62,30 @@ in
     echo "</ul>" >> Keys.astro
     mv Keys.astro ./src/components/Keys.astro
   '';
-  buildPhase = ''
+  preBuild = ''
     ${vars}
-    ${nodejs}/bin/npm run build
+    export npm_config_nodedir=${nodejs_24}
+    export npm_config_sqlite=${sqlite.dev}
+    export SHARP_FORCE_GLOBAL_LIBVIPS=1
   '';
   installPhase = ''
-    cp -pr dist $out
+    mkdir -p $out/{homepage,bin,migrations}
+
+    cp -pr migrations/* $out/migrations
+    cp -pr dist/* $out/homepage
+    cp -pr package.json $out/homepage
+    cp -pr package-lock.json $out/homepage
+    cp -pr node_modules $out/homepage
+
+    cat > $out/bin/run <<EOF
+      #!${bash}/bin/bash
+
+      echo "migrations in $out/migrations"
+      export CLIENT_DIR=$out/homepage/client
+
+      cd $out/homepage
+      exec ${nodejs_24}/bin/node server/entry.mjs
+    EOF
+    chmod +x $out/bin/run
   '';
 })

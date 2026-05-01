@@ -1,0 +1,95 @@
+---
+import {Link} from "../lib/urls.ts";
+import {marked} from "marked";
+
+interface Props {
+    link: Link;
+    expand?: boolean,
+}
+
+const {link, expand = false}: Props = Astro.props;
+
+const url = link.link;
+const description = link.note.replaceAll("\r\n", "\n");
+const split_description =  description.split("\n\n");
+const first_description_part = split_description.shift();
+const rest_of_description = split_description.join("\n\n");
+
+const parsed_first = marked.parse(first_description_part);
+const parsed_rest = marked.parse(rest_of_description);
+
+const options = {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+};
+
+---
+
+<Fragment>
+    <a href={url}>{url}</a>
+    {
+        expand? (
+            <div class="note limited" set:html={marked.parse(link.note)}></div>
+        ):
+        first_description_part == description?(
+            <div class="note limited" set:html={parsed_first}></div>
+        ) : (
+            <div class="note">
+                <details>
+                    <summary class="limited" set:html={parsed_first}></summary>
+                    <span set:html={parsed_rest}></span>
+                </details>
+            </div>
+        )
+    }
+    {
+        expand && (<div>Added: {new Date(link.added).toLocaleDateString("en-GB", options)}</div>)
+    }
+</Fragment>
+
+<style>
+
+.limited {
+    p {
+        margin-top: 0.1em;
+    }
+}
+
+details > summary {
+    list-style: none;
+    position: relative;
+    padding-right: 3em;
+    &::after {
+        content: 'more';
+        position: absolute;
+        right: 0;
+        top: 0;
+
+        color: #9c3574;
+
+        font-family: "Noto Sans Mono";
+        font-weight: 600;
+
+        font-size: 4mm;
+        text-decoration-thickness: 1px;
+        text-decoration: underline;
+    }
+}
+</style>
+<style is:global>
+.note {
+    details[open] summary::after {
+        content: "less";
+    }
+    details summary p {
+        margin-bottom: 0;
+    }
+    details[open] .limited p {
+        margin-bottom: unset;
+    }
+    &.limited {
+        margin-bottom: 0;
+    }
+}
+</style>

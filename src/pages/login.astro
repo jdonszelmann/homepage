@@ -1,0 +1,19 @@
+---
+export const prerender = false;
+---
+<script>
+import {authClient} from "../lib/auth-client";
+
+const params = new URLSearchParams(window.location.search);
+const callback = params.get('return') || "/dashboard";
+
+authClient.signIn.oauth2({
+  providerId: "auth.donsz.nl",
+  callbackURL: callback,
+}).then(({data, error}) => {
+    console.log(data);
+    console.log(error);
+})
+
+</script>
+
