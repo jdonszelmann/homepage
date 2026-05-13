@@ -27,11 +27,12 @@ const {
 }: Props = Astro.props;
 
 
+// console.log(Astro.props)
 let slug = unprocessed_slug;
-if (slug.includes("/")) {
-    let split = slug.split("/");
-    slug = split[split.length - 1];
-}
+// if (slug.includes("/")) {
+//     let split = slug.split("/");
+//     slug = split[split.length - 1];
+// }
 ---
 
 <div class:list={["preview", draft ? "draft" : null]}>
