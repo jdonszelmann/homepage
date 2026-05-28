@@ -1,0 +1,19 @@
+[package]
+name = "homepage"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8"
+tracing = "0.1"
+tracing-subscriber = {version = "0.3", features = ["fmt", "env-filter"]}
+tokio = {version = "1", features = ["full"]}
+serde = {version = "1", features = ["derive"]}
+sqlx = { version = "0.9", features = [ "runtime-tokio", "tls-native-tls", "uuid", "json", "postgres", "migrate" ] }
+color-eyre = "0.6"
+dotenvy = "0.15"
+clap = {version = "4.6.1", features=["derive", "env"]}
+uuid = {version = "1", features = ["v4"]}
+
+[dev-dependencies]
+axum-test = "20"
