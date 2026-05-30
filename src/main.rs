@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
+    extract::Request,
     http::StatusCode,
     routing::{get, post},
 };
@@ -9,7 +10,8 @@ use clap::Parser;
 use color_eyre::eyre::WrapErr;
 use serde::{Deserialize, Serialize};
 use sqlx::{Connection, Executor, PgConnection, Pool, Postgres, postgres::PgPoolOptions};
-use tracing::info;
+use tower_http::trace::TraceLayer;
+use tracing::{Level, info};
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[cfg(test)]
@@ -123,8 +125,21 @@ async fn init_app(state: Arc<RouteState>) -> Router {
     routes(app).await
 }
 
-async fn routes<S>(r: Router<S>) -> Router<S> {
-    r
+async fn routes<S: Clone + Send + Sync + 'static>(r: Router<S>) -> Router<S> {
+    r.layer(
+        TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
+            let request_id = uuid::Uuid::new_v4().to_string();
+
+            tracing::span!(
+                Level::INFO,
+                "request",
+                %request_id,
+                method = ?request.method(),
+                uri = %request.uri(),
+                version = ?request.version(),
+            )
+        }),
+    )
 }
 
 async fn start() -> color_eyre::Result<()> {

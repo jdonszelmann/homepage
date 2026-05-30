@@ -1,4 +1,6 @@
 use std::{
+    ffi::OsString,
+    iter,
     panic::{UnwindSafe, catch_unwind, resume_unwind},
     sync::Arc,
 };
@@ -6,7 +8,7 @@ use std::{
 use crate::{Args, init_database};
 use axum_test::TestServer;
 use clap::Parser;
-use sqlx::{Connection, Executor, PgConnection, Pool, Postgres, postgres::PgPoolOptions};
+use sqlx::{Connection, Executor, PgConnection};
 use tracing::info;
 use uuid::Uuid;
 
@@ -15,11 +17,12 @@ use crate::{RouteState, init_app, shared_setup};
 fn start_test_server<O, F: UnwindSafe + AsyncFnOnce(TestServer) -> color_eyre::Result<O>>(
     f: F,
 ) -> color_eyre::Result<O> {
-    let mut args = Args::parse();
+    let mut args = Args::parse_from(iter::empty::<OsString>());
 
     // ignore errors, they only happen if we've already initialized for this process which we expect
     // given that tests run in the same process
     let _ = shared_setup();
+    info!("starting test");
 
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
