@@ -1,0 +1,244 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Social from "../components/Social.astro";
+import Card from "../components/Card.astro";
+import Keys from "../components/Keys.astro";
+import Projects from "../components/Projects.astro";
+import Project from "../components/Project.astro";
+
+import { icon } from "@fortawesome/fontawesome-svg-core";
+
+import {
+    faEarthEurope,
+    faEnvelope,
+    faCat,
+} from "@fortawesome/free-solid-svg-icons";
+import {
+    faMastodon,
+    faGithub,
+    faLinkedin,
+    faRust,
+} from "@fortawesome/free-brands-svg-icons";
+import matrix from "../../assets/images/matrix.svg?raw";
+---
+
+<Layout title="Jana Dönszelmann">
+    <Fragment slot="head">
+        <style>
+            .title {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+
+                h3 {
+                    font-weight: lighter;
+                }
+            }
+
+            i {
+                width: 1em;
+                height: 1em;
+                color: black;
+            }
+
+            .nodots {
+                list-style-type: none;
+            }
+
+            ul {
+                margin: 0;
+            }
+        </style>
+    </Fragment>
+
+    <Fragment slot="main">
+        <div class="title">
+            {
+                import.meta.env.GAY ? (
+                    <h3>
+                        Hiiiii, this is the much better gay version of the
+                        homepage of
+                    </h3>
+                ) : (
+                    <h3>You have reached the homepage of</h3>
+                )
+            }
+            <h1>Jana Dönszelmann</h1>
+        </div>
+
+        <p>
+            Hi! I'm Jana (she/her)
+
+            {
+                import.meta.env.GAY ? (
+                    <span>
+                        I'm a girl from Delft, The Netherlands. Come on this has
+                        to be professional, bear with me for a sec. I sometimes
+                        use computers, something something Rust, you get the
+                        gist. Quite gay, likes kitties, and cute girls who are
+                        sometimes also kitties etc. Has been described as "quite
+                        hot". Oh I have ADHD btw. Trans rights are human rights.
+                        Did I mention I like girls? Yeah, pretty gay. Warning: I
+                        bite. More boobs accellerate this process.
+                    </span>
+                ) : (
+                    <span>
+                        I'm a software developer from Delft, The Netherlands. I
+                        work for my own company,
+                        <a href="https://hexcat.nl">Hexcat</a> and the RustNL
+                        foundation. A large part of my job is to work on
+                        <a href="https://github.com/rust-lang/rust">rustc</a>,
+                        the rust compiler, being a member of the compiler team.
+                        Additionally, every year I help co-organize
+                        <a href="https://rustweek.org">Rust Week</a>, the
+                        largest rust conference. Before that, I used to teach
+                        computer science and embedded systems at the University
+                        of Delft, giving and developing three courses called
+                        <i>Software Fundamentals</i>, <i>Software Systems</i>,
+                        and the <i>Embedded Systems Lab</i>. All these courses
+                        used Rust as their primary programming language.
+                    </span>
+            )
+            }
+        </p>
+
+        <blockquote>
+            <b>NO large language models were or are used in any of my open source contributions or anything I do. If you see something that I made online: that is <i>me</i>, and I take full responsibility for it.</b>
+        </blockquote>
+
+        <p>
+            I
+            {import.meta.env.GAY && <span>regularly meow,</span>}
+            speak Dutch, prefer English, you can try your luck with French but about
+            that I make no guarantees, and just maybe I understand some of your German...
+        </p>
+        <p>You can find me elsewhere online as:</p>
+
+        <ul class="nodots">
+            <li>
+                <Social link="https://github.com/jdonszelmann">
+                    <i set:html={icon(faGithub).html} />
+                    <span>jdonszelmann</span>
+                </Social>
+            </li>
+            {
+                !import.meta.env.GAY && (
+                    <li>
+                        <Social link="https://www.linkedin.com/in/jdonszelmann/">
+                            <i set:html={icon(faLinkedin).html} />
+                            <span>jdonszelmann</span>
+                        </Social>
+                    </li>
+                )
+            }
+            <li>
+                <Social link="https://donsz.nl">
+                    <i set:html={icon(faEarthEurope).html} />
+                    <span>https://donsz.nl</span>
+                </Social>
+            </li>
+            <li>
+                <Social link="https://crates.io/users/jdonszelmann">
+                    <i set:html={icon(faRust).html} />
+                    <span>jdonszelmann</span>
+                </Social>
+            </li>
+            <li>
+                <Social link="mailto://website+jana@donsz.nl">
+                    <i set:html={icon(faEnvelope).html} />
+                    <span>jana@donsz.nl</span>
+                </Social>
+            </li>
+            <li>
+                <Social link="https://fedi.xirion.net/@jana">
+                    <i set:html={icon(faMastodon).html} />
+                    <span>@jana@xirion.net</span>
+                </Social>
+            </li>
+            {
+                import.meta.env.GAY && (
+                    <li>
+                        <Social link="/">
+                            <i set:html={icon(faCat).html} />
+                            <span>mrow!</span>
+                        </Social>
+                    </li>
+                )
+            }
+        </ul>
+
+        <p>
+            I'm also available on discord and matrix but those I prefer not to
+            publish here. Feel free to ask me for those though! And finally, if
+            it's about rust, I'm active on <a
+                href="https://rust-lang.zulipchat.com/#user/370197"
+                >rust's zulip</a
+            > too.
+        </p>
+
+        <p>
+            You might be interested in some of the things I've worked on over
+            the past years.
+        </p>
+
+        <Projects>
+            <Project title="blog" link="/blog">
+                I occasionally write blog posts, mainly about Rust.
+            </Project>
+            <Project
+                title="temporary directory manager"
+                link="https://github.com/jdonszelmann/t-rs"
+            >
+                A tool to manage tempororary directories, easily accessible in <code
+                    >~/tempdirs</code
+                >. Useful, for example, when you often pull git repositories
+                just to build their source and discard again.
+            </Project>
+            <Project
+                title="rust-lang/rust"
+                link="https://github.com/jdonszelmann/rust"
+            >
+                A cool programming language! You may have heard of it :3. I help
+                develop its compiler.
+            </Project>
+            <Project title="review queue" link="https://queue.donsz.nl">
+                A work tracker specifically for the rust-lang/rust repository.
+            </Project>
+            <Project
+                title="rust-scopegraphs"
+                link="https://github.com/metaborg/rust-scopegraphs"
+            >
+                An implementation of the <a
+                    href="https://dl.acm.org/doi/10.1145/3276484"
+                    >scopegraphs algorithm</a
+                > in Rust, which I worked on together with Aron Zwaan.
+            </Project>
+            <Project title="thesis" link="https://mapfm-poster.donsz.nl">
+                A visualization of the work I did for my bachelor's thesis at <a
+                    href="https://mapf.donsz.nl">mapf.donsz.nl</a
+                >, and an overview of it at <a
+                    href="https://mapfm-poster.donsz.nl"
+                    >mapfm-poster.donsz.nl</a
+                >
+            </Project>
+            <Project
+                title="compiler resources"
+                link="https://compiler-construction-2021.donsz.nl"
+            >
+                Some excellent resources on compiler construction from when I
+                studied at the TU Delft. <b>These are not mine!</b> Its author, my
+                professor, unfortunately passed away far too early, days after the
+                final exam. Over time, these resources slowly started to disappear.
+            </Project>
+        </Projects>
+
+        {import.meta.env.GAY && <p>meow meow mrrrp mrow meow :3 :3 &lt;3</p>}
+
+        <p>
+            <h3>SSH Keys</h3>
+
+            <Keys />
+        </p>
+    </Fragment>
+</Layout>

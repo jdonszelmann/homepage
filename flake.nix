@@ -12,12 +12,12 @@
     };
   };
   outputs =
-    {
-      self,
-      nixpkgs,
-      flake-utils,
-      nixpkgs-mozilla,
-      naersk,
+    { self
+    , nixpkgs
+    , flake-utils
+    , nixpkgs-mozilla
+    , naersk
+    ,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -94,7 +94,7 @@
               '')
 
               (writeShellScriptBin "prep" ''
-                cargo sqlx prepare --database-url=postgres://postgres@localhost
+                cargo sqlx prepare
               '')
 
               gdb
@@ -102,14 +102,20 @@
               (postgresql.withPackages (postgresqlPackages: [ postgresqlPackages.pgtap ]))
             ];
 
-            env = {
-              PGDATA = "./.pgdata";
+            env = rec {
+              DATABASE_URL = "postgres://postgres@${HOMEPAGE_DB_HOST}";
 
+              HOMEPAGE_DB_USER = "postgres";
               HOMEPAGE_DB_HOST = "localhost";
               HOMEPAGE_DB_NAME = db_name;
+              # note: not the same as used in production
+              HOMEPAGE_CLIENT_SECRET = "35wTlOjLXEobV3lb3qaqHY018cFY5sO3";
+              HOMEPAGE_CLIENT_ID = "1db518fb-6ba9-4f64-aee5-0ac3e97f358a";
+              HOMEPAGE_AUTH_SERVER = "https://auth.donsz.nl";
+              HOMEPAGE_BASE_URL = "http://localhost:3000";
 
               DATABASE_LOCATION = "./homepage.db";
-              # note: not used in production
+              # note: not the same as used in production
               BETTER_AUTH_SECRET = "2/Uv6lUd5kNzjpgyoU9miAMuJEqLc4tOZhHS/LV4QGg=";
               BETTER_AUTH_URL = "http://localhost:4321";
 

@@ -1,23 +1,23 @@
-use std::sync::Arc;
-
-use axum::{
-    Json, Router,
-    extract::Request,
-    http::StatusCode,
-    routing::{get, post},
-};
+use axum::{Router, extract::Request, routing::get};
 use clap::Parser;
 use color_eyre::eyre::WrapErr;
-use serde::{Deserialize, Serialize};
-use sqlx::{Connection, Executor, PgConnection, Pool, Postgres, postgres::PgPoolOptions};
-use tower_http::trace::TraceLayer;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{Level, info};
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_tree::HierarchicalLayer;
 
+use crate::{
+    auth::auth_routes,
+    state::{ArcRouteState, RouteState, init_database},
+};
+
+mod auth;
+mod pages;
+mod state;
 #[cfg(test)]
 mod tests;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 struct Args {
     #[arg(long, env = "HOMEPAGE_DB_HOST")]
@@ -40,6 +40,18 @@ struct Args {
 
     #[arg(long, env = "HOMEPAGE_PORT", default_value_t = 3000)]
     port: u16,
+
+    #[arg(long, env = "HOMEPAGE_CLIENT_ID")]
+    client_id: String,
+
+    #[arg(long, env = "HOMEPAGE_CLIENT_SECRET")]
+    client_secret: String,
+
+    #[arg(long, env = "HOMEPAGE_AUTH_SERVER")]
+    auth_server: String,
+
+    #[arg(long, env = "HOMEPAGE_BASE_URL")]
+    base_url: String,
 }
 
 impl Args {
@@ -65,51 +77,22 @@ impl Args {
 fn init_tracing() -> color_eyre::Result<()> {
     let fmt_layer = fmt::layer().with_target(false);
     let filter_layer = EnvFilter::try_from_default_env()
-        .or_else(|_| EnvFilter::try_new("info"))
+        .or_else(|_| EnvFilter::try_new("debug"))
         .unwrap();
+    let tree_layer = HierarchicalLayer::new(2)
+        .with_ansi(true)
+        .with_indent_lines(true)
+        .with_verbose_entry(true)
+        .with_verbose_exit(true);
 
     tracing_subscriber::registry()
         .with(filter_layer)
         .with(fmt_layer)
+        .with(tree_layer)
         .try_init()
         .context("init tracing")?;
 
     Ok(())
-}
-
-async fn init_database(args: &Args, create_db: bool) -> color_eyre::Result<Pool<Postgres>> {
-    if create_db {
-        info!("creating database {}", args.db_name);
-        // Connect to the default `postgres` database to create a new database
-        let mut connection = PgConnection::connect(&args.db_base()).await?;
-
-        // create unique logical database
-        connection
-            .execute(sqlx::AssertSqlSafe(format!(
-                r#"CREATE DATABASE "{}";"#,
-                args.db_name
-            )))
-            .await?;
-    }
-
-    info!("connecting to database");
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&args.db_connection_str())
-        .await
-        .context("connect to pool")?;
-
-    info!("running migrations");
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .context("migrations")?;
-
-    Ok(pool)
-}
-
-struct RouteState {
-    db: Pool<Postgres>,
 }
 
 fn shared_setup() -> color_eyre::Result<()> {
@@ -120,36 +103,44 @@ fn shared_setup() -> color_eyre::Result<()> {
     Ok(())
 }
 
-async fn init_app(state: Arc<RouteState>) -> Router {
-    let app = Router::new().with_state(state);
-    routes(app).await
+async fn init_app(state: ArcRouteState) -> color_eyre::Result<Router> {
+    let app = Router::new().with_state(state.clone());
+    let app = routes(app).await;
+    let app = auth_routes(app, state).await.context("auth routes")?;
+
+    Ok(app)
 }
 
 async fn routes<S: Clone + Send + Sync + 'static>(r: Router<S>) -> Router<S> {
-    r.layer(
-        TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
-            let request_id = uuid::Uuid::new_v4().to_string();
+    r.route("/", get(pages::index))
+        .nest_service("/static", ServeDir::new("public"))
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
+                let request_id = uuid::Uuid::new_v4().to_string();
 
-            tracing::span!(
-                Level::INFO,
-                "request",
-                %request_id,
-                method = ?request.method(),
-                uri = %request.uri(),
-                version = ?request.version(),
-            )
-        }),
-    )
+                tracing::span!(
+                    Level::INFO,
+                    "request",
+                    %request_id,
+                    method = ?request.method(),
+                    uri = %request.uri(),
+                    version = ?request.version(),
+                )
+            }),
+        )
 }
 
 async fn start() -> color_eyre::Result<()> {
     shared_setup()?;
 
-    let args = Arc::new(Args::parse());
+    let args = Args::parse();
     let pool = init_database(&args, false).await?;
-    let state = Arc::new(RouteState { db: pool });
+    let state = ArcRouteState::new(RouteState {
+        db: pool,
+        args: args.clone(),
+    });
 
-    let app = init_app(state).await;
+    let app = init_app(state).await.context("init app")?;
 
     let bind_addr = args.bind_addr();
     info!("listening on {bind_addr:?}");
