@@ -23,14 +23,11 @@ description: |
 draft: false
 time: "30 minutes"
 ---
-import User from '../../components/GithubUser.astro';
-import Pr from '../../components/GithubPr.astro';
-import Issue from '../../components/GithubIssue.astro';
 
 # The problem
 
 This story starts, almost two years ago, in the days after [RustNL 2024](https://2024.rustnl.org/).
-An RFC was opened by <User name="m-ou-se" /> called [Externally Implementable Functions](https://github.com/rust-lang/rfcs/pull/3632),
+An RFC was opened by {{ github::user("m-ou-se") }} called [Externally Implementable Functions](https://github.com/rust-lang/rfcs/pull/3632),
 which was actively being discussed.
 The idea is as follows:
 
@@ -148,7 +145,7 @@ At this point, I think the discussion saturated a little.
 None of the three proposals is obviously better, with most of the differences being syntactic.
 And without an actual implementation, we were mostly bikeshedding, which wouldn't get us anywhere.
 So in the summer of 2024, to sidestep that discussion completely,
-<User name="m-ou-se" /> and I sat down, came up with a _fourth_ implementation.
+{{ github::user("m-ou-se") }}  and I sat down, came up with a _fourth_ implementation.
 Yes, yes, competing standards and all that.
 
 But I don't think requesting more comments at that point were helpful.
@@ -295,7 +292,7 @@ we've finally [converted the parsing infrastructure](https://github.com/rust-lan
 created through the combined effort of more than 20 people.
 What's awesome, I think, is that this refactor was an amazing source of "good first issues", tasks that beginners could solve.
 Of those 20 people, several had never or rarely contributed to the rust compiler before.
-And through the attribute refactor, one of those (<User name="jonathanbrouwer" />) is now one of our newest compiler team members,
+And through the attribute refactor, one of those ({{ github::user("jonathanbrouwer") }}) is now one of our newest compiler team members,
 starting their own projects in the rust compiler.
 I've seen other contributions from other first-time contributors as well, and I wouldn't be surprised if the compiler team will grow more as a result.
 
@@ -383,11 +380,11 @@ It's either both, or none.
 ### Asking the linker, nicely
 
 Now, so far, these are _technically_ solvable challenges, with more engineering time.
-But during Rust Week 2025, I sat down with <User name="ojeda" />, from Rust for Linux.
+But during Rust Week 2025, I sat down with {{ github::user("ojeda") }}, from Rust for Linux.
 They're using rustc a little bit like a C compiler:
 generating object files, which they then link themselves to C code from the kernel.
 Or, I think that's roughly what was going on.
-I also learned that this is a concern in other places, <User name="amanieu" /> told me google is doing things similarly?
+I also learned that this is a concern in other places, {{ github::user("amanieu") }} told me google is doing things similarly?
 In fact, anytime you're using a custom external build system like bazel or buck2 that wants to be in charge of creating the the final binary, this strategy doesn't work.
 The important difference with Rust here is that rust likes to drive the linker, and so if an external build system does this driving it doesn't work as well!
 
@@ -396,7 +393,7 @@ Fortunately, almost all linkers support what's called weak linker symbols.
 Weak symbols are simply de-prioritized by the linker, and when another non-weak symbol of the same name is found it is preferred.
 This avoids duplicate definition errors, and neatly matches the behavior of defaults for EIIs.
 
-Several months later, I was talking to <User name="cramertj" />.
+Several months later, I was talking to {{ github::user("cramertj") }}.
 She was interested in how EIIs would interact with foreign function interfaces (FFI).
 Specifically compatibility with C++.
 We concluded that it would be extremely desirable if we can guarantee that EIIs desugar to weak linker symbols.
@@ -432,7 +429,7 @@ Several of the discussions about how to continue with EIIs as a feature have tak
 
 ## Windows
 
-For example, I've been chatting with <User name="bjorn3" /> somewhat regularly.
+For example, I've been chatting with {{ github::user("bjorn3") }} somewhat regularly.
 His knowledge about compiling for Windows, and linkers and code generation in general has been absolutely invaluable.
 One of the issues that's still open with EIIs is how we handle Windows.
 On Windows, weak symbols _are_ supported, but they work slightly differently than on other platforms.
@@ -494,7 +491,7 @@ In addition to `librustc_driver.so`, Rust uses `dlopen` to dynamically open code
 So, if EIIs didn't support dynamic linking, that would _in general_ be fine-ish, but we wouldn't be able to use EIIs in the compiler itself.
 
 And office hours was exactly the kind of space where we could chat about various solutions to this.
-Together with <User name="jyn514" />, we thought of an approach where we optionally desugar EIIs to thread-locals,
+Together with {{ github::user("jyn514") }}, we thought of an approach where we optionally desugar EIIs to thread-locals,
 and resolve either the default or explicit implementation at runtime.
 This would trade some amount of performance for full support of dynamic linking, including `dlopen`!
 

@@ -1,0 +1,185 @@
+---
+title: 'Arenas'
+pubDate: 2024-08-15
+authors: ['jdonszelmann']
+reviewers: ['JonathanBrouwer', 'LHolten']
+tags: [ "rust"]
+description: |
+    Sometimes you just really need an arena. Sometimes for performance reasons, other times for lifetime-related reasons.
+    In their most basic forms, they're just a vec with some extra guarantees. However, it's those extra guarantees that matter.
+    I've found myself looking for the right kind of arena too many times, so here's an overview of literally everything there is.
+    I think, let me know if I forgot something.
+draft: false
+time: "10 minutes"
+---
+
+## What's an arena?
+
+Very basically, an arena is a way to store your data somewhere without directly going through the system allocator.
+If you have a lot of small objects which you don't mind to deallocate *together* instead of individually,
+this can be a lot faster.
+You could use a `Vec` for this.
+However, if you store data in a vec its address might change all the time.
+
+When the vector grows, its contents move around memory.
+That's not actually as inefficient as you think, it happens less and less often as the vec grows.
+The real problem with this moving around is that you can't depend on the address of your elements staying the same.
+It's common that you want to hold on to those addresses in a datastructure while also adding new objects.
+
+The simplest kind of arena is built to solve that exact problem, by allocating in large chunks,
+and promising never to deallocate or move those.
+To grow, such an arena would simply allocate a whole new chunk of memory.
+However, there are so many more ways to do this which give you arenas with slightly different properties.
+
+## properties of arenas
+
+In the table below, I talk about various properties arena do and don't have.
+Sometimes, you might not need an arena at all.
+Libraries such as {{ rust::krate("elsa") }} or {{ rust::krate("rpds") }} can help you write efficient datastructures,
+that are immutable, or provide quick clones because they are mostly based on pointers internally.
+That could be what you're actually looking for.
+
+In the table, I've abbreviated some things a little, so here is the full explanation:
+
+**Type**
+
+Some arena implementations only allow you to store a single datatype in them.
+This can be good for performance, and might make it possible to iterate over the full list of allocations.
+However, it can be a limitation too.
+If the arena is supposed to work a little like an alternative to the built-in memory allocator,
+then you might want to allocate arbitrary elements of mixed types.
+This makes element iteration harder, since elements aren't stored at well-known offsets in the arena.
+
+Interestingly, {{ rust::krate("bumpalo") }} supports both kinds.
+By default, the arena is mixed-type, but you can allocate vectors of a single type in their arena.
+
+**Requires**
+
+This indicates what kind of reference *to the arena* you need to allocate something in it.
+
+**Gives Out, and Deref Key**
+
+Some arenas directly give you references,
+but some are based on indices,
+and you might even need to have access to the arena to use these indices.
+"Gives Out" documents what kind of type you get to refer to an allocation.
+Sometimes it has a `'a` lifetime, refering to the fact that it is bound to the lifetime of the arena,
+or `T: 'static`, meaning the type given out must be `'static`.
+If no such lifetime is given, the index type is completely free from the arena's lifetime.
+"Deref Key" documents whether you need access to the arena to use the key,
+or whether the key directly gives access to the element.
+
+**Reuse Memory**
+
+Some arena allocators assume you only allocate, never free.
+That might be what you want, but sometimes it might not be.
+Most freeing arenas use a linked list of free spots, a freelist,
+though there are other options like garbage collection (GC),
+and I found one library that can actually compact itself and shrink.
+
+Note, that for performance reasons, shrinking usually isn't often a very good idea.
+
+**Runs Drop**
+
+Especially the mixed-type arenas sometimes don't run `Drop` of stored elements.
+It's hard to call `Drop` if you don't know where in the arena elements are stored.
+This is a problem if you, for example, want to store an `Rc` in an arena,
+though there are many more types for which this is a problem.
+
+**Iteration**
+
+Although an arena isn't a vec, the items are often stored prety much in-order.
+So this column is about whether the arena supports this.
+The type behind it indicates whether to iterate you need a reference or mutable reference to the arena.
+
+**Collections**
+
+A few arena libraries also provide an alternative set of collections like `Vec`, `String`, and pointers like `Box` and `Rc`.
+
+**`no_std` and no `unsafe`**
+
+These should be pretty obvious.
+
+**ABA mitigation**
+
+If your arena supports deletions,
+the arena must be careful that on re-allocation it doesn't accidentally reuse an ID it previously gave to you.
+If you had still stored that old ID, you could now use it to access a new allocation.
+Or not, some arenas don't care and let you deal with this.
+
+**Concurrent**
+
+This documents whether the arena can be used concurrently.
+For some, I documented whether they require locking.
+
+**Dedup**
+
+Interners often deduplicate keys, to gain pointer equality.
+So far I only investigated one library doing this.
+
+**Approach**
+
+This roughly documentes how the library works.
+
+* Linked Arena Chunks means that at a basic level,
+  big chunks of contiguous memory are allocated,
+  slowly filled, and linked together to form one big arena built up from smaller chunks.
+* `Vec` (with freelist) refers to the backing storage.
+  An Arena is a `Vec`, and you get indices to later index the `Vec` to get the element you stored.
+* Linked List means every element in the arena gets its own link in a linked list.
+
+The others I think mostly make sense.
+
+> Note that there are instances where I left a cell blank.
+> That's on some new columns, for which I've not gone through all the crates yet,
+> so I don't have all the data yet. Feel free to help out!
+
+## Overview
+
+Ordered by number of downloads, not by what you should use!! That only depends on your situation.
+
+{% call arena::table() %}
+
+| Crate                                           | Type   | Takes    | Gives Out         | Idx Size             | Deref Key | Reuse Mem      | Runs Drop | Iteration | Collections  | `no_std` | no `unsafe` | ABA mitigation |  concurrent     | dedup |   Approach                                                                                      | Downloads | Last Update | Version |
+| ----------------------------------------------- | ------ | -------- | ----------------- | -------------------- | --------- | -------------- | --------- | --------- | ------------ | -------- | ----------- | -------------- |  -------------- | ----- | ----------------------------------------------------------------------------------------------- | --------- | ----------- | ------- |
+| {{rust::krate("slab", true)}}                   | Single | `&mut`   | `usize`           |`usize`               | ❌        | ✅ compact[^2] | ✅        | ✅ `&`    | ❌           | ✅       | ✅          | ❌             |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
+| {{rust::krate("bumpalo", true)}}                | Both   | `&`      | `&'a mut`         |`NonZero<usize>`      | ✅        | ❌             | ❌        | ❌        | ✅           | ✅       | ❌          |                |  ❌             | ❌    | Linked Arena Chunks                                                                             |           |             |         |
+| {{rust::krate("sharded-slab", true)}}           | Single | `&`      | `usize`           |`usize`               | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ❌       | ❌          |                |  ✅             | ❌    | [Linked Arena Chunks](https://docs.rs/sharded-slab/0.1.7/sharded_slab/implementation/index.html)|           |             |         |
+| {{rust::krate("typed-arena", true)}}            | Single | `&`      | `&'a mut`         |`NonZero<usize>`      | ✅        | ❌             | ✅        | ✅ `&mut` | ❌           | ❌       | ❌          |                |  ❌             | ❌    | Linked Arena Chunks                                                                             |           |             |         |
+| {{rust::krate("slotmap", true)}}                | Single | `&mut`   | `K: Key`          |`NonZero<u64>`        | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ❌          | ✅             |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
+| {{rust::krate("id-arena", true)}}               | Single | `&mut`   | `Id`              |`usize`+`u32`         | ❌        | ❌             | ✅        | ✅ `&`    | ❌           | ✅       | ✅          |                |  ✅             | ❌    | Indexed `Vec`                                                                                   |           |             |         |
+| {{rust::krate("generational-arena", true)}}     | Single | `&mut`   | `Index`           |`usize`+`u64`         | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ✅          |                |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
+| {{rust::krate("internment", true)}}             | Single | `&`      | `ArenaIntern<'a>` |`usize`               | ✅        | ❌             | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒             | ✅    | Hashset of Boxes                                                                                |           |             |         |
+| {{rust::krate("concurrent_arena", true)}}       | Single | `&`      | `ArenaArc`        |2*`u32`+`Arc`         | ✅        | ✅             | ✅        | ❌        | ❌           | ❌       | ❌          |                |  ✅ alloc may 🔒| ❌    | Reference Counted Buckets                                                                       |           |             |         |
+| {{rust::krate("thunderdome", true)}}            | Single | `&mut`   | `Index`           |`NonZero<u64>`        | ❌        | ✅ freelist    | ✅        | ❌        | ❌           | ✅       | ❌          | ✅             |  ❌             | ❌    | Memory efficient {{ rust::krate("generational-arena") }}                                        |           |             |         |
+| {{rust::krate("atree", true)}}                  | Single | `&mut`   | `Token`           |`NonZero<usize>`      | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ❌       | ✅          |                |  ❌             | ❌    | `Vec`-Backed Linked Tree                                                                        |           |             |         |
+| {{rust::krate("multi-stash", true)}}            | Single | `&mut`   | `Key`             |`usize`               | ✅        | ❌             | ✅        | ✅ `&`    | ❌           | ✅       | ❌          |                |  ❌             | ❌    | Indexed `Vec`                                                                                   |           |             |         |
+| {{rust::krate("colosseum", true)}}              | Single | `&`      | `&'a mut`         |`NonZero<usize>`      | ✅        | ❌             | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒             | ❌    | `Mutex`ed {{ rust::krate("typed-arena") }}                                                      |           |             |         |
+| {{rust::krate("gc", true)}}                     | Mixed  | glob     | `Gc`              |`usize`               | ✅        | ✅ GC          | ✅        | ❌        | ❌           | ❌       | ❌          |                |  ❌             | ❌    | [Garbage Collector](https://manishearth.github.io/blog/2015/09/01/designing-a-gc-in-rust/)      |           |             |         |
+| {{rust::krate("atomic_arena", true)}}           | Single | `&mut`?? | `Key`             |2*`usize`             | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ❌       | ❌          |                |  🔒             | ❌    | `Vec`[^1]                                                                                       |           |             |         |
+| {{rust::krate("gc-arena", true)}}               | Single | `&`      | `Gc<'a>`          |`NonZero<usize>`      | ✅        | ✅ GC          | ✅        | ❌        | ❌           | ✅       | ❌          |                |  ❌             | ❌    | [Garbage Collector](https://kyju.org/blog/rust-safe-garbage-collection/)                        |           |             |         |
+| {{rust::krate("typed-arena-nomut", true)}}      | Single | `&`      | `&'a`             |`usize`               | ✅        | ❌             | ✅        | ✅ `&`    | ❌           | ❌       | ❌          |                |  ❌             | ❌    | Linked Arena Chunks                                                                             |           |             |         |
+| {{rust::krate("typed-generational-arena",true)}}| Single | `&mut`   | `Index`           |~`usize`+`u64`        | ❌        | ✅ freelist    | ✅        | ✅ `&`    | ❌           | ✅       | ✅          | ✅             |  ❌             | ❌    | Various backings with Freelist[^3]                                                              |           |             |         |
+| {{rust::krate("compact_arena", true)}}          | Single | `&mut`   | `IdxN<'a>`        |`u32`/`u16`/`u8`      | ❌        | ❌             | ✅        | ❌        | ❌           | ✅       | ❌          |                |  ❌             | ❌    | `Vec` with "branded" indices                                                                    |           |             |         |
+| {{rust::krate("blink-alloc", true)}}            | Mixed  | `&`      |`&mut (T: 'static)`|`NonZero<usize>`      | ✅        | ❌             | ✅        | ❌        | ✅           | ✅       | ❌          |                |  🔒             | ❌    | Linked Arena Chunks                                                                             |           |             |         |
+| {{rust::krate("bumpalo-herd", true)}}           | Mixed  | `&`      | `&'a mut`         |`NonZero<usize>`      | ✅        | ❌             | ❌        | ❌        | ❌           | ✅       | ❌          |                |  ✅             | ❌    | Per-thread {{ rust::krate("bumpalo") }} arena                                                   |           |             |         |
+| {{rust::krate("bump_scope", true)}}             | Both   | `&`      | `BumpBox<'a>`     |`NonZero<usize>`      | ✅        | ❌             | ✅        | ❌        | ✅           | ✅       | ❌          |                |  ✅             | ❌    | Linked Arena Chunks[^4]                                                                         |           |             |         |
+| {{rust::krate("shredder", true)}}               | Mixed  | glob     | `Gc<'a>`          |`Arc`+2*`usize`       | ✅        | ✅ GC          | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒 (spinlock)  | ❌    | Single Global GC                                                                                |           |             |         |
+| {{rust::krate("erased-type-arena", true)}}      | Mixed  | `&`      | `AllocMut<'a>`    |`NonZero<usize>`+`Arc`| ✅        | ❌             | ✅        | ❌        | ❌           | ❌       | ❌          |                |  ❌             | ❌    | Linked List                                                                                     |           |             |         |
+| {{rust::krate("riddance", true)}}               | Single | `&mut`   | `Id<T>`           |`u32`/`u64`           | ❌        | ✅ freelist    | ✅        | ✅        | ❌           | ❌       | ❌          |                |  ❌             | ❌    | `Vec` with Freelist                                                                             |           |             |         |
+| {{rust::krate("drop-arena", true)}}             | Single | `&`      | `DropBox<'a>`     |`NonZero<usize>`      | ✅        | ✅ freelist    | ✅        | ❌        | ❌           | ❌       | ❌          |                |  ❌             | ❌    | {{ rust::krate("typed-arena") }} + free list                                                    |           |             |         |
+| {{rust::krate("elise", true)}}                  | Mixed  | glob     | `Gc<'a>`          |`usize`               | ✅        | ✅ GC          | ✅        | ❌        | ❌           | ❌       | ❌          |                |  🔒             | ❌    | Single Global GC                                                                                |           |             |         |
+| {{rust::krate("hato", true)}}                   | Mixed  | `&mut`   | `Handle`          |`u32`+`u32`           | ❌        | ✅ freelist    | ❌        | ❌        | ❌           | ❌       | ❌          | ❌             |  🔒             | ❌    | `Vec`s of bitwise-copyable objects grouped by type                                              |           |             |         |
+
+{% endcall %}
+
+{#
+TODO: column that says whether keys are generational
+stadium?
+index size
+#}
+
+[^1]: Allocating slots in the arena is atomic, but using and storing data into the arena requires `&mut` and the only useful way to use this library across threads is by putting the `Arena` in a `Mutex`
+[^2]: Also uses a freelist, but on request can actually reduce its memory size.
+[^3]: Seems to be a fork of sorts of {{ rust::krate("generational-arena") }}. Supports many more types of backing storage including more space-efficient ones.
+[^4]: Surprisingly well-made and documented library compared to its number of downloads. Super well tested too. Also has arena-per-thread.

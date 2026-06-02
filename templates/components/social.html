@@ -1,0 +1,5 @@
+{% macro social(link) %}
+<a class="social" {% if link is defined %}href={{link}}{% endif%}>
+    {{ caller() }}
+</a>
+{% endmacro %}

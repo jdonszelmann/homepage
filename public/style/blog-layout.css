@@ -20,6 +20,26 @@
     }
 }
 
+body.wide .ifwide {
+    display: none !important;
+}
+
+@media (width <=900px) {
+    .ifwide {
+        display: none !important;
+    }
+}
+
+@media (width > 900px) {
+    .toc {
+        display: contents;
+    }
+
+    .narrow {
+        display: none !important;
+    }
+}
+
 .reviewers {
     display: contents;
 }

@@ -1,4 +1,4 @@
-use axum::{Router, extract::Request, routing::get};
+use axum::{Router, extract::Request};
 use clap::Parser;
 use color_eyre::eyre::WrapErr;
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -112,7 +112,7 @@ async fn init_app(state: ArcRouteState) -> color_eyre::Result<Router> {
 }
 
 async fn routes<S: Clone + Send + Sync + 'static>(r: Router<S>) -> Router<S> {
-    r.route("/", get(pages::index))
+    pages::routes(r)
         .nest_service("/static", ServeDir::new("public"))
         .layer(
             TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {

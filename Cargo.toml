@@ -3,7 +3,20 @@ name = "homepage"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = ["./crates/*"]
+default-members = ["."]
+
+[workspace.dependencies]
+markdown = "1"
+thiserror = "2"
+time = {version = "0.3", features = ["serde"]}
+serde = {version = "1", features = ["derive"]}
+
 [dependencies]
+homepage-macros = {path = "./crates/homepage-macros/"}
+homepage-markdown = {path = "./crates/homepage-markdown/"}
+
 axum = {version = "0.8", features = ["macros"]}
 axum-macros = { version = "0.5.0-rc.1" }
 tower-http = {version = "0.6", features = ["auth", "trace", "fs"]}
@@ -13,9 +26,12 @@ askama = "0.16"
 sqlx = { version = "0.9", features = [ "runtime-tokio", "tls-native-tls", "uuid", "json", "postgres", "migrate", "time" ] }
 axum-oidc = {version = "1.0.0-dev-2"}
 
+fontawesome-free-pack = "7.2.0"
+markdown = {workspace = true}
+
 url = "2"
 uuid = {version = "1", features = ["v4"]}
-time = "0.3"
+time = {workspace = true}
 
 log = "0.4"
 tracing = "0.1"
@@ -25,10 +41,11 @@ dotenvy = "0.15"
 clap = {version = "4.6.1", features=["derive", "env"]}
 
 tokio = {version = "1", features = ["full"]}
-serde = {version = "1", features = ["derive"]}
+serde = {workspace = true}
 serde_json = {version = "1", features = ["arbitrary_precision"]}
 color-eyre = "0.6"
 async-trait = "0.1"
+thiserror = {workspace = true}
 
 [dev-dependencies]
 axum-test = "20"

@@ -1,33 +1,33 @@
 @font-face {
     font-family: "JBM";
-    src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+    src: url("/static/fonts/JetBrainsMono-Regular.ttf") format("truetype");
 }
 
 @font-face {
     font-family: "NF";
-    src: url("/fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
+    src: url("/static/fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
 }
 
 @font-face {
     font-family: "Noto Sans Mono";
-    src: url("/fonts/NotoSansMono.ttf") format("truetype");
+    src: url("/static/fonts/NotoSansMono.ttf") format("truetype");
 }
 
 @font-face {
     font-family: "Fira Sans";
-    src: url("/fonts/FiraSans-Regular.otf") format("opentype");
+    src: url("/static/fonts/FiraSans-Regular.otf") format("opentype");
     font-weight: normal;
 }
 
 @font-face {
     font-family: "Fira Sans";
-    src: url("/fonts/FiraSans-Bold.otf") format("opentype");
+    src: url("/static/fonts/FiraSans-Bold.otf") format("opentype");
     font-weight: bold;
 }
 
 @font-face {
     font-family: "Fira Sans Mono";
-    src: url("/fonts/FiraMono-Medium.otf") format("opentype");
+    src: url("/static/fonts/FiraMono-Medium.otf") format("opentype");
     font-weight: bold;
 }
 
@@ -116,6 +116,13 @@ nav {
 
 .no-ligatures {
     font-variant-ligatures: none;
+}
+
+.icon {
+    width: 1em;
+    height: 1em;
+    color: black;
+    display: inline-block;
 }
 
 details {

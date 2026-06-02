@@ -27,7 +27,6 @@ impl ArcRouteState {
         conn: &mut PgConnection,
         record: &Record,
     ) -> color_eyre::Result<()> {
-        println!("{record:?}");
         let record_value = serde_json::to_value(record).context("encode")?;
         let query = sqlx::query!(
             "

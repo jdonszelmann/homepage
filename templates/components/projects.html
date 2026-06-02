@@ -1,0 +1,27 @@
+{% macro projects(small = false) %}
+<div class="projects {% if small %}small{% endif %}">
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro project(title, link = None, all = true) %}
+{% if all && let Some(link) = link %}
+<div class="project">
+    <a href={{link}}>
+        <h3 class="title">{{title}}</h3>
+        {{ caller() }}
+    </a>
+</div>
+{% else %}
+<div class="project">
+    <h3 class="title">
+        {% if let Some(link) = link %}
+        <a href="{{link}}">{{title}}</a>
+        {% else %}
+        <span>{{title}}</span>
+        {% endif %}
+    </h3>
+    {{ caller() }}
+</div>
+{% endif %}
+{% endmacro %}

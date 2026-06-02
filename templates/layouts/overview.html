@@ -1,0 +1,78 @@
+{% extends "layouts/base.html" %}
+{% import "components/github.html" as github %}
+{% import "components/tag.html" as tag %}
+
+{% block title %}Blog posts{% endblock %}
+
+{% block head %}
+<meta name="description" content="list of all blogposts" />
+<style lang="scss">
+    .space {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% macro postpreview(ppost) %}
+{% let url = ppost.0 %}
+{% let post = ppost.1 %}
+<div class="preview {% if post.draft %}draft{% endif %}">
+    <a class="click-area" href={{url}}>
+        <h1 class="title">
+            {% if post.draft %} <span>Draft:</span> {% endif %}
+            {{ post.title }}
+        </h1>
+        <div class="first-paragraph">
+            {{ post.templatable_description | safe }}
+        </div>
+    </a>
+
+    <div class="author-area">
+        {% if post.authors.len() > 1 %} Authors {% else %} Author: {% endif %}
+        <div class="authors">
+            {% for author in post.authors %}
+                {{ github::user(author, true) }}
+            {% endfor %}
+        </div>
+
+        Published: {{ post.publication_date }}<br />
+    </div>
+    <div class="tags">
+        {% for t in post.tags %}
+            {{ tag::tag(t) }}
+        {% endfor %}
+    </div>
+</div>
+{% endmacro %}
+
+{% block main %}
+<div class="previews">
+    {% if !posts.is_empty() %}
+        {{ postpreview(posts[0]) }}
+    {% endif %}
+
+    {#
+    {% if !urls.is_empty() %}
+    <div class="urls">
+        <h1>Posts on the internet I enjoyed</h1>
+
+        <Links links={getLinks(5)} />
+
+        <div class="buttons">
+            <a href="/links">More links</a>
+            {
+            Astro.locals.session &&
+            (<a href="/addlink">Add</a>)
+            }
+        </div>
+    </div>
+    {% endif %}
+    #}
+
+    {% if posts.len() > 1 %}
+    {% for post in posts.iter().skip(1) %}
+    {{ postpreview(post) }}
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% macro krate(name, large = false) %}
+<a class="crate {% if large %}large{% endif %}" href="https://crates.io/crates/{{name}}">
+    <img alt="crates.io logo" class="logo" src="/static/images/cargo.png" />
+    {{name}}
+</a>
+{% endmacro %}

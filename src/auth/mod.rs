@@ -28,7 +28,34 @@ mod session_store;
 
 #[derive(Debug)]
 pub struct User {
+    pub id: String,
     pub name: String,
+}
+
+impl From<OidcClaims<EmptyAdditionalClaims>> for User {
+    fn from(claims: OidcClaims<EmptyAdditionalClaims>) -> Self {
+        let id = claims.subject().to_string();
+
+        let real_name = claims
+            .name()
+            .and_then(|i| i.iter().next())
+            .map(|(_, i)| i.to_string());
+        let preferred_name = claims.preferred_username().map(|i| i.to_string());
+        let nickname = claims
+            .nickname()
+            .and_then(|i| i.iter().next())
+            .map(|(_, i)| i.to_string());
+
+        let name = preferred_name
+            .or(nickname)
+            .or(real_name)
+            .expect("no username in claims");
+
+        User {
+            id,
+            name: name.to_string(),
+        }
+    }
 }
 
 impl<S> FromRequestParts<S> for User
@@ -40,14 +67,7 @@ where
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         let claims: OidcClaims<EmptyAdditionalClaims> = parts.extract().await?;
 
-        let name = claims
-            .name()
-            .and_then(|i| i.iter().next())
-            .expect("no username in claims")
-            .1
-            .to_string();
-
-        Ok(User { name })
+        Ok(claims.into())
     }
 }
 
@@ -62,14 +82,7 @@ where
             return Ok(None);
         };
 
-        let name = claims
-            .nickname()
-            .and_then(|i| i.iter().next())
-            .expect("no username in claims")
-            .1
-            .to_string();
-
-        Ok(Some(User { name }))
+        Ok(Some(claims.into()))
     }
 }
 

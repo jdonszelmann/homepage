@@ -1,231 +1,143 @@
----
-import TOCHeading from "../components/TOCHeading.astro";
-import GithubUser from "../components/GithubUser.astro";
-import Tag from "../components/Tag.astro";
-import { type HierarchicalHeading } from "../ts/HierarchicalHeading.ts";
-import { marked } from "marked";
-import Layout from "./Layout.astro";
+{% extends "layouts/base.html" %}
+{% import "components/github.html" as github %}
+{% import "components/tag.html" as t %}
+{% import "components/rust.html" as rust %}
+{% import "components/arena.html" as arena %}
 
-type Variant = "normal" | "music";
+{% block title %}{{ post.title }}{% endblock %}
 
-interface Heading {
-slug: string;
-text: string;
-depth: number;
-}
+{% block head %}
+<meta name="description" content={{post.description}} />
+<link rel="stylesheet" href="/static/style/blog-layout.css" />
+<style>
+    body.wide .ifwide {
+        display: none !important;
+    }
 
-export interface Props {
-headings: Heading[];
-id: string;
-data: {
-authors: string[];
-reviewers?: string[];
-description: string;
-draft: boolean;
-title: string;
-pubDate: Date;
-time?: string;
-tags: string[];
-ligatures?: boolean;
-variant?: Variant;
-};
-}
+    @media (width <=900px) {
+        .ifwide {
+            display: none !important;
+        }
+    }
 
-const {
-data: {
-authors,
-description,
-reviewers = [],
-draft = false,
-title,
-pubDate,
-time,
-tags,
-ligatures = true,
-variant = "normal",
-},
-headings,
-id,
-} = Astro.props;
+    @media (width > 900px) {
+        .toc {
+            display: contents;
+        }
 
-const maxDepth = 2;
+        .narrow {
+            display: none !important;
+        }
+    }
+</style>
 
-function parseHeadings(
-headings: Heading[],
-depth: number,
-): HierarchicalHeading[] {
-if (headings.length == 0) {
-return [];
-}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
 
-const result: HierarchicalHeading[] = [];
-let acc: Heading[] = [];
+<script>
+hljs.configure({languages:[]});
+hljs.highlightAll();
+</script>
 
-for (const heading of headings) {
-if (heading.depth > maxDepth) {
-continue;
-}
+{% endblock %}
 
-if (heading.depth > depth) {
-acc.push(heading);
-} else if (heading.depth == depth) {
-if (acc.length != 0) {
-result[result.length - 1].children = parseHeadings(
-acc,
-depth + 1,
-);
-acc = [];
-}
-result.push({
-slug: heading.slug,
-text: heading.text,
-children: [],
-});
-} else if (heading.depth < depth) { throw new Error("bad heading hierarchy"); } } if (acc.length !=0) {
-    result[result.length - 1].children=parseHeadings(acc, depth + 1); } return result; } headings.splice(0, 0, {
-    slug: "title" , text: title, depth: 1, }); const hierarchicalHeadings=headings.length==0 ? [] : headings[0].depth==1
-    ? parseHeadings(headings, 1) : (()=> {
-    throw new Error("bad heading hierarchy (should start with h1)");
-    })();
-    ---
-    {% extends "base.html" %}
+{% block menu %}
+<a href="https://github.com/jdonszelmann/homepage/tree/main/templates/blog/{{post.filepath}}">Source</a>
+{% endblock %}
 
-    <Layout title={`${title}`} wide={variant==="music" }>
-        <Fragment slot="head">
-            <meta name="description" content={description} />
-            <link rel="stylesheet" href="/style/blog-layout.css" />
-            <style>
-                @media (width <=1300px) {
-                    body.wide .wide {
-                        display: none !important;
-                    }
-                }
+{% block nav %}
+<div class="author-info ifwide">
+    By:
+    <div class="authors">
+        {% for user in post.authors %}
+        {{ github::user(user, true) }}
+        {% endfor %}
+    </div>
+    {% if !post.variant.is_music() && !post.reviewers.is_empty() %}
+    Reviewed by:
+    <div class="authors">
+        {% for user in post.reviewers %}
+        {{ github::user(user, true) }}
+        {% endfor %}
+    </div>
+    {% endif %}
 
-                @media (width <=900px) {
-                    .wide {
-                        display: none !important;
-                    }
-                }
+    Published: {{post.publication_date}}<br />
+    {% if let Some(time) = post.time %}
+    read time: {{time}}
+    {% endif %}
 
-                @media (width > 900px) {
-                    .toc {
-                        display: contents;
-                    }
+    <div class="tags">
+        Tags:
+        {% for tag in post.tags %}
+        {{ t::tag(tag, true) }}
+        {% endfor %}
+    </div>
+</div>
 
-                    .narrow {
-                        display: none !important;
-                    }
-                }
-            </style>
-        </Fragment>
-        <Fragment slot="menu">
-            <a href={`https://github.com/jdonszelmann/homepage/tree/main/src/content/blog/${id}`}>Source</a>
-        </Fragment>
-        <Fragment slot="nav">
-            <div class="author-info wide">
-                By:
-                <div class="authors">
-                    {
-                    authors.map((author: any) => (
-                    <GithubUser name={author} large />
-                    ))
-                    }
-                </div>
-                {
-                variant !== "music" && reviewers.length > 0 && (
-                <Fragment>
-                    Reviewed by:
-                    <div class="authors">
-                        {reviewers.map((reviewer: any) => (
-                        <GithubUser name={reviewer} large />
-                        ))}
-                    </div>
-                </Fragment>
-                )
-                }
+{% if !post.variant.is_music() %}
+<div class="toc ifwide sans" role="navigation" aria-label="Table of contents">
+    <TOCHeading elems={hierarchicalHeadings} />
+</div>
+{% endif %}
 
-                Published: {pubDate.toISOString().slice(0, 10)}<br />
-                {time ? `read time: ${time}` : ""}
+{% endblock %}
 
-                <div class="tags">
-                    Tags:
-                    {tags.map((tag: any) =>
-                    <Tag name={tag} wide />)}
-                </div>
-            </div>
+{% block main %}
+<h1 id="title" class="title" }>
+    {{ post.title }}
+    {% if post.draft %} <span>(Draft)</span> {% endif %}
+</h1>
 
-            {
-            variant !== "music" && (
-            <div class="toc wide sans" role="navigation" aria-label="Table of contents">
-                <TOCHeading elems={hierarchicalHeadings} />
-            </div>
-            )
-            }
-        </Fragment>
-        <Fragment slot="main">
-            <h1 id="title" class="title" }>
-                {title}
-                {draft && <span>(Draft)</span>}
-            </h1>
-            <p set:html={marked.parse(description || "" )} />
+{% if !post.variant.is_music() %}
+<details class="center narrow">
+    <summary>Press for table of Contents</summary>
+    <div class="toc sans" role="navigation" aria-label="Table of contents">
+        <TOCHeading elems={hierarchicalHeadings} />
+    </div>
+</details>
+{% endif %}
 
-            {
-            variant !== "music" && (
-            <details class="center narrow">
-                <summary>Press for table of Contents</summary>
-                <div class="toc sans" role="navigation" aria-label="Table of contents">
-                    <TOCHeading elems={hierarchicalHeadings} />
-                </div>
-            </details>
-            )
-            }
 
-            <div class:list={[ligatures ? null : "no-ligatures" , "contents" ]}>
-                <slot />
-            </div>
+<div class="contents {% if !post.ligatures || post.variant.is_music() %}no-ligatures{% endif %}">
+    {% block contents %}{% endblock %}
+</div>
 
-            <footer class="narrow center">
-                {
-                variant !== "music" && (
-                <Fragment>
-                    Table of contents:
-                    <div class="toc sans" role="navigation" aria-label="Table of contents">
-                        <TOCHeading elems={hierarchicalHeadings} />
-                    </div>
-                </Fragment>
-                )
-                }
+<footer class="narrow center">
+    {% if !post.variant.is_music() %}
+    Table of contents:
+    <div class="toc sans" role="navigation" aria-label="Table of contents">
+        <TOCHeading elems={hierarchicalHeadings} />
+    </div>
+    {% endif %}
 
-                <div class="author-info below">
-                    By:
-                    <div class="authors">
-                        {
-                        authors.map((author: any) => (
-                        <GithubUser name={author} large />
-                        ))
-                        }
-                    </div>
-                    {
-                    variant !== "music" && reviewers.length > 0 && (
-                    <Fragment>
-                        Reviewed by:
-                        <div class="authors">
-                            {reviewers.map((reviewer: any) => (
-                            <GithubUser name={reviewer} large />
-                            ))}
-                        </div>
-                    </Fragment>
-                    )
-                    }
-                    Published: {pubDate.toISOString().slice(0, 10)}
-                    <br />
-                    {time ? `read time: ${time}` : ""}
-                    <div class="tags">
-                        Tags:
-                        {tags.map((tag: any) =>
-                        <Tag name={tag} wide />)}
-                    </div>
-                </div>
-            </footer>
-        </Fragment>
-    </Layout>
+    <div class="author-info below">
+        By:
+        <div class="authors">
+            {% for user in post.authors %}
+            {{ github::user(user, true) }}
+            {% endfor %}
+        </div>
+
+        {% if !post.variant.is_music() && !post.reviewers.is_empty() %}
+        Reviewed by:
+        <div class="authors">
+            {% for user in post.reviewers %}
+            {{ github::user(user, true) }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        Published: {{post.publication_date}}
+        <br />
+        {% if let Some(time) = post.time %}
+        read time: {{time}}
+        {% endif %}
+        <div class="tags">
+            Tags:
+            {% for tag in post.tags %}
+            {{ t::tag(tag, true) }}
+            {% endfor %}
+        </div>
+    </div>
+</footer>
+{% endblock %}

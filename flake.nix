@@ -12,12 +12,12 @@
     };
   };
   outputs =
-    { self
-    , nixpkgs
-    , flake-utils
-    , nixpkgs-mozilla
-    , naersk
-    ,
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      nixpkgs-mozilla,
+      naersk,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -33,7 +33,7 @@
         toolchain = (
           (pkgs.rustChannelOf {
             rustToolchain = ./rust-toolchain.toml;
-            sha256 = "sha256-gh/xTkxKHL4eiRXzWv8KP7vfjSk61Iq48x47BEDFgfk=";
+            sha256 = "sha256-mvUGEOHYJpn3ikC5hckneuGixaC+yGrkMM/liDIDgoU=";
           }).rust.override
             {
               extensions = [

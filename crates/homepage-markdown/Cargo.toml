@@ -1,0 +1,14 @@
+[package]
+name = "homepage-markdown"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "./lib.rs"
+
+[dependencies]
+markdown = {workspace = true}
+thiserror = {workspace = true}
+time = {workspace = true}
+serde = {workspace = true}
+serde_yaml = "0.9"

@@ -2,15 +2,17 @@
 <html lang="en">
 
 <head>
-    <slot name="head" />
+    {% block head %}{% endblock %}
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="stylesheet" href="/style/site-layout.css" />
+    <link rel="stylesheet" href="/static/style/site-layout.css" />
     {% if gay %}
-    <link rel="stylesheet" href="/style/gay.css" />
+    <link rel="stylesheet" href="/static/style/gay.css" />
     {% endif %}
-    <link rel="stylesheet" href="/style/contents.css" />
+    <link rel="stylesheet" href="/static/style/contents.css" />
+    <link rel="stylesheet" href="/static/style/components.css" />
 
     <title>
         {% block title %}{% endblock %}
