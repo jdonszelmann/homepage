@@ -104,14 +104,16 @@ fn shared_setup() -> color_eyre::Result<()> {
 }
 
 async fn init_app(state: ArcRouteState) -> color_eyre::Result<Router> {
-    let app = Router::new().with_state(state.clone());
+    let app = Router::new();
     let app = routes(app).await;
-    let app = auth_routes(app, state).await.context("auth routes")?;
+    let app = auth_routes(app, state.clone())
+        .await
+        .context("auth routes")?;
 
-    Ok(app)
+    Ok(app.with_state(state))
 }
 
-async fn routes<S: Clone + Send + Sync + 'static>(r: Router<S>) -> Router<S> {
+async fn routes(r: Router<ArcRouteState>) -> Router<ArcRouteState> {
     pages::routes(r)
         .nest_service("/static", ServeDir::new("public"))
         .layer(

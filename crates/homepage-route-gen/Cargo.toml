@@ -1,5 +1,5 @@
 [package]
-name = "homepage-macros"
+name = "homepage-route-gen"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,7 +8,8 @@ path = "./lib.rs"
 proc-macro = true
 
 [dependencies]
+homepage-markdown = {path = "../homepage-markdown"}
+homepage-traits = {path = "../homepage-traits"}
+
 quote = {workspace = true}
-syn = {workspace = true}
 proc-macro2 = {workspace = true}
-itertools = {workspace = true}

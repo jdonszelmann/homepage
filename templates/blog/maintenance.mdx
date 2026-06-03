@@ -13,12 +13,10 @@ description: |
 draft: false
 time: "5 minutes"
 ---
-import User from '../../components/GithubUser.astro';
-import Tag from '../../components/Tag.astro';
 
-I was talking to Mara (<User name="m-ou-se"/>) today about what I was busy working on.
+I was talking to Mara ({{ github::user("m-ou-se") }}) today about what I was busy working on.
 I said that I was fixing weird behavior of `#[deprecated]` attributes.
-Last week <User name="WaffleLapkin" /> and I discovered some subtle bugs in that.
+Last week {{ github::user("WaffleLapkin") }} and I discovered some subtle bugs in that.
 Yesterday, I finished up a pull request that fixed unsizing coercions in the new trait solver.
 
 Both of these tiny projects I quite enjoyed, and they represent what most of my days are filled with.
@@ -34,7 +32,7 @@ How did we miss that? Why are there no tests for that? How did nobody notice tha
 
 So, Mara convinced me to share some of that.
 From now on, I intend to write about some of the things I work on in the compiler.
-I'll tag them with <Tag name="maintenance" />.
+I'll tag them with {{ t::tag("maintenance") }}.
 
 I've already written a couple!
 

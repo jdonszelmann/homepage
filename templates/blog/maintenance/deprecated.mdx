@@ -11,11 +11,6 @@ description: |
 draft: false
 time: "10 minutes"
 ---
-import User from '../../../components/GithubUser.astro';
-import Tag from '../../../components/Tag.astro';
-import SpoilerGap from '../../../components/SpoilerGap.astro';
-import Pr from '../../../components/GithubPr.astro';
-import Issue from '../../../components/GithubIssue.astro';
 
 ## The `deprecated` attribute
 
@@ -100,7 +95,7 @@ The reason is that after name resolution, the use of `bar` doesn't pass through 
 It just resolves directly to `foo`.
 So, the fact that the use item is deprecated isn't noticed.
 
-<User name="WaffleLapkin" /> were planning to fix that.
+{{ github::user("WaffleLapkin") }} were planning to fix that.
 It seems reasonable that this should work, or otherwise at least warn that it doesn't do anything.
 What happened is that we found multiple other bugs with `#[deprecated]`.
 
@@ -197,4 +192,4 @@ Hence, two warnings.
 
 Structs with braces don't get this treatment, and `3` only produces one warning.
 
-This last bug is fixed with <Pr name="#147994" />.
+This last bug is fixed with {{ github::pr("#147994") }}.

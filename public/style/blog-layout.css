@@ -35,7 +35,7 @@ body.wide .ifwide {
         display: contents;
     }
 
-    .narrow {
+    .ifnarrow {
         display: none !important;
     }
 }

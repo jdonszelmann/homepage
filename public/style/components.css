@@ -108,6 +108,8 @@
     font-size: unset;
     text-decoration: none;
 
+    color: #9c3574;
+
     &.wide {
         padding: 0.125em 0em;
         width: 100%;

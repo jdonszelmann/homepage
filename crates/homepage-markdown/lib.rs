@@ -1,10 +1,11 @@
 use std::{borrow::Cow, fs, io, ops::Deref, path::Path};
 
+use homepage_traits::ReproduceTokens;
 use markdown::{CompileOptions, Constructs, LineEnding, Options, ParseOptions, mdast::Node};
 use serde::Deserialize;
 use thiserror::Error;
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, ReproduceTokens)]
 #[serde(rename_all = "kebab-case")]
 pub enum Variant {
     #[default]
@@ -18,7 +19,7 @@ impl Variant {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ReproduceTokens)]
 pub struct Preamble {
     pub title: Cow<'static, str>,
     #[serde(rename = "pubDate")]
@@ -47,6 +48,7 @@ fn default_true() -> bool {
     true
 }
 
+#[derive(ReproduceTokens)]
 pub struct BlogPost {
     pub preamble: Preamble,
     pub templatable_source: Cow<'static, str>,

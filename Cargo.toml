@@ -9,12 +9,19 @@ default-members = ["."]
 
 [workspace.dependencies]
 markdown = "1"
-thiserror = "2"
+
 time = {version = "0.3", features = ["serde"]}
+
+thiserror = "2"
 serde = {version = "1", features = ["derive"]}
+itertools = "0.14"
+
+quote = "1"
+syn = "2"
+proc-macro2 = "1"
 
 [dependencies]
-homepage-macros = {path = "./crates/homepage-macros/"}
+homepage-route-gen = {path = "./crates/homepage-route-gen/"}
 homepage-markdown = {path = "./crates/homepage-markdown/"}
 
 axum = {version = "0.8", features = ["macros"]}

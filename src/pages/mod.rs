@@ -1,8 +1,13 @@
-use std::fmt::Display;
+use std::{convert::Infallible, fmt::Display};
 
-use crate::auth::User;
+use crate::{auth::User, state::ArcRouteState};
 use askama::{Template, filters::HtmlSafe};
-use axum::{Router, routing::get};
+use axum::{
+    RequestPartsExt, Router,
+    extract::{FromRequestParts, Query},
+    routing::get,
+};
+use serde::Deserialize;
 
 struct Icon(&'static str);
 
@@ -31,6 +36,29 @@ pub struct Base {
     user: Option<User>,
 }
 
+impl<S: Send + Sync> FromRequestParts<S> for Base {
+    type Rejection = Infallible;
+
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        _: &S,
+    ) -> Result<Self, Self::Rejection> {
+        let user: Option<User> = parts.extract().await?;
+
+        #[derive(Deserialize, Default)]
+        struct GayParams {
+            gay: bool,
+        }
+        let Query(GayParams { gay }) = parts.extract().await.unwrap_or_default();
+
+        Ok(Self {
+            gay,
+            wide: false,
+            user,
+        })
+    }
+}
+
 pub struct GithubUrlParts {
     org: String,
     repo: String,
@@ -38,7 +66,7 @@ pub struct GithubUrlParts {
 }
 
 impl Base {
-    fn split_github_url(url: &str) -> GithubUrlParts {
+    fn split_github_url(&self, url: &str) -> GithubUrlParts {
         let url = url.trim_start_matches("https://github.com/");
         let (org, rest) = url.split_once("/").unwrap_or(("rust-lang", url));
         let (mut repo, number) = rest.rsplit_once("#").unwrap_or(("rust", url));
@@ -54,7 +82,7 @@ impl Base {
     }
 }
 
-pub fn routes<S: Clone + Send + Sync + 'static>(r: Router<S>) -> Router<S> {
+pub fn routes(r: Router<ArcRouteState>) -> Router<ArcRouteState> {
     let r = r.route("/", get(index::index));
 
     blog::routes(r)

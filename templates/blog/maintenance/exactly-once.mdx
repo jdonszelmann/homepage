@@ -14,11 +14,6 @@ description: |
 draft: false
 time: "10 minutes"
 ---
-import User from '../../../components/GithubUser.astro';
-import Pr from '../../../components/GithubPr.astro';
-import Issue from '../../../components/GithubIssue.astro';
-import Crate from '../../../components/Crate.astro';
-import Tag from '../../../components/Tag.astro';
 
 ## The feature I'd like
 
@@ -52,7 +47,7 @@ There are certainly ways to remove the mutable variable too, maybe with iterator
 Still, none of those solutions are particularly pretty.
 I think this is common enough that it's something the standard library could provide.
 Maybe not on `Vec`, or `&[]`, but on iterators so it's widely applicable.
-That's what I proposed in <Issue name="libs-team#676" />, 
+That's what I proposed in {{ github::issue("libs-team#676") }}, 
 with which we could write the solution as:
 
 ```rust
@@ -61,8 +56,8 @@ get_all_spans().into_iter().exactly_one()
 
 ## Stabilizing methods on traits
 
-The implementation is rather trivial, this is the PR if you're interested anyway: <Pr name="#149270" />.
-The problem is that <Crate name="itertools" /> already has a method named `exactly_one`.
+The implementation is rather trivial, this is the PR if you're interested anyway: {{ github::pr("#149270") }}.
+The problem is that {{ rust::krate("itertools") }} already has a method named `exactly_one`.
 With a different signature.
 And a blanket implementation for `T: Iterator`.
 
@@ -81,19 +76,19 @@ match foo.into_iter().exactly_one() {
 Which will break as soon as we stabilize the method on `Iterator` which instead returns an `Option`.
 And that's not just a problem with `Iterator`.
 Any trait method we stabilize, that someone already added themselves through an extension trait with a blanket implementation, is a breaking change.
-Though the problem with methods we want on `Iterator`, which already existing in <Crate name="itertools" /> is apparently a common one.
+Though the problem with methods we want on `Iterator`, which already existing in {{ rust::krate("itertools") }} is apparently a common one.
 
 Not that this clueless girl knew that this morning.
 I only found out when CI failed on the implementation PR:
 the compiler itself couldn't compile with the updated standard library containing `exactly_one` because of a warning about a name resolution ambiguity.
-We use <Crate name="itertools" /> and its existing `exactly_one` method too, causing the exact same problem users will when we stabilize it.
+We use {{ rust::krate("itertools") }} and its existing `exactly_one` method too, causing the exact same problem users will when we stabilize it.
 
 The good news is: this is being fixed!
 And if like me, you didn't already know about this: you should! It's cool!
 These internal compiler changes aren't always super visible,
 but the result is that we can stabilize parts of the standard library which *are* things you might notice.
 
-Only 3 weeks ago <User name="amanieu" /> opened the stabilization PR for a feature called `supertrait_item_shadowing` <Pr name="rust-lang/rust#148605" />
+Only 3 weeks ago {{ github::user("amanieu") }} opened the stabilization PR for a feature called `supertrait_item_shadowing` {{ github::pr("rust-lang/rust#148605") }}
 which makes changes rust's name resolution rules to:
 
 - When a type implements a trait, like `trait Iterator {...}`,
@@ -107,4 +102,4 @@ This whole issue reminds me of the issue we have with built-in attributes.
 Technically, every built-in attribute we add to rustc is a breaking change...
 I expect some day we need a similar change in name resolution there.
 
-So, to end off, let me repeat the acknowledgements from under that stabilization PR, by thanking <User name="compiler-errors" /> and <User name="lcdr" /> for making this possible.
+So, to end off, let me repeat the acknowledgements from under that stabilization PR, by thanking {{ github::user("compiler-errors") }} and {{ github::user("lcnr") }} for making this possible.

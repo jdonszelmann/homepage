@@ -13,9 +13,6 @@ description: |
 draft: false
 time: "15 minutes"
 ---
-import User from '../../components/GithubUser.astro';
-import Pr from '../../components/GithubPr.astro';
-import Issue from '../../components/GithubIssue.astro';
 
 [Criterion](https://docs.rs/criterion) is a custom benchmarking framework which provides great statistical analyses of performance.
 If you've ever used it before, you may have seen this pattern:
@@ -67,7 +64,7 @@ Interestingly, Rust does have a weird kind of support for this through [`#![feat
 I've even recommended it to my students once or twice, who wanted to test their embedded software but it always felt a bit painful as this feature will, at least in its current form, never be stable.
 
 Various people have expressed interest in having a generic system built into the compiler that can provide this behavior.
-At [RustNL](https://2024.rustnl.org), I talked to <User name="epage" /> who wants this for the [Testing Devex team](https://github.com/rust-lang/testing-devex-team), 
+At [RustNL](https://2024.rustnl.org), I talked to {{ github::user("epage") }} who wants this for the [Testing Devex team](https://github.com/rust-lang/testing-devex-team), 
 exactly to make tests less magical and to provide users with the option to define their own test frameworks.
 Since then, I've been thinking about this feature. 
 It started with a [pre-rfc](https://internals.rust-lang.org/t/global-registration-a-kind-of-pre-rfc/20813/26), and at this point I've written most of an implementation.
@@ -78,7 +75,7 @@ Why? Well that's what the rest of this blog post is about.
 # Library Solutions
 
 While direct support from the compiler is the ideal way to implement this feature, as always, people have come up with interesting workarounds.
-There are currently two libraries that can help you achieve global registration, both of which are maintained by <User name="dtolnay" />.
+There are currently two libraries that can help you achieve global registration, both of which are maintained by {{ github::user("dtolnay") }}
 Let's discuss them briefly.
 
 ## Inventory
@@ -216,7 +213,7 @@ One crate defines a registry, with `#[global_registry]`;
 anyone can add to it and in the final binary a static appears that, when iterated over, contains all the elements. Neat!
 
 Of course, I acted first and only then thought about it properly...
-After lots of incredibly helpful discussion with <User name="m-ou-se"/>, 
+After lots of incredibly helpful discussion with {{ github::user("m-ou-se") }}, 
 we realised that this has a lot of implications.
 Let's do some thought experiments, and discuss what they mean.
 
@@ -285,7 +282,7 @@ You could define a second registry, and deprecate the old one, and when you need
 However, existing crates that are already reading the global registry won't know that they now have to read two registries to make sure they get all the elements.
 
 What you'd want is some way to communicate that all the elements in the old registry should be converted using some function into elements in the new registry.
-[Later on in this blog post](#externally-implementable-items) I briefly touch on Externally Implementable Items, for which <User name="m-ou-se" /> and I think
+[Later on in this blog post](#externally-implementable-items) I briefly touch on Externally Implementable Items, for which {{ github::user("m-ou-se") }} and I think
 we have solved this problem, but it won't easily transfer to global registration.
 
 ## Compile time access
@@ -338,7 +335,7 @@ In any case, I now believe that *actually global* registration is not something 
 
 # An alternative design
 
-A fact is that testing devex wants to make custom test frameworks a thing (<Issue name="testing-devex-team#2" />), 
+A fact is that testing devex wants to make custom test frameworks a thing ( {{ github::issue("testing-devex-team#2") }}), 
 and I think it's safe to conclude that this same pattern is useful in other places too.
 Let's start from the beginning.
 
@@ -358,7 +355,7 @@ It's not true that there are *no* applications for inter-crate registries.
 Talking to some friends, we came up with some examples
 
 * A dependency might define some routes that you can just import.
-* <User name="epage" /> talked about wanting a dependency to register test fixtures.
+* {{ github::user("epage") }} talked about wanting a dependency to register test fixtures.
 * Sometimes in embedded programming, the only actually runnable crate is your main crate (it contains the code to boot the processor).
   However, this main crate might then actually want to run test from dependencies as they wouldn't be able to boot on their own.
 * A dependency of yours defines some metrics, you want to register those, and some more of your own.
@@ -479,8 +476,8 @@ because right now there's a lot of compiler magic going on that's likely hard to
 
 # Externally Implementable Items
 
-Many of the things I've written about here come from discussions with <User name="m-ou-se" />, 
-as we thought that a feature she was working on (Externally Implementable Items; EII <Issue name="#125418" />) 
+Many of the things I've written about here come from discussions with {{ github::user("m-ou-se") }}, 
+as we thought that a feature she was working on (Externally Implementable Items; EII {{ github::issue("#125418") }}) 
 would have a very similar implementation to global registration.
 
 Basically, externally implementable items are like registering a single element in a global registry.

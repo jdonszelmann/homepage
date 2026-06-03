@@ -9,27 +9,6 @@
 {% block head %}
 <meta name="description" content={{post.description}} />
 <link rel="stylesheet" href="/static/style/blog-layout.css" />
-<style>
-    body.wide .ifwide {
-        display: none !important;
-    }
-
-    @media (width <=900px) {
-        .ifwide {
-            display: none !important;
-        }
-    }
-
-    @media (width > 900px) {
-        .toc {
-            display: contents;
-        }
-
-        .narrow {
-            display: none !important;
-        }
-    }
-</style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
@@ -90,7 +69,7 @@ hljs.highlightAll();
 </h1>
 
 {% if !post.variant.is_music() %}
-<details class="center narrow">
+<details class="center ifnarrow">
     <summary>Press for table of Contents</summary>
     <div class="toc sans" role="navigation" aria-label="Table of contents">
         <TOCHeading elems={hierarchicalHeadings} />
@@ -103,7 +82,7 @@ hljs.highlightAll();
     {% block contents %}{% endblock %}
 </div>
 
-<footer class="narrow center">
+<footer class="ifnarrow center">
     {% if !post.variant.is_music() %}
     Table of contents:
     <div class="toc sans" role="navigation" aria-label="Table of contents">

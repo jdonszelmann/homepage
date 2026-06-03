@@ -1,21 +1,24 @@
 use std::{convert::Infallible, ops::Deref};
 
-use crate::{
-    auth::User,
-    pages::{Base, error::RequestError},
-};
+use crate::pages::{Base, error::RequestError};
 use askama::Template;
-use axum::response::{Html, IntoResponse};
+use axum::response::Html;
+use axum::routing::MethodRouter;
 use axum::routing::get;
-use axum::{Router, routing::MethodRouter};
-use homepage_macros::collect_blog_posts;
-use homepage_markdown::{BlogPost, Preamble, Variant};
-use std::borrow::Cow;
+use homepage_markdown::BlogPost;
+use homepage_route_gen::generate_blog_routes;
+
+// used in the expansion of generate_blog_routes
+mod prelude {
+    pub use crate::state::ArcRouteState;
+    pub use axum::{response::IntoResponse, routing::Router};
+    pub use homepage_markdown::{BlogPost, Preamble, Variant};
+}
 
 macro_rules! generate_route {
     ($source: literal, $data: expr) => {{
         // #[axum::debug_handler]
-        pub async fn blog_route(user: Option<User>) -> Result<impl IntoResponse, RequestError> {
+        pub async fn blog_route(mut base: Base) -> Result<impl IntoResponse, RequestError> {
             #[derive(Template)]
             #[template(source = $source, ext="html")]
             struct Template {
@@ -32,15 +35,8 @@ macro_rules! generate_route {
             }
 
             let post = &$data;
-
-            let template = Template {
-                base: Base {
-                    gay: false,
-                    wide: matches!(post.preamble.variant, Variant::Music),
-                    user,
-                },
-                post,
-            };
+            base.wide |= matches!(post.preamble.variant, Variant::Music);
+            let template = Template { base, post };
 
             Ok(Html(template.render()?))
         }
@@ -49,7 +45,7 @@ macro_rules! generate_route {
     }};
 }
 
-collect_blog_posts!(generate_route);
+generate_blog_routes!(generate_route);
 
 #[derive(Template)]
 #[template(path = "layouts/overview.html")]
@@ -69,17 +65,8 @@ impl Deref for Overview<'_> {
 fn overview_route<S: Clone + Send + Sync + 'static>(
     posts: &'static [(&'static str, BlogPost)],
 ) -> MethodRouter<S, Infallible> {
-    // TODO: don't prompt login on Option<User> routes
-    get(async move |user: Option<User>| -> Result<_, RequestError> {
-        let template = Overview {
-            base: Base {
-                gay: false,
-                wide: false,
-                user,
-            },
-            posts,
-        };
-
+    get(async move |base: Base| -> Result<_, RequestError> {
+        let template = Overview { base, posts };
         Ok(Html(template.render()?))
     })
 }

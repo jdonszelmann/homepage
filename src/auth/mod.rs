@@ -1,9 +1,9 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, str::FromStr};
 
 use axum::{
     RequestPartsExt, Router,
     error_handling::HandleErrorLayer,
-    extract::{FromRequestParts, OptionalFromRequestParts},
+    extract::{FromRequestParts, OptionalFromRequestParts, State},
     http::{Uri, request::Parts},
     response::{IntoResponse, Redirect},
     routing::{any, get},
@@ -107,10 +107,10 @@ impl<AC: AdditionalClaims> axum_oidc::Session<AC> for SessionWrapper {
     }
 }
 
-pub async fn auth_routes<S: Clone + Send + Sync + 'static>(
-    r: Router<S>,
+pub async fn auth_routes(
+    r: Router<ArcRouteState>,
     state: ArcRouteState,
-) -> color_eyre::Result<Router<S>> {
+) -> color_eyre::Result<Router<ArcRouteState>> {
     let session_layer = SessionManagerLayer::new(state.clone())
         .with_secure(false)
         .with_same_site(SameSite::Lax)
@@ -151,8 +151,7 @@ pub async fn auth_routes<S: Clone + Send + Sync + 'static>(
 
     let r = r
         .route("/logout", get(logout))
-        .route("/login", get(login))
-        .layer(oidc_login_service)
+        .route("/login", get(login).layer(oidc_login_service))
         .route(
             OIDC_URL,
             any(handle_oidc_redirect::<EmptyAdditionalClaims, SessionWrapper>),
@@ -167,6 +166,9 @@ async fn login(_: User) -> impl IntoResponse {
     Redirect::temporary("/")
 }
 
-async fn logout(logout: OidcRpInitiatedLogout) -> impl IntoResponse {
-    logout.with_post_logout_redirect(Uri::from_static("/"))
+async fn logout(
+    logout: OidcRpInitiatedLogout,
+    State(state): State<ArcRouteState>,
+) -> impl IntoResponse {
+    logout.with_post_logout_redirect(Uri::from_str(&state.args.base_url).expect("bad base url"))
 }

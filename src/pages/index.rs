@@ -1,9 +1,6 @@
 use std::ops::Deref;
 
-use crate::{
-    auth::User,
-    pages::{Base, error::RequestError},
-};
+use crate::pages::{Base, error::RequestError};
 use askama::Template;
 use axum::response::{Html, IntoResponse};
 
@@ -22,14 +19,8 @@ impl Deref for Index {
 }
 
 #[axum::debug_handler]
-pub async fn index(user: Option<User>) -> Result<impl IntoResponse, RequestError> {
-    let template = Index {
-        base: Base {
-            gay: false,
-            wide: false,
-            user,
-        },
-    };
+pub async fn index(base: Base) -> Result<impl IntoResponse, RequestError> {
+    let template = Index { base };
 
     Ok(Html(template.render()?))
 }
