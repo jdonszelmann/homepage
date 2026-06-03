@@ -21,7 +21,7 @@ itertools = "0.14"
 
 quote = "1"
 syn = "2"
-proc-macro2 = "1"
+proc-macro2 = {version = "1", features = ["span-locations"]}
 
 [dependencies]
 homepage-route-gen = {path = "./crates/homepage-route-gen/"}

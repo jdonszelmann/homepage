@@ -5,7 +5,7 @@ use markdown::{CompileOptions, Constructs, LineEnding, Options, ParseOptions, md
 use serde::Deserialize;
 use thiserror::Error;
 
-#[derive(Deserialize, Default, ReproduceTokens)]
+#[derive(Deserialize, Default, ReproduceTokens, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub enum Variant {
     #[default]
@@ -19,7 +19,7 @@ impl Variant {
     }
 }
 
-#[derive(Deserialize, ReproduceTokens)]
+#[derive(Deserialize, ReproduceTokens, Debug)]
 pub struct Preamble {
     pub title: Cow<'static, str>,
     #[serde(rename = "pubDate")]
@@ -48,7 +48,7 @@ fn default_true() -> bool {
     true
 }
 
-#[derive(ReproduceTokens)]
+#[derive(ReproduceTokens, Debug)]
 pub struct BlogPost {
     pub preamble: Preamble,
     pub templatable_source: Cow<'static, str>,
@@ -147,7 +147,7 @@ fn put_back_templates(mut input: String, substitutions: Vec<String>) -> String {
 
 impl BlogPost {
     pub fn from_file(
-        root: impl AsRef<Path>,
+        real_path: impl AsRef<Path>,
         path: impl AsRef<Path>,
     ) -> Result<BlogPost, FromFileError> {
         let parse_options = ParseOptions {
@@ -241,12 +241,7 @@ impl BlogPost {
             .replace(" ", "-")
             .replace(|i: char| !i.is_ascii_alphanumeric() && i != '-', "");
 
-        let filepath = path
-            .as_ref()
-            .strip_prefix(root.as_ref())
-            .unwrap()
-            .to_string_lossy()
-            .into_owned();
+        let filepath = real_path.as_ref().to_string_lossy().into_owned();
 
         Ok(BlogPost {
             slug: slug.into(),

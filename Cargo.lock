@@ -1372,6 +1372,7 @@ dependencies = [
  "homepage-traits",
  "proc-macro2",
  "quote",
+ "syn",
 ]
 
 [[package]]

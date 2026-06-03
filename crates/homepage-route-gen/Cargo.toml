@@ -13,3 +13,4 @@ homepage-traits = {path = "../homepage-traits"}
 
 quote = {workspace = true}
 proc-macro2 = {workspace = true}
+syn = {workspace = true, features = ["parsing"]}

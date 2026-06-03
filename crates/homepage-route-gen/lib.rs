@@ -1,12 +1,14 @@
 use homepage_markdown::BlogPost;
 use homepage_traits::ReproduceTokens;
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, TokenStream as TokenStream2};
+use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{format_ident, quote};
 use std::cmp::Reverse;
 use std::collections::{HashSet, VecDeque};
 use std::fs::read_dir;
 use std::path::{Path, PathBuf};
+use syn::LitStr;
+use syn::parse::Parse;
 
 fn collect_files(root: impl AsRef<Path>) -> Result<Vec<PathBuf>, String> {
     let mut res = Vec::new();
@@ -31,7 +33,13 @@ fn collect_files(root: impl AsRef<Path>) -> Result<Vec<PathBuf>, String> {
                 .extension()
                 .is_some_and(|i| i == "mdx" || i == "md")
             {
-                res.push(entry.path().to_path_buf());
+                res.push(
+                    entry
+                        .path()
+                        .strip_prefix(root.as_ref())
+                        .unwrap()
+                        .to_path_buf(),
+                );
             }
         }
     }
@@ -59,6 +67,7 @@ fn posts_with_tag<'a>(
 
 fn make_blogpost_set(
     name: Ident,
+    generate_overview_route_function: Ident,
     overview_route: &str,
     posts: &[&BlogPost],
 ) -> (TokenStream2, TokenStream2) {
@@ -75,7 +84,7 @@ fn make_blogpost_set(
             const #name: &[(&str, BlogPost)] = &[#(#data)*];
         },
         quote! {
-          .route(#overview_route, overview_route(#name))
+          .route(#overview_route, #generate_overview_route_function(#name))
         },
     )
 }
@@ -92,19 +101,61 @@ fn convert_tag(tag: &str) -> String {
     tag.to_uppercase().replace("-", "_").replace(" ", "_")
 }
 
+struct GenerateBlogRoutesInput {
+    repo_root: LitStr,
+    generate_route_macro: syn::Ident,
+    generate_overview_route_function: syn::Ident,
+}
+
+impl Parse for GenerateBlogRoutesInput {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let repo_root = input.parse()?;
+        let _: syn::Token![,] = input.parse()?;
+        let generate_route_macro = input.parse()?;
+        let _: syn::Token![,] = input.parse()?;
+        let generate_overview_route_function = input.parse()?;
+
+        Ok(Self {
+            repo_root,
+            generate_route_macro,
+            generate_overview_route_function,
+        })
+    }
+}
+
 #[proc_macro]
 pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
-    let input: TokenStream2 = ts.into();
+    let GenerateBlogRoutesInput {
+        repo_root,
+        generate_route_macro,
+        generate_overview_route_function,
+    } = syn::parse_macro_input!(ts as GenerateBlogRoutesInput);
 
-    let root = "./templates/blog";
-    let sources = match collect_files(root) {
+    let call_path = {
+        let mut call_path = Span::call_site().local_file().unwrap();
+        call_path.pop();
+        call_path
+    };
+
+    let call_path_to_repo_root = PathBuf::from(repo_root.value());
+    let repo_root_to_blog = Path::new("templates/blog");
+    // where are blog posts relative to the macro?
+    let macro_base = call_path
+        .join(&call_path_to_repo_root)
+        .join(&repo_root_to_blog);
+    // where are blog posts relative to the expanded source?
+    // no need to include the call path, since that's already where we're compiling 
+    // (in the expanded source)
+    let expansion_base = call_path_to_repo_root.join(repo_root_to_blog);
+
+    let sources = match collect_files(&macro_base) {
         Ok(i) => i,
         Err(e) => return (quote! { compile_error!(#e) }).into(),
     };
 
     let mut posts = Vec::<BlogPost>::new();
     for i in sources {
-        match BlogPost::from_file(root, i) {
+        match BlogPost::from_file(expansion_base.join(&i), macro_base.join(&i)) {
             Ok(i) => posts.push(i),
             Err(e) => {
                 let e = format!("{e:?}");
@@ -120,11 +171,13 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
     let (blog_data, overview_routes): (Vec<_>, Vec<_>) = [
         make_blogpost_set(
             format_ident!("ALL_POSTS"),
+            generate_overview_route_function.clone(),
             "/blog",
             &posts_with_tag(&posts, None, false),
         ),
         make_blogpost_set(
             all_blogposts_name.clone(),
+            generate_overview_route_function.clone(),
             "/blog/drafts",
             &posts_with_tag(&posts, None, true),
         ),
@@ -137,11 +190,13 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
         [
             make_blogpost_set(
                 normal,
+                generate_overview_route_function.clone(),
                 &format!("/blog/tag/{tag}"),
                 &posts_with_tag(&posts, Some(&tag), false),
             ),
             make_blogpost_set(
                 drafts,
+                generate_overview_route_function.clone(),
                 &format!("/blog/tag/{tag}/drafts"),
                 &posts_with_tag(&posts, Some(&tag), true),
             ),
@@ -159,7 +214,7 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
                 post.templatable_source.as_ref()
             );
             quote! {
-                  .route(#url, #input !(#templatable_source, #all_blogposts_name[#idx].1))
+                  .route(#url, #generate_route_macro !(#templatable_source, #all_blogposts_name[#idx].1))
 
             }
         })
@@ -168,7 +223,7 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
     let includes: Vec<_> = posts
         .iter()
         .map(|i| {
-            let path = format!("../../../templates/blog/{}", i.filepath);
+            let path = i.filepath.as_ref();
             quote! {
                 const _: &str = include_str!(#path);
             }

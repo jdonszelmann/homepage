@@ -45,7 +45,7 @@ macro_rules! generate_route {
     }};
 }
 
-generate_blog_routes!(generate_route);
+generate_blog_routes!("../../..", generate_route, overview_route);
 
 #[derive(Template)]
 #[template(path = "layouts/overview.html")]
