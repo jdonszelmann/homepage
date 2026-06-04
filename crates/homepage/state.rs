@@ -39,7 +39,7 @@ pub async fn init_database(args: &Args, create_db: bool) -> color_eyre::Result<P
         .context("connect to pool")?;
 
     info!("running migrations");
-    sqlx::migrate!("./migrations")
+    sqlx::migrate!("../../migrations")
         .run(&pool)
         .await
         .context("migrations")?;

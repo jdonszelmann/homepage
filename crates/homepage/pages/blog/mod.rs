@@ -17,7 +17,6 @@ mod prelude {
 
 macro_rules! generate_route {
     ($source: literal, $data: expr) => {{
-        // #[axum::debug_handler]
         pub async fn blog_route(mut base: Base) -> Result<impl IntoResponse, RequestError> {
             #[derive(Template)]
             #[template(source = $source, ext="html")]
@@ -45,7 +44,7 @@ macro_rules! generate_route {
     }};
 }
 
-generate_blog_routes!("../../..", generate_route, overview_route);
+generate_blog_routes!("../../../..", generate_route, overview_route);
 
 #[derive(Template)]
 #[template(path = "layouts/overview.html")]

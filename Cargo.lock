@@ -1343,6 +1343,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "homepage-bin"
+version = "0.1.0"
+dependencies = [
+ "homepage",
+]
+
+[[package]]
+name = "homepage-live"
+version = "0.1.0"
+dependencies = [
+ "homepage-macros",
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
 name = "homepage-macros"
 version = "0.1.0"
 dependencies = [

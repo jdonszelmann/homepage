@@ -154,8 +154,9 @@ async fn start() -> color_eyre::Result<()> {
     Ok(())
 }
 
+pub type MainResult = color_eyre::Result<()>;
 #[tokio::main]
-async fn main() -> color_eyre::Result<()> {
+pub async fn main() -> MainResult {
     start().await?;
 
     Ok(())

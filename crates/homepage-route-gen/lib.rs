@@ -144,7 +144,7 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
         .join(&call_path_to_repo_root)
         .join(&repo_root_to_blog);
     // where are blog posts relative to the expanded source?
-    // no need to include the call path, since that's already where we're compiling 
+    // no need to include the call path, since that's already where we're compiling
     // (in the expanded source)
     let expansion_base = call_path_to_repo_root.join(repo_root_to_blog);
 
