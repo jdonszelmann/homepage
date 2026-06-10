@@ -13,6 +13,7 @@ use tracing::error;
 #[template(path = "pages/error.html")]
 struct ErrorTemplate {
     base: Base,
+    message: String,
 }
 
 impl Deref for ErrorTemplate {
@@ -39,11 +40,8 @@ impl IntoResponse for RequestError {
             RequestError::Generic(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
         let tmpl = ErrorTemplate {
-            base: Base {
-                gay: false,
-                wide: false,
-                user: None,
-            },
+            base: Base::default(),
+            message: status.to_string(),
         };
         if let Ok(body) = tmpl.render() {
             (status, Html(body)).into_response()
@@ -51,4 +49,13 @@ impl IntoResponse for RequestError {
             (status, "Something went wrong").into_response()
         }
     }
+}
+
+pub async fn fallback(base: Base) -> Result<impl IntoResponse, RequestError> {
+    let template = ErrorTemplate {
+        base,
+        message: "this page doesn't exist".to_string(),
+    };
+
+    Ok(Html(template.render()?))
 }

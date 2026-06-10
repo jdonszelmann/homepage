@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["./crates/*"]
-default-members = ["./crates/*"]
+default-members = ["./crates/homepage-bin"]
 
 [workspace.dependencies]
 markdown = "1"

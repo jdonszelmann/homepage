@@ -82,8 +82,9 @@ impl Base {
     }
 }
 
-pub fn routes(r: Router<ArcRouteState>) -> Router<ArcRouteState> {
-    let r = r.route("/", get(index::index));
+pub fn routes(app: Router<ArcRouteState>) -> Router<ArcRouteState> {
+    let app = app.route("/", get(index::index));
+    let app = app.fallback(error::fallback);
 
-    blog::routes(r)
+    blog::routes(app)
 }

@@ -108,31 +108,31 @@ fn shared_setup() -> eyre::Result<()> {
 
 async fn init_app(state: ArcRouteState) -> eyre::Result<Router> {
     let app = Router::new();
-    let app = routes(app).await;
+    // static dir
+    let app = app.nest_service("/static", ServeDir::new("public"));
+    // tracing
+    let app = app.layer(
+        TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
+            let request_id = uuid::Uuid::new_v4().to_string();
+
+            tracing::span!(
+                Level::INFO,
+                "request",
+                %request_id,
+                method = ?request.method(),
+                uri = %request.uri(),
+                version = ?request.version(),
+            )
+        }),
+    );
+    // webpages
+    let app = pages::routes(app);
+    // authentication
     let app = auth_routes(app, state.clone())
         .await
         .context("auth routes")?;
 
     Ok(app.with_state(state))
-}
-
-async fn routes(r: Router<ArcRouteState>) -> Router<ArcRouteState> {
-    pages::routes(r)
-        .nest_service("/static", ServeDir::new("public"))
-        .layer(
-            TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
-                let request_id = uuid::Uuid::new_v4().to_string();
-
-                tracing::span!(
-                    Level::INFO,
-                    "request",
-                    %request_id,
-                    method = ?request.method(),
-                    uri = %request.uri(),
-                    version = ?request.version(),
-                )
-            }),
-        )
 }
 
 async fn start() -> eyre::Result<()> {
