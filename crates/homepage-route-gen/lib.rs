@@ -213,8 +213,9 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
                 r#"{{% extends "layouts/blog.html" %}} {{% block contents %}} {} {{% endblock %}}"#,
                 post.templatable_source.as_ref()
             );
+            let path = post.filepath.as_ref();
             quote! {
-                  .route(#url, #generate_route_macro !(#templatable_source, #all_blogposts_name[#idx].1))
+                  .route(#url, #generate_route_macro !(#templatable_source, #path, #all_blogposts_name[#idx].1))
 
             }
         })

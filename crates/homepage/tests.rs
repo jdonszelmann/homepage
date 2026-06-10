@@ -14,9 +14,9 @@ use uuid::Uuid;
 
 use crate::{RouteState, init_app, shared_setup};
 
-fn start_test_server<O, F: UnwindSafe + AsyncFnOnce(TestServer) -> color_eyre::Result<O>>(
+fn start_test_server<O, F: UnwindSafe + AsyncFnOnce(TestServer) -> eyre::Result<O>>(
     f: F,
-) -> color_eyre::Result<O> {
+) -> yre::Result<O> {
     let mut args = Args::parse_from(iter::empty::<OsString>());
 
     // ignore errors, they only happen if we've already initialized for this process which we expect

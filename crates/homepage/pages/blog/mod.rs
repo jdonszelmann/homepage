@@ -5,6 +5,7 @@ use askama::Template;
 use axum::response::Html;
 use axum::routing::MethodRouter;
 use axum::routing::get;
+use homepage_live::LiveTemplate;
 use homepage_markdown::BlogPost;
 use homepage_route_gen::generate_blog_routes;
 
@@ -16,10 +17,11 @@ mod prelude {
 }
 
 macro_rules! generate_route {
-    ($source: literal, $data: expr) => {{
+    ($source: literal, $path: literal, $data: expr) => {{
         pub async fn blog_route(mut base: Base) -> Result<impl IntoResponse, RequestError> {
-            #[derive(Template)]
+            #[derive(Template, LiveTemplate)]
             #[template(source = $source, ext="html")]
+            #[template_disambiguator = $path]
             struct Template {
                 base: Base,
                 post: &'static BlogPost,
@@ -37,7 +39,7 @@ macro_rules! generate_route {
             base.wide |= matches!(post.preamble.variant, Variant::Music);
             let template = Template { base, post };
 
-            Ok(Html(template.render()?))
+            Ok(Html(template.render_live()?))
         }
 
         get(blog_route)

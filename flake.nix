@@ -10,6 +10,11 @@
       url = "github:mozilla/nixpkgs-mozilla";
       flake = false;
     };
+
+    wild = {
+      url = "github:wild-linker/wild";
+      flake = false;
+    };
   };
   outputs =
     {
@@ -18,6 +23,7 @@
       flake-utils,
       nixpkgs-mozilla,
       naersk,
+      wild,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -26,7 +32,7 @@
           inherit system;
           overlays = [
             (import nixpkgs-mozilla)
-
+            (import wild)
           ];
         };
 
@@ -54,6 +60,8 @@
           '';
 
         db_name = "homepage";
+
+        wildStdenv = pkgs.useWildLinker pkgs.stdenv;
       in
       rec {
         packages = rec {
@@ -70,7 +78,7 @@
         };
         devShells.default =
           with pkgs;
-          mkShell {
+          mkShell.override { stdenv = wildStdenv; } {
             nativeBuildInputs = [ openssl ];
             buildInputs = [
               nodejs_24

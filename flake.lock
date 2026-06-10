@@ -112,7 +112,8 @@
         "flake-utils": "flake-utils",
         "naersk": "naersk",
         "nixpkgs": "nixpkgs_2",
-        "nixpkgs-mozilla": "nixpkgs-mozilla"
+        "nixpkgs-mozilla": "nixpkgs-mozilla",
+        "wild": "wild"
       }
     },
     "rust-analyzer-src": {
@@ -144,6 +145,22 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "wild": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780444722,
+        "narHash": "sha256-pOSw7garNgNk/T+wM8To+AGcV6Yp88gQh5SVkZuh6dA=",
+        "owner": "wild-linker",
+        "repo": "wild",
+        "rev": "1ad5d5c9a09e8ead118ea3af426bcb664499e9ea",
+        "type": "github"
+      },
+      "original": {
+        "owner": "wild-linker",
+        "repo": "wild",
         "type": "github"
       }
     }

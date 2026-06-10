@@ -1,6 +1,6 @@
 use std::{ops::Deref, sync::Arc, time::Duration};
 
-use color_eyre::eyre::Context;
+use eyre::Context;
 use sqlx::{
     ConnectOptions, Connection, Executor, PgConnection, Pool, Postgres,
     postgres::{PgConnectOptions, PgPoolOptions},
@@ -9,7 +9,7 @@ use tracing::info;
 
 use crate::Args;
 
-pub async fn init_database(args: &Args, create_db: bool) -> color_eyre::Result<Pool<Postgres>> {
+pub async fn init_database(args: &Args, create_db: bool) -> eyre::Result<Pool<Postgres>> {
     if create_db {
         info!("creating database {}", args.db_name);
         // Connect to the default `postgres` database to create a new database

@@ -15,7 +15,7 @@ use axum_oidc::{
     handle_oidc_redirect,
     openidconnect::{ClientId, ClientSecret, IssuerUrl, Scope, core::CoreGenderClaim},
 };
-use color_eyre::eyre::Context;
+use eyre::Context;
 use tower::ServiceBuilder;
 use tower_sessions::{
     Expiry, SessionManagerLayer,
@@ -110,7 +110,7 @@ impl<AC: AdditionalClaims> axum_oidc::Session<AC> for SessionWrapper {
 pub async fn auth_routes(
     r: Router<ArcRouteState>,
     state: ArcRouteState,
-) -> color_eyre::Result<Router<ArcRouteState>> {
+) -> eyre::Result<Router<ArcRouteState>> {
     let session_layer = SessionManagerLayer::new(state.clone())
         .with_secure(false)
         .with_same_site(SameSite::Lax)

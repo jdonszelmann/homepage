@@ -5,15 +5,18 @@ default-members = ["./crates/*"]
 
 [workspace.dependencies]
 markdown = "1"
+askama = "0.16"
 
 time = {version = "0.3", features = ["serde"]}
 
 thiserror = "2"
 serde = {version = "1", features = ["derive"]}
 itertools = "0.14"
+tracing = "0.1"
 
 quote = "1"
 syn = "2"
 proc-macro2 = {version = "1", features = ["span-locations"]}
 
+inventory = "0.3"
 

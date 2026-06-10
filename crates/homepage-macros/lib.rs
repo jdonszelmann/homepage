@@ -1,100 +1,83 @@
-use itertools::Itertools;
 use proc_macro::TokenStream;
-use proc_macro2::{Punct, Spacing, TokenStream as TokenStream2};
-use quote::{format_ident, quote};
-use syn::{Data, DeriveInput, Fields, Ident, parse_macro_input};
+use quote::quote;
+use syn::{DeriveInput, parse_macro_input};
 
-fn generate_converter(
-    name: Ident,
-    variant_name: Option<Ident>,
-    f: Fields,
-) -> (TokenStream2, TokenStream2) {
-    let variant_name = variant_name.map(|i| quote! {:: #i});
-    let pound = Punct::new('#', Spacing::Alone);
+use crate::reproduce_tokens::generate_body;
 
-    match f {
-        Fields::Named(n) => {
-            let (names, quoted_names, generators): (Vec<_>, Vec<_>, Vec<_>) = n
-                .named
-                .into_iter()
-                .map(|field| {
-                    let ident = field.ident.unwrap();
-                    (
-                        quote! {#ident , },
-                        quote! {#ident: #pound #ident , },
-                        quote! {
-                            let #ident = homepage_traits::ReproduceTokens::reproduce_tokens(#ident);
-                        },
-                    )
-                })
-                .multiunzip();
-            (
-                quote! {#name #variant_name {#(#names)*}},
-                quote! {
-                    #(#generators)*
+mod reproduce_tokens;
 
-                    homepage_traits::quote! { #name #variant_name { #(#quoted_names)* } }
-                },
-            )
-        }
-        Fields::Unnamed(n) => {
-            let (names, quoted_names, generators): (Vec<_>, Vec<_>, Vec<_>) = n
-                .unnamed
-                .into_iter()
-                .enumerate()
-                .map(|(index, _)| {
-                    let ident = format_ident!("field_{index}");
-                    (
-                        quote! {#ident , },
-                        quote! {#pound #ident , },
-                        quote! {
-                            let #ident = homepage_traits::ReproduceTokens::reproduce_tokens(#ident);
-                        },
-                    )
-                })
-                .multiunzip();
-            (
-                quote! {#name #variant_name (#(#names)*)},
-                quote! {
-                    #(#generators)*
+#[proc_macro_derive(LiveTemplate, attributes(template_disambiguator))]
+pub fn live_template(input: TokenStream) -> TokenStream {
+    let DeriveInput {
+        attrs,
+        vis: _,
+        ident,
+        generics,
+        data: _,
+    } = parse_macro_input!(input as DeriveInput);
 
-                    homepage_traits::quote! { #name #variant_name ( #(#quoted_names)* ) }
-                },
-            )
-        }
-        Fields::Unit => (
-            quote! { #name #variant_name },
-            quote! {
-                homepage_traits::quote! { #name #variant_name }
-            },
-        ),
-    }
-}
-
-fn generate_body(name: Ident, data: Data) -> TokenStream2 {
-    match data {
-        Data::Struct(data_struct) => {
-            let (pattern, arm) = generate_converter(name.clone(), None, data_struct.fields);
-
-            quote! {
-                let #pattern = self;
-                #arm
+    let disambiguator = if let Some(attr) = attrs
+        .iter()
+        .find(|i| i.meta.path().is_ident("template_disambiguator"))
+    {
+        match attr.meta.require_name_value() {
+            Ok(nv) => {
+                let expr = &nv.value;
+                Some(quote! {#expr}.to_string())
             }
+            Err(e) => return e.to_compile_error().into(),
         }
-        Data::Enum(data_enum) => {
-            let (patterns, arms): (Vec<_>, Vec<_>) = data_enum
-                .variants
-                .into_iter()
-                .map(|i| generate_converter(name.clone(), Some(i.ident), i.fields))
-                .unzip();
-            quote! {
-                match self {
-                    #(#patterns => {#arms})*
+    } else {
+        None
+    };
+
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+
+    (quote! {
+        impl #impl_generics LiveTemplate for #ident #ty_generics
+            #where_clause
+        {
+            #[cfg(not(feature = "live"))]
+            fn render_live(&self) -> Result<String, homepage_live::askama::Error> {
+                self.render()
+            }
+
+            #[cfg(feature = "live")]
+            fn render_live(&self) -> Result<String, homepage_live::askama::Error> {
+                use homepage_live::*;
+                const PATH: &'static str = concat!(module_path!(), file!(), line!(), #disambiguator);
+                {
+                    inventory::submit! {
+                        TemplateMetadata {
+                            path: PATH,
+                            do_render: |template: *const ()| -> Result<String, askama::Error> {
+                                let template: &#ident = unsafe {
+                                    std::mem::transmute(template)
+                                };
+
+                                template.render()
+                            },
+                        }
+                    }
                 }
+
+                let templates_list = CURRENT_TEMPLATES.lock().unwrap();
+
+                if templates_list.1.is_empty() {
+                    return self.render()
+                }
+
+                for template in &templates_list.1 {
+                    if template.path == PATH {
+                        return unsafe {(template.do_render)(std::mem::transmute(self))};
+                    }
+                }
+
+                unreachable!("no template matched");
             }
         }
-        Data::Union(_) => unimplemented!("can't derive ReproduceTokens on unins"),
-    }
+    })
+    .into()
 }
 
 #[proc_macro_derive(ReproduceTokens)]

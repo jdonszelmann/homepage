@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use color_eyre::eyre::Context;
+use eyre::Context;
 use sqlx::{Executor, PgConnection};
 use time::OffsetDateTime;
 use tower_sessions::{
@@ -11,7 +11,7 @@ use tower_sessions::{
 use crate::ArcRouteState;
 
 impl ArcRouteState {
-    async fn id_exists(&self, conn: &mut PgConnection, id: &Id) -> color_eyre::Result<bool> {
+    async fn id_exists(&self, conn: &mut PgConnection, id: &Id) -> eyre::Result<bool> {
         let res = sqlx::query!(
             "select exists(select 1 from session where id = $1)",
             id.to_string()
@@ -22,11 +22,7 @@ impl ArcRouteState {
         Ok(res.exists.unwrap_or_default())
     }
 
-    async fn save_with_conn(
-        &self,
-        conn: &mut PgConnection,
-        record: &Record,
-    ) -> color_eyre::Result<()> {
+    async fn save_with_conn(&self, conn: &mut PgConnection, record: &Record) -> eyre::Result<()> {
         let record_value = serde_json::to_value(record).context("encode")?;
         let query = sqlx::query!(
             "
@@ -64,7 +60,7 @@ impl ExpiredDeletion for ArcRouteState {
 
 async fn transform_result<T>(
     context: &'static str,
-    f: impl AsyncFnOnce() -> color_eyre::Result<T>,
+    f: impl AsyncFnOnce() -> eyre::Result<T>,
 ) -> session_store::Result<T> {
     f().await
         .context(context)

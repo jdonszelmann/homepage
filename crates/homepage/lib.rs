@@ -1,15 +1,21 @@
+#[cfg(feature = "live")]
+use std::path::Path;
+
 use axum::{Router, extract::Request};
 use clap::Parser;
-use color_eyre::eyre::WrapErr;
+use eyre::WrapErr;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{Level, info};
-use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_tree::HierarchicalLayer;
 
 use crate::{
     auth::auth_routes,
     state::{ArcRouteState, RouteState, init_database},
 };
+
+#[cfg(feature = "live")]
+pub use homepage_live::get_templates;
 
 mod auth;
 mod pages;
@@ -74,8 +80,7 @@ impl Args {
     }
 }
 
-fn init_tracing() -> color_eyre::Result<()> {
-    let fmt_layer = fmt::layer().with_target(false);
+fn init_tracing() -> eyre::Result<()> {
     let filter_layer = EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new("debug"))
         .unwrap();
@@ -87,7 +92,6 @@ fn init_tracing() -> color_eyre::Result<()> {
 
     tracing_subscriber::registry()
         .with(filter_layer)
-        .with(fmt_layer)
         .with(tree_layer)
         .try_init()
         .context("init tracing")?;
@@ -95,15 +99,14 @@ fn init_tracing() -> color_eyre::Result<()> {
     Ok(())
 }
 
-fn shared_setup() -> color_eyre::Result<()> {
+fn shared_setup() -> eyre::Result<()> {
     dotenvy::dotenv().ok();
-    color_eyre::install()?;
     init_tracing()?;
 
     Ok(())
 }
 
-async fn init_app(state: ArcRouteState) -> color_eyre::Result<Router> {
+async fn init_app(state: ArcRouteState) -> eyre::Result<Router> {
     let app = Router::new();
     let app = routes(app).await;
     let app = auth_routes(app, state.clone())
@@ -132,8 +135,15 @@ async fn routes(r: Router<ArcRouteState>) -> Router<ArcRouteState> {
         )
 }
 
-async fn start() -> color_eyre::Result<()> {
+async fn start() -> eyre::Result<()> {
     shared_setup()?;
+
+    #[cfg(feature = "live")]
+    homepage_live::start_watching(
+        &[Path::new("./templates")],
+        &[Path::new("./crates"), Path::new("Cargo.toml")],
+    )
+    .context("start watch")?;
 
     let args = Args::parse();
     let pool = init_database(&args, false).await?;
@@ -154,7 +164,7 @@ async fn start() -> color_eyre::Result<()> {
     Ok(())
 }
 
-pub type MainResult = color_eyre::Result<()>;
+pub type MainResult = eyre::Result<()>;
 #[tokio::main]
 pub async fn main() -> MainResult {
     start().await?;

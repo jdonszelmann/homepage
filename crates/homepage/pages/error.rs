@@ -28,7 +28,7 @@ pub enum RequestError {
     #[error("could not render template: {0:?}")]
     Render(#[from] askama::Error),
     #[error(transparent)]
-    Generic(#[from] color_eyre::Report),
+    Generic(#[from] eyre::Report),
 }
 
 impl IntoResponse for RequestError {

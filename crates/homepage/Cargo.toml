@@ -6,17 +6,21 @@ edition = "2024"
 [lib]
 path = "./lib.rs"
 
+[features]
+live = ["homepage-live/live"]
+
 [dependencies]
 homepage-route-gen = {path = "../homepage-route-gen/"}
 homepage-markdown = {path = "../homepage-markdown/"}
+homepage-live = {path = "../homepage-live/"}
 
 axum = {version = "0.8", features = ["macros"]}
 axum-macros = { version = "0.5.0-rc.1" }
 tower-http = {version = "0.6", features = ["auth", "trace", "fs"]}
 tower-sessions = "0.15"
 tower = "0.5"
-askama = "0.16"
-sqlx = { version = "0.9", features = [ "runtime-tokio", "tls-native-tls", "uuid", "json", "postgres", "migrate", "time" ] }
+askama = {workspace = true}
+sqlx = { version = "0.9", features = [ "runtime-tokio", "tls-rustls", "uuid", "json", "postgres", "migrate", "time" ] }
 axum-oidc = {version = "1.0.0-dev-2"}
 
 fontawesome-free-pack = "7.2.0"
@@ -27,16 +31,16 @@ uuid = {version = "1", features = ["v4"]}
 time = {workspace = true}
 
 log = "0.4"
-tracing = "0.1"
+tracing = {workspace = true}
 tracing-subscriber = {version = "0.3", features = ["fmt", "env-filter"]}
 tracing-tree = "0.4"
 dotenvy = "0.15"
 clap = {version = "4.6.1", features=["derive", "env"]}
 
-tokio = {version = "1", features = ["full"]}
+tokio = {version = "1", features = ["macros", "rt-multi-thread"]}
 serde = {workspace = true}
 serde_json = {version = "1", features = ["arbitrary_precision"]}
-color-eyre = "0.6"
+eyre = {version = "0.6", default-features = false}
 async-trait = "0.1"
 thiserror = {workspace = true}
 
