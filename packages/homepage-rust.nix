@@ -54,4 +54,8 @@ naersk'.buildPackage {
   preBuild = ''
     rm -rf .cargo
   '';
+
+  postInstall = ''
+    cp -r ./public $out
+  '';
 }

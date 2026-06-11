@@ -2,10 +2,15 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use axum::{Router, extract::Request};
+use axum::{
+    Router,
+    extract::Request,
+    http::{HeaderValue, header},
+};
 use clap::Parser;
 use eyre::WrapErr;
-use tower_http::{services::ServeDir, trace::TraceLayer};
+use tower::{Layer, ServiceBuilder};
+use tower_http::{services::ServeDir, set_header::SetResponseHeaderLayer, trace::TraceLayer};
 use tracing::{Level, info};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_tree::HierarchicalLayer;
@@ -116,7 +121,15 @@ fn shared_setup() -> eyre::Result<()> {
 async fn init_app(state: ArcRouteState) -> eyre::Result<Router> {
     let app = Router::new();
     // static dir
-    let app = app.nest_service("/static", ServeDir::new("public"));
+    let app = app.nest_service(
+        "/static",
+        ServiceBuilder::new()
+            .layer(SetResponseHeaderLayer::overriding(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static("public, no-transform"),
+            ))
+            .service(ServeDir::new("public")),
+    );
     // tracing
     let app = app.layer(
         TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
