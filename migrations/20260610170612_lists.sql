@@ -1,8 +1,10 @@
 -- Add migration script here
 
 create table "list" (
-    "id" text not null primary key,
+    "id" uuid not null primary key,
     "name" text not null,
+
+    "public" boolean not null,
 
     "added" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updated" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -10,8 +12,8 @@ create table "list" (
 );
 
 create table "item" (
-    "id" text not null primary key,
-    "list" text not null references list (id),
+    "id" uuid not null primary key,
+    "list" uuid not null references list (id),
 
     "note" text not null,
 
@@ -19,6 +21,8 @@ create table "item" (
     "link" text not null,
     -- the type of link, if relevant, to be displayed nicely
     "link_type" text not null,
+
+    "public" boolean not null,
 
     "added" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updated" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,

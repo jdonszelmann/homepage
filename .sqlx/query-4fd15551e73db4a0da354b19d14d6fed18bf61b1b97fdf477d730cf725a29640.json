@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select * from list where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "list",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "list",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "public",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "list",
+            "name": "public"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "added",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "list",
+            "name": "added"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "updated",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "list",
+            "name": "updated"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "deleted",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "list",
+            "name": "deleted"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "4fd15551e73db4a0da354b19d14d6fed18bf61b1b97fdf477d730cf725a29640"
+}

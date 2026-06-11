@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update item set deleted = CURRENT_TIMESTAMP, updated = CURRENT_TIMESTAMP where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d69798f42ecd72b302e5a438440bff0902b48aabda4417ee658777422deb9197"
+}

@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select public from item where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "public",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "public"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "bf65c17fb8bed8ad98c90b4fc8ac895cb7a9818fde05d7542665f700c61c623f"
+}

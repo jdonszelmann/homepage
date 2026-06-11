@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update item set list = $2, updated = CURRENT_TIMESTAMP where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a09304ea62358c30d3409526b62b6962d42c9ea3a973fc4993f50cf90341434a"
+}

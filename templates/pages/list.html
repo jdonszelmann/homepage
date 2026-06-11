@@ -1,0 +1,66 @@
+{% extends "layouts/base.html" %}
+
+
+{% block head %}
+<link rel="stylesheet" href="/static/style/list.css" />
+{% endblock %}
+
+{% block title %}Lists{% endblock %}
+
+{% block main %}
+<h1>Lists</h1>
+
+<ol class="list">
+    {% block listitem %}
+    {% for item in items %}
+    <li class="item">
+        <template class="edit-note">
+            <form hx-put="/list/item/{{item.id}}" hx-vals='{"kind": "set_note"}' hx-target="closest .item"
+                hx-swap="outerHTML">
+                <textarea class="note" name="note">{{ item.note }}</textarea>
+                <div class="controls-after">
+                    <button type="submit">Save</button>
+                </div>
+            </form>
+        </template>
+
+        <div class="note"
+            hx-on='dblclick -> this.replaceWith(((e) => {htmx.process(e); return e;})(document.importNode(this.closest(".item").querySelector(".edit-note").content,true)))'>
+            {{ item.note }}
+        </div>
+        <div class="controls">
+            <a hx-target="closest .item" hx-swap="outerHTML" hx-delete="/list/item/{{item.id}}"
+                hx-confirm="Are you sure you wish to delete this list?">delete</a>
+
+            <a
+                hx-on='click -> this.closest(".list").querySelector(".note").replaceWith(((e) => {htmx.process(e); return e;})(document.importNode(this.closest(".item").querySelector(".edit-note").content,true)))'>edit</a>
+
+            {% if item.public %}
+            <a hx-target="closest .item" hx-swap="outerHTML" hx-put="/list/item/{{item.id}}"
+                hx-vals='{"kind": "public", "public": false}'>unpublish</a>
+            {% else %}
+            <a hx-target="closest .item" hx-swap="outerHTML" hx-put="/list/item/{{item.id}}"
+                hx-vals='{"kind": "public", "public": true}'
+                hx-confirm="Are you sure you wish to make this list public?">publish</a>
+            {% endif %}
+        </div>
+    </li>
+    {% endfor %}
+    {% endblock %}
+
+    {% if let Some(user) = user %}
+    <div class="item newitem">
+        <h2>New item</h2>
+        <form hx-post="/list/item" hx-status:500="target:#error-container" hx-status:200="transition:true"
+            hx-vals='{"list": "{{list}}"}'>
+            <textarea name="note" class="note"></textarea>
+
+            <div class="controls-after">
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</ol>
+
+{% endblock %}

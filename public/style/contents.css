@@ -54,6 +54,15 @@ main {
         }
     }
 
+    button {
+        color: #9c3574;
+        padding: 0.3em 0.5em;
+    }
+
+    input {
+        padding: 0.3em 0.5em;
+    }
+
     .expressive-code {
         margin-bottom: 0.5em;
         margin-top: 0em;

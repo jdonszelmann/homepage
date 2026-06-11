@@ -1,0 +1,124 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select * from item where list = $1 and public = true and deleted is NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "list",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "list"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "note",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "note"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "link",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "link"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "link_type",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "link_type"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "public",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "public"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "added",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "added"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "updated",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "updated"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "deleted",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "deleted"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "7d3a888b8de1ae54456b4fb4569c8e4e3b31fb5302b73f8748a2c9408945e654"
+}

@@ -27,6 +27,7 @@ macro_rules! icon {
 pub mod blog;
 pub mod error;
 pub mod index;
+pub mod lists;
 
 #[derive(Template, Default)]
 #[template(path = "layouts/base.html")]
@@ -59,6 +60,37 @@ impl<S: Send + Sync> FromRequestParts<S> for Base {
     }
 }
 
+pub struct LoggedinBase(Base);
+
+impl LoggedinBase {
+    pub fn user(&self) -> &User {
+        self.0.user.as_ref().unwrap()
+    }
+}
+
+impl<S: Send + Sync> FromRequestParts<S> for LoggedinBase {
+    type Rejection = axum_oidc::error::ExtractorError;
+
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        _: &S,
+    ) -> Result<Self, Self::Rejection> {
+        let user: User = parts.extract().await?;
+
+        #[derive(Deserialize, Default)]
+        struct GayParams {
+            gay: bool,
+        }
+        let Query(GayParams { gay }) = parts.extract().await.unwrap_or_default();
+
+        Ok(Self(Base {
+            gay,
+            wide: false,
+            user: Some(user),
+        }))
+    }
+}
+
 pub struct GithubUrlParts {
     org: String,
     repo: String,
@@ -66,6 +98,7 @@ pub struct GithubUrlParts {
 }
 
 impl Base {
+    // only takes self to be accessible in templates.
     fn split_github_url(&self, url: &str) -> GithubUrlParts {
         let url = url.trim_start_matches("https://github.com/");
         let (org, rest) = url.split_once("/").unwrap_or(("rust-lang", url));
@@ -86,5 +119,8 @@ pub fn routes(app: Router<ArcRouteState>) -> Router<ArcRouteState> {
     let app = app.route("/", get(index::index));
     let app = app.fallback(error::fallback);
 
-    blog::routes(app)
+    let app = blog::routes(app);
+    let app = lists::routes(app);
+
+    app
 }

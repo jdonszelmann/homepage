@@ -1,0 +1,56 @@
+{% extends "layouts/base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/style/list.css" />
+{% endblock %}
+
+{% block title %}Lists{% endblock %}
+
+{% block main %}
+
+<h1>Lists</h1>
+
+<table class="lists">
+    <thead>
+        <tr>
+            <th scope="col">name</th>
+            <th scope="col">privacy</th>
+            <th scope="col">actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% block listitem %}
+        {% for list in lists %}
+        <tr class="listrow">
+            <td><a href="/list/{{ list.id }}">{{ list.name }}</a></td>
+            <td>{% if list.public %}public{% else %}private{% endif %}</td>
+            <td>
+                <a hx-target="closest .listrow" hx-delete="/list/{{list.id}}"
+                    hx-confirm="Are you sure you wish to delete this list?">delete</a>
+
+                {% if list.public %}
+                <a hx-target="closest .listrow" hx-swap="outerHTML" hx-put="/list/{{list.id}}"
+                    hx-vals='{"kind": "public", "public": false}'>unpublish</a>
+                {% else %}
+                <a hx-target="closest .listrow" hx-swap="outerHTML" hx-put="/list/{{list.id}}"
+                    hx-vals='{"kind": "public", "public": true}'
+                    hx-confirm="Are you sure you wish to make this list public?">publish</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        {% endblock %}
+    </tbody>
+</table>
+
+{% if let Some(user) = user %}
+<div class="newlist">
+    <h2>New list</h2>
+    <form hx-post="/list" hx-status:500="target:#error-container" hx-status:200="transition:true">
+        <input name="name">
+        <button type="submit">Submit</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}

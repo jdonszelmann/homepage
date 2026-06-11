@@ -111,7 +111,7 @@
             ];
 
             env = rec {
-              DATABASE_URL = "postgres://postgres@${HOMEPAGE_DB_HOST}";
+              DATABASE_URL = "postgres://postgres@${HOMEPAGE_DB_HOST}/homepage";
 
               HOMEPAGE_DB_USER = "postgres";
               HOMEPAGE_DB_HOST = "localhost";
