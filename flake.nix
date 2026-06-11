@@ -65,15 +65,9 @@
       in
       rec {
         packages = rec {
-          website = pkgs.callPackage ./packages/homepage.nix { name = "homepage"; };
-          website-gay = pkgs.callPackage ./packages/homepage.nix {
-            vars = "export GAY=1";
-            name = "homepage-gay";
-          };
           default = website;
-
-          website-rust = pkgs.callPackage ./packages/homepage-rust.nix {
-            inherit naersk toolchain;
+          website = pkgs.callPackage ./packages/homepage-rust.nix {
+            inherit naersk;
           };
         };
         devShells.default =
@@ -121,15 +115,9 @@
               HOMEPAGE_CLIENT_ID = "1db518fb-6ba9-4f64-aee5-0ac3e97f358a";
               HOMEPAGE_AUTH_SERVER = "https://auth.donsz.nl";
               HOMEPAGE_BASE_URL = "http://localhost:3000";
-
-              DATABASE_LOCATION = "./homepage.db";
-              # note: not the same as used in production
-              BETTER_AUTH_SECRET = "2/Uv6lUd5kNzjpgyoU9miAMuJEqLc4tOZhHS/LV4QGg=";
-              BETTER_AUTH_URL = "http://localhost:4321";
-
             };
 
-            shellHook = packages.website.configurePhase + ''
+            shellHook = packages.website.preConfigure + ''
               export LIBCLANG_PATH="${lib.makeLibraryPath [ llvmPackages_latest.libclang.lib ]}"
               export LD_LIBRARY_PATH="'$LD_LIBRARY_PATH:${
                 lib.makeLibraryPath [

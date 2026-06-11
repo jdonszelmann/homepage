@@ -1,5 +1,6 @@
 #[cfg(feature = "live")]
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use axum::{Router, extract::Request};
 use clap::Parser;
@@ -22,6 +23,8 @@ mod pages;
 mod state;
 #[cfg(test)]
 mod tests;
+
+static GAY_MODE: AtomicBool = AtomicBool::new(false);
 
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
@@ -58,6 +61,9 @@ struct Args {
 
     #[arg(long, env = "HOMEPAGE_BASE_URL")]
     base_url: String,
+
+    #[arg(long, env = "HOMEPAGE_GAY")]
+    gay: bool,
 }
 
 impl Args {
@@ -82,13 +88,14 @@ impl Args {
 
 fn init_tracing() -> eyre::Result<()> {
     let filter_layer = EnvFilter::try_from_default_env()
-        .or_else(|_| EnvFilter::try_new("debug"))
+        .or_else(|_| EnvFilter::try_new("info"))
         .unwrap();
     let tree_layer = HierarchicalLayer::new(2)
         .with_ansi(true)
         .with_indent_lines(true)
         .with_verbose_entry(true)
-        .with_verbose_exit(true);
+        .with_verbose_exit(true)
+        .with_span_retrace(true);
 
     tracing_subscriber::registry()
         .with(filter_layer)
@@ -151,6 +158,10 @@ async fn start() -> eyre::Result<()> {
         db: pool,
         args: args.clone(),
     });
+
+    if args.gay {
+        GAY_MODE.store(true, Ordering::Relaxed);
+    }
 
     let app = init_app(state).await.context("init app")?;
 

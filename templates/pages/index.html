@@ -5,6 +5,7 @@
 {% block title %}Jana's homepage{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/style/keys.css" />
 <style>
     .sitetitle {
         display: flex;
@@ -199,7 +200,7 @@
 
 <p>
     <h3>SSH Keys</h3>
-
+        {% include "keys.html"%}
     <Keys />
 </p>
 {% endblock %}

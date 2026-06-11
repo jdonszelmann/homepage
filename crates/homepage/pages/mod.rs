@@ -1,6 +1,6 @@
-use std::{convert::Infallible, fmt::Display};
+use std::{convert::Infallible, fmt::Display, sync::atomic::Ordering};
 
-use crate::{auth::User, state::ArcRouteState};
+use crate::{GAY_MODE, auth::User, state::ArcRouteState};
 use askama::{Template, filters::HtmlSafe};
 use axum::{
     RequestPartsExt, Router,
@@ -50,7 +50,11 @@ impl<S: Send + Sync> FromRequestParts<S> for Base {
         struct GayParams {
             gay: bool,
         }
-        let Query(GayParams { gay }) = parts.extract().await.unwrap_or_default();
+        let Query(GayParams { gay }) = parts.extract().await.unwrap_or_else(|_| {
+            Query(GayParams {
+                gay: GAY_MODE.load(Ordering::Relaxed),
+            })
+        });
 
         Ok(Self {
             gay,
@@ -81,7 +85,11 @@ impl<S: Send + Sync> FromRequestParts<S> for LoggedinBase {
         struct GayParams {
             gay: bool,
         }
-        let Query(GayParams { gay }) = parts.extract().await.unwrap_or_default();
+        let Query(GayParams { gay }) = parts.extract().await.unwrap_or_else(|_| {
+            Query(GayParams {
+                gay: GAY_MODE.load(Ordering::Relaxed),
+            })
+        });
 
         Ok(Self(Base {
             gay,

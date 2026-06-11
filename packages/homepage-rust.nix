@@ -1,5 +1,4 @@
 {
-  rustChannelOf,
   naersk,
   callPackage,
   pkg-config,
@@ -7,17 +6,18 @@
   clang,
   lib,
   openssl_3,
+  fira,
+  jetbrains-mono,
+  fira-mono,
+  noto-fonts,
+  fetchurl,
 }:
 let
-  toolchain =
-    (rustChannelOf {
-      rustToolchain = ../rust-toolchain.toml;
-      sha256 = "sha256-+9FmLhAOezBZCOziO0Qct1NOrfpjNsXxc/8I0c7BdKE=";
-    }).rust;
+  naersk' = callPackage naersk { };
 
-  naersk' = callPackage naersk {
-    cargo = toolchain;
-    rustc = toolchain;
+  keys = fetchurl {
+    url = "https://github.com/jdonszelmann.keys";
+    sha256 = "sha256-zKL99PzMQ74pn0V2IwdFRgBQJdHnyDDGCDzMMBeSV54=";
   };
 in
 naersk'.buildPackage {
@@ -32,4 +32,26 @@ naersk'.buildPackage {
     llvmPackages_latest.libclang.lib
   ];
   PKG_CONFIG_PATH = "${openssl_3.dev}/lib/pkgconfig";
+
+  preConfigure = ''
+    mkdir -p ./public/fonts
+    mkdir -p ./templates
+
+    ln -sf ${fira}/share/fonts/opentype/* ./public/fonts/
+    ln -sf ${jetbrains-mono}/share/fonts/truetype/* ./public/fonts/
+    ln -sf ${fira-mono}/share/fonts/opentype/* ./public/fonts/
+    ln -sf ${noto-fonts}/share/fonts/noto/* ./public/fonts/
+
+    touch keys.html
+    cat > keys.html <<EOF
+    <ul class="keys">
+    EOF
+    cat ${keys} | xargs -I{} echo "<li>{}</li>" >> keys.html
+    echo "</ul>" >> keys.html
+    mv keys.html ./templates/keys.html
+  '';
+
+  preBuild = ''
+    rm -rf .cargo
+  '';
 }
