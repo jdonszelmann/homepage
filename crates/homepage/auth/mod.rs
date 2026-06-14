@@ -112,9 +112,11 @@ pub async fn auth_routes(
     state: ArcRouteState,
 ) -> eyre::Result<Router<ArcRouteState>> {
     let session_layer = SessionManagerLayer::new(state.clone())
-        .with_secure(false)
+        .with_secure(true)
+        .with_http_only(true)
+        // Lax needed to get requests from oidc providers, I think
         .with_same_site(SameSite::Lax)
-        .with_expiry(Expiry::OnInactivity(Duration::hours(12)));
+        .with_expiry(Expiry::OnInactivity(Duration::days(30)));
 
     let oidc_login_service = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|e: MiddlewareError| async {

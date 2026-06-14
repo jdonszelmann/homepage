@@ -11,15 +11,15 @@ use crate::{
     auth::User,
     pages::lists::raw::{
         self, all_lists, get_item, get_list, get_list_all_items, get_list_public_items,
-        item_set_public, list_is_public, list_set_public, move_item, public_lists, rename_list,
-        set_item_link, set_item_note,
+        item_set_public, list_set_public, move_item, public_lists, rename_list, set_item_link,
+        set_item_note,
     },
     state::ArcRouteState,
 };
 
-#[derive(Deserialize, Clone, Copy)]
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(transparent)]
-pub struct ListId(Uuid);
+pub struct ListId(pub(super) Uuid);
 
 impl Display for ListId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -198,45 +198,50 @@ impl Item {
 pub async fn get_lists(user: Option<&User>, state: ArcRouteState) -> eyre::Result<Vec<List>> {
     let mut conn = state.db.acquire().await.context("aqcuire")?;
 
-    let res = if let Some(_) = user {
+    let res = if user.is_some() {
         all_lists(&mut conn).await?
     } else {
         public_lists(&mut conn).await?
     };
 
-    Ok(res
-        .into_iter()
+    res.into_iter()
         .map(List::from_raw)
-        .collect::<Result<_, _>>()?)
+        .collect::<Result<_, _>>()
 }
 
 pub async fn get_items(
     user: Option<&User>,
-    state: ArcRouteState,
+    state: &ArcRouteState,
     list: ListId,
-) -> eyre::Result<Vec<Item>> {
+    limit: Option<usize>,
+) -> eyre::Result<(Vec<Item>, List)> {
     let mut conn = state.db.begin().await.context("start tx")?;
 
-    let res = if let Some(_) = user {
-        get_list_all_items(&mut conn, list.0).await?
+    let list_obj = get_list(&mut conn, list.0).await?;
+
+    let res = if user.is_some() {
+        get_list_all_items(&mut conn, list.0, limit).await?
     } else {
-        if !list_is_public(&mut conn, list.0).await? {
-            return Ok(Vec::new());
+        if !list_obj.public {
+            bail!("can't access private list when not logged in")
         }
 
-        get_list_public_items(&mut conn, list.0).await?
+        get_list_public_items(&mut conn, list.0, limit).await?
     };
 
     conn.commit().await.context("commit tx")?;
 
-    Ok(res
+    let items = res
         .into_iter()
         .map(Item::from_raw)
-        .collect::<Result<_, _>>()?)
+        .collect::<Result<_, _>>()?;
+
+    let list = List::from_raw(list_obj)?;
+
+    Ok((items, list))
 }
 
-pub async fn create_list(
-    _user: &User,
+pub(super) async fn create_list_unauthenticated(
     state: ArcRouteState,
     CreateList { name }: CreateList,
 ) -> eyre::Result<()> {
@@ -244,6 +249,10 @@ pub async fn create_list(
     raw::create_list(&mut conn, &name).await?;
 
     Ok(())
+}
+
+pub async fn create_list(_user: &User, state: ArcRouteState, cl: CreateList) -> eyre::Result<()> {
+    create_list_unauthenticated(state, cl).await
 }
 
 pub async fn delete_list(_user: &User, state: ArcRouteState, list: ListId) -> eyre::Result<()> {
@@ -293,7 +302,7 @@ pub async fn edit_item(
     state: ArcRouteState,
     item: ItemId,
     edit: EditItemKind,
-) -> eyre::Result<Item> {
+) -> eyre::Result<(Item, List)> {
     let mut conn = state.db.begin().await.context("start tx")?;
 
     match edit {
@@ -314,9 +323,10 @@ pub async fn edit_item(
     }
 
     let item = get_item(&mut conn, item.0).await?;
+    let list = get_list(&mut conn, item.list).await?;
     conn.commit().await.context("commit tx")?;
 
-    Ok(Item::from_raw(item)?)
+    Ok((Item::from_raw(item)?, List::from_raw(list)?))
 }
 
 pub async fn edit_list(
@@ -340,5 +350,5 @@ pub async fn edit_list(
 
     conn.commit().await.context("commit tx")?;
 
-    Ok(List::from_raw(list)?)
+    List::from_raw(list)
 }

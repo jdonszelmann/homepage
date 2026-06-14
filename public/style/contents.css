@@ -17,6 +17,8 @@ main {
         font-size: 4mm;
         text-decoration-thickness: 1px;
 
+        cursor: pointer;
+
         code {
             display: inline;
             font-size: inherit;

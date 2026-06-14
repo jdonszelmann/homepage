@@ -24,17 +24,23 @@
         <tr class="listrow">
             <td><a href="/list/{{ list.id }}">{{ list.name }}</a></td>
             <td>{% if list.public %}public{% else %}private{% endif %}</td>
-            <td>
-                <a hx-target="closest .listrow" hx-delete="/list/{{list.id}}"
-                    hx-confirm="Are you sure you wish to delete this list?">delete</a>
+            <td class="controls">
+                <button hx-target="closest .listrow" hx-delete="/list/{{list.id}}"
+                    hx-confirm="Are you sure you wish to delete this list?">
+                    {{icon!(REGULAR_TRASH_CAN)}}
+                </button>
 
                 {% if list.public %}
-                <a hx-target="closest .listrow" hx-swap="outerHTML" hx-put="/list/{{list.id}}"
-                    hx-vals='{"kind": "public", "public": false}'>unpublish</a>
+                <button hx-target="closest .listrow" hx-swap="outerHTML" hx-put="/list/{{list.id}}"
+                    hx-vals='{"kind": "public", "public": false}'>
+                    {{icon!(REGULAR_EYE_SLASH)}}
+                </button>
                 {% else %}
-                <a hx-target="closest .listrow" hx-swap="outerHTML" hx-put="/list/{{list.id}}"
+                <button hx-target="closest .listrow" hx-swap="outerHTML" hx-put="/list/{{list.id}}"
                     hx-vals='{"kind": "public", "public": true}'
-                    hx-confirm="Are you sure you wish to make this list public?">publish</a>
+                    hx-confirm="Are you sure you wish to make this list public?">
+                    {{icon!(REGULAR_EYE)}}
+                </button>
                 {% endif %}
             </td>
         </tr>
@@ -47,7 +53,7 @@
 <div class="newlist">
     <h2>New list</h2>
     <form hx-post="/list" hx-status:500="target:#error-container" hx-status:200="transition:true">
-        <input name="name">
+        <input name="name" required>
         <button type="submit">Submit</button>
     </form>
 </div>

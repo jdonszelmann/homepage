@@ -5,10 +5,19 @@
 <link rel="stylesheet" href="/static/style/list.css" />
 {% endblock %}
 
-{% block title %}Lists{% endblock %}
+{% block title %}
+    {{ list.name }}
+{% endblock %}
 
 {% block main %}
-<h1>Lists</h1>
+<h1>
+    {{ list.name }}
+</h1>
+{% if list.public %}
+    <p>
+        New items default to public.
+    </p>
+{% endif %}
 
 <ol class="list">
     {% block listitem %}
@@ -16,10 +25,18 @@
     <li class="item">
         <template class="edit-note">
             <form hx-put="/list/item/{{item.id}}" hx-vals='{"kind": "set_note"}' hx-target="closest .item"
-                hx-swap="outerHTML">
-                <textarea class="note" name="note">{{ item.note }}</textarea>
+                hx-swap="outerHTML"
+            >
+                <textarea 
+                    class="note"
+                    name="note"
+                    hx-on='keypress[key==="Enter"&&ctrlKey] -> event.preventDefault(); this.closest("form").requestSubmit()'
+                    rows="6"
+                >{{ item.note }}</textarea>
                 <div class="controls-after">
-                    <button type="submit">Save</button>
+                    <button type="submit">
+                        {{icon!(REGULAR_FLOPPY_DISK)}}
+                    </button>
                 </div>
             </form>
         </template>
@@ -29,19 +46,30 @@
             {{ item.note }}
         </div>
         <div class="controls">
-            <a hx-target="closest .item" hx-swap="outerHTML" hx-delete="/list/item/{{item.id}}"
-                hx-confirm="Are you sure you wish to delete this list?">delete</a>
+            <button hx-target="closest .item" hx-swap="outerHTML" hx-delete="/list/item/{{item.id}}"
+                hx-confirm="Are you sure you wish to delete this list?">
 
-            <a
-                hx-on='click -> this.closest(".list").querySelector(".note").replaceWith(((e) => {htmx.process(e); return e;})(document.importNode(this.closest(".item").querySelector(".edit-note").content,true)))'>edit</a>
+                {{icon!(REGULAR_TRASH_CAN)}}
+            </button>
+
+            <button
+                hx-on='click -> this.closest(".item").querySelector(".note").replaceWith(((e) => {htmx.process(e); return e;})(document.importNode(this.closest(".item").querySelector(".edit-note").content,true)))'>
+                {{icon!(REGULAR_PEN_TO_SQUARE)}}
+            </button>
 
             {% if item.public %}
-            <a hx-target="closest .item" hx-swap="outerHTML" hx-put="/list/item/{{item.id}}"
-                hx-vals='{"kind": "public", "public": false}'>unpublish</a>
+            <button hx-target="closest .item" hx-swap="outerHTML" hx-put="/list/item/{{item.id}}"
+                hx-vals='{"kind": "public", "public": false}'>
+                {{icon!(REGULAR_EYE_SLASH)}}
+            </button>
+            <span>public</span>
             {% else %}
-            <a hx-target="closest .item" hx-swap="outerHTML" hx-put="/list/item/{{item.id}}"
+            <button hx-target="closest .item" hx-swap="outerHTML" hx-put="/list/item/{{item.id}}"
                 hx-vals='{"kind": "public", "public": true}'
-                hx-confirm="Are you sure you wish to make this list public?">publish</a>
+                hx-confirm="Are you sure you wish to make this list public?">
+                {{icon!(REGULAR_EYE)}}
+            </button>
+            <span>private</span>
             {% endif %}
         </div>
     </li>
@@ -52,8 +80,16 @@
     <div class="item newitem">
         <h2>New item</h2>
         <form hx-post="/list/item" hx-status:500="target:#error-container" hx-status:200="transition:true"
-            hx-vals='{"list": "{{list}}"}'>
-            <textarea name="note" class="note"></textarea>
+            hx-vals='{"list": "{{list.id}}"}'
+            hx-on::after:request="if(event.detail.ctx.response.status === 200) this.reset()"
+        >
+            <textarea 
+                rows="6"
+                name="note"
+                class="note"
+                hx-on='keypress[key==="Enter"&&ctrlKey] -> event.preventDefault(); this.closest("form").requestSubmit()'
+                required
+            ></textarea>
 
             <div class="controls-after">
                 <button type="submit">Submit</button>

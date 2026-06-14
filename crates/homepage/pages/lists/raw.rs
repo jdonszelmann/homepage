@@ -58,24 +58,54 @@ pub async fn get_item(conn: &mut PgConnection, item: Uuid) -> sqlx::Result<Item>
         .await
 }
 
-pub async fn get_list_public_items(conn: &mut PgConnection, list: Uuid) -> sqlx::Result<Vec<Item>> {
-    sqlx::query_as!(
-        Item,
-        "select * from item where list = $1 and public = true and deleted is NULL",
-        list
-    )
-    .fetch_all(conn)
-    .await
+pub async fn get_list_public_items(
+    conn: &mut PgConnection,
+    list: Uuid,
+    limit: Option<usize>,
+) -> sqlx::Result<Vec<Item>> {
+    if let Some(limit) = limit {
+        sqlx::query_as!(
+            Item,
+            "select * from item where list = $1 and public = true and deleted is NULL order by updated desc limit $2",
+            list,
+            limit as i64,
+        )
+        .fetch_all(conn)
+        .await
+    } else {
+        sqlx::query_as!(
+            Item,
+            "select * from item where list = $1 and public = true and deleted is NULL order by updated desc",
+            list
+        )
+        .fetch_all(conn)
+        .await
+    }
 }
 
-pub async fn get_list_all_items(conn: &mut PgConnection, list: Uuid) -> sqlx::Result<Vec<Item>> {
-    sqlx::query_as!(
-        Item,
-        "select * from item where list = $1 and deleted is NULL",
-        list
-    )
-    .fetch_all(conn)
-    .await
+pub async fn get_list_all_items(
+    conn: &mut PgConnection,
+    list: Uuid,
+    limit: Option<usize>,
+) -> sqlx::Result<Vec<Item>> {
+    if let Some(limit) = limit {
+        sqlx::query_as!(
+            Item,
+            "select * from item where list = $1 and deleted is NULL order by updated desc limit $2",
+            list,
+            limit as i64,
+        )
+        .fetch_all(conn)
+        .await
+    } else {
+        sqlx::query_as!(
+            Item,
+            "select * from item where list = $1 and deleted is NULL order by updated desc",
+            list
+        )
+        .fetch_all(conn)
+        .await
+    }
 }
 
 pub async fn create_list(conn: &mut PgConnection, name: &str) -> sqlx::Result<()> {
@@ -90,9 +120,27 @@ pub async fn create_list(conn: &mut PgConnection, name: &str) -> sqlx::Result<()
     Ok(())
 }
 
+pub async fn ensure_list_exists(
+    conn: &mut PgConnection,
+    uuid: Uuid,
+    name: &str,
+    public: bool,
+) -> sqlx::Result<()> {
+    sqlx::query!(
+        "insert into list values ($1, $2, $3) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name, public=EXCLUDED.public",
+        uuid,
+        name,
+        public,
+    )
+    .execute(conn)
+    .await?;
+
+    Ok(())
+}
+
 pub async fn create_item(conn: &mut PgConnection, list: Uuid, note: &str) -> sqlx::Result<Uuid> {
     let res = sqlx::query!(
-        "insert into item values ($1, $2, $3, '', '', false) returning id",
+        "insert into item values ($1, $2, $3, '', '', (select list.public from list where list.id = $2)) returning id",
         Uuid::new_v4(),
         list,
         note,
@@ -209,14 +257,6 @@ pub async fn set_item_link(
     .await?;
 
     Ok(())
-}
-
-pub async fn list_is_public(conn: &mut PgConnection, list: Uuid) -> sqlx::Result<bool> {
-    let record = sqlx::query!(r#"select public from list where id = $1"#, list)
-        .fetch_one(conn)
-        .await?;
-
-    Ok(record.public)
 }
 
 pub async fn item_is_public(conn: &mut PgConnection, item: Uuid) -> sqlx::Result<bool> {

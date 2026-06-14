@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * from item where list = $1 and public = true and deleted is NULL",
+  "query": "select * from item where list = $1 and deleted is NULL order by updated desc",
   "describe": {
     "columns": [
       {
@@ -120,5 +120,5 @@
       true
     ]
   },
-  "hash": "7d3a888b8de1ae54456b4fb4569c8e4e3b31fb5302b73f8748a2c9408945e654"
+  "hash": "38738edd28aacda4312aa57671864e14d55d5c8305ec09a94a78f33665a74201"
 }

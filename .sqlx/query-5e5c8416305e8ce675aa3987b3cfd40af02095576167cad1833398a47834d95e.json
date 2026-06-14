@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "insert into item values ($1, $2, $3, '', '', false) returning id",
+  "query": "insert into item values ($1, $2, $3, '', '', (select list.public from list where list.id = $2)) returning id",
   "describe": {
     "columns": [
       {
@@ -26,5 +26,5 @@
       false
     ]
   },
-  "hash": "e4001f7eae1d35ebd1eef2683b64f29892c87334f0adeae7fc6d83b8e71a29ea"
+  "hash": "5e5c8416305e8ce675aa3987b3cfd40af02095576167cad1833398a47834d95e"
 }

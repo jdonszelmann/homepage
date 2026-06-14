@@ -17,7 +17,7 @@ homepage-live = {path = "../homepage-live/"}
 
 axum = {version = "0.8", features = ["macros"]}
 axum-macros = { version = "0.5.0-rc.1" }
-tower-http = {version = "0.6", features = ["auth", "trace", "fs", "set-header"]}
+tower-http = {version = "0.6", features = ["auth", "trace", "fs", "set-header", "normalize-path"]}
 tower-sessions = "0.15"
 tower = "0.5"
 askama = {workspace = true}

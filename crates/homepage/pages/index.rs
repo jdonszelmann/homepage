@@ -18,7 +18,6 @@ impl Deref for Index {
     }
 }
 
-#[axum::debug_handler]
 pub async fn index(base: Base) -> Result<impl IntoResponse, RequestError> {
     let template = Index { base };
 

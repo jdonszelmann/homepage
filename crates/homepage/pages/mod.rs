@@ -4,7 +4,8 @@ use crate::{GAY_MODE, auth::User, state::ArcRouteState};
 use askama::{Template, filters::HtmlSafe};
 use axum::{
     RequestPartsExt, Router,
-    extract::{FromRequestParts, Query},
+    extract::{FromRef, FromRequestParts, Query},
+    http::request,
     routing::get,
 };
 use serde::Deserialize;
@@ -35,32 +36,46 @@ pub struct Base {
     gay: bool,
     wide: bool,
     user: Option<User>,
+    state: Option<ArcRouteState>,
 }
 
-impl<S: Send + Sync> FromRequestParts<S> for Base {
+async fn extract_base<E>(
+    parts: &mut request::Parts,
+    state: ArcRouteState,
+    user: Option<User>,
+) -> Result<Base, E> {
+    #[derive(Deserialize, Default)]
+    struct GayParams {
+        gay: bool,
+    }
+    let Query(GayParams { gay }) = parts.extract().await.unwrap_or_else(|_| {
+        Query(GayParams {
+            gay: GAY_MODE.load(Ordering::Relaxed),
+        })
+    });
+
+    Ok(Base {
+        gay,
+        wide: false,
+        user,
+        state: Some(state),
+    })
+}
+
+impl<S: Send + Sync> FromRequestParts<S> for Base
+where
+    ArcRouteState: FromRef<S>,
+{
     type Rejection = Infallible;
 
     async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        _: &S,
+        parts: &mut request::Parts,
+        state: &S,
     ) -> Result<Self, Self::Rejection> {
         let user: Option<User> = parts.extract().await?;
+        let state = ArcRouteState::from_ref(state);
 
-        #[derive(Deserialize, Default)]
-        struct GayParams {
-            gay: bool,
-        }
-        let Query(GayParams { gay }) = parts.extract().await.unwrap_or_else(|_| {
-            Query(GayParams {
-                gay: GAY_MODE.load(Ordering::Relaxed),
-            })
-        });
-
-        Ok(Self {
-            gay,
-            wide: false,
-            user,
-        })
+        extract_base(parts, state, user).await
     }
 }
 
@@ -72,30 +87,22 @@ impl LoggedinBase {
     }
 }
 
-impl<S: Send + Sync> FromRequestParts<S> for LoggedinBase {
+impl<S: Send + Sync> FromRequestParts<S> for LoggedinBase
+where
+    ArcRouteState: FromRef<S>,
+{
     type Rejection = axum_oidc::error::ExtractorError;
 
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
-        _: &S,
+        state: &S,
     ) -> Result<Self, Self::Rejection> {
         let user: User = parts.extract().await?;
+        let state = ArcRouteState::from_ref(state);
 
-        #[derive(Deserialize, Default)]
-        struct GayParams {
-            gay: bool,
-        }
-        let Query(GayParams { gay }) = parts.extract().await.unwrap_or_else(|_| {
-            Query(GayParams {
-                gay: GAY_MODE.load(Ordering::Relaxed),
-            })
-        });
-
-        Ok(Self(Base {
-            gay,
-            wide: false,
-            user: Some(user),
-        }))
+        extract_base(parts, state, Some(user))
+            .await
+            .map(LoggedinBase)
     }
 }
 

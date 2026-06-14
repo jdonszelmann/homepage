@@ -1,6 +1,7 @@
 {% extends "layouts/base.html" %}
 {% import "components/github.html" as github %}
 {% import "components/tag.html" as tag %}
+{% import "components/link.html" as link %}
 
 {% block title %}Blog posts{% endblock %}
 
@@ -51,23 +52,17 @@
         {{ postpreview(posts[0]) }}
     {% endif %}
 
-    {#
-    {% if !urls.is_empty() %}
+    {% if !links.is_empty() %}
     <div class="urls">
         <h1>Posts on the internet I enjoyed</h1>
 
-        <Links links={getLinks(5)} />
+        {{ link::links(links) }}
 
         <div class="buttons">
             <a href="/links">More links</a>
-            {
-            Astro.locals.session &&
-            (<a href="/addlink">Add</a>)
-            }
         </div>
     </div>
     {% endif %}
-    #}
 
     {% if posts.len() > 1 %}
     {% for post in posts.iter().skip(1) %}

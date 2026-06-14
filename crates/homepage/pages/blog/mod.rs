@@ -1,10 +1,13 @@
 use std::{convert::Infallible, ops::Deref};
 
+use crate::pages::lists::{Item, LINKS_LIST, get_items};
 use crate::pages::{Base, error::RequestError};
+use crate::state::ArcRouteState;
 use askama::Template;
 use axum::response::Html;
 use axum::routing::MethodRouter;
 use axum::routing::get;
+use eyre::{Context, bail};
 use homepage_live::LiveTemplate;
 use homepage_markdown::BlogPost;
 use homepage_route_gen::generate_blog_routes;
@@ -48,11 +51,32 @@ macro_rules! generate_route {
 
 generate_blog_routes!("../../../..", generate_route, overview_route);
 
+pub struct Link {
+    note: String,
+}
+
+async fn get_links(base: &Base, limit: usize) -> eyre::Result<Vec<Link>> {
+    let Some(state) = &base.state else {
+        bail!("no state")
+    };
+
+    let items = get_items(None, state, LINKS_LIST, Some(limit))
+        .await
+        .context("get links")?
+        .0;
+
+    Ok(items
+        .into_iter()
+        .map(|Item { id, note, .. }| Link { note })
+        .collect())
+}
+
 #[derive(Template)]
 #[template(path = "layouts/overview.html")]
 struct Overview<'a> {
     base: Base,
     posts: &'a [(&'a str, BlogPost)],
+    links: Vec<Link>,
 }
 
 impl Deref for Overview<'_> {
@@ -63,11 +87,12 @@ impl Deref for Overview<'_> {
     }
 }
 
-fn overview_route<S: Clone + Send + Sync + 'static>(
+fn overview_route(
     posts: &'static [(&'static str, BlogPost)],
-) -> MethodRouter<S, Infallible> {
+) -> MethodRouter<ArcRouteState, Infallible> {
     get(async move |base: Base| -> Result<_, RequestError> {
-        let template = Overview { base, posts };
+        let links = get_links(&base, 5).await.context("get links")?;
+        let template = Overview { base, posts, links };
         Ok(Html(template.render()?))
     })
 }

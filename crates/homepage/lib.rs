@@ -3,14 +3,19 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use axum::{
-    Router,
+    Router, ServiceExt,
     extract::Request,
     http::{HeaderValue, header},
 };
 use clap::Parser;
 use eyre::WrapErr;
 use tower::{Layer, ServiceBuilder};
-use tower_http::{services::ServeDir, set_header::SetResponseHeaderLayer, trace::TraceLayer};
+use tower_http::{
+    normalize_path::{NormalizePath, NormalizePathLayer},
+    services::ServeDir,
+    set_header::SetResponseHeaderLayer,
+    trace::{DefaultOnRequest, TraceLayer},
+};
 use tracing::{Level, info};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_tree::HierarchicalLayer;
@@ -97,10 +102,10 @@ fn init_tracing() -> eyre::Result<()> {
         .unwrap();
     let tree_layer = HierarchicalLayer::new(2)
         .with_ansi(true)
-        .with_indent_lines(true)
-        .with_verbose_entry(true)
-        .with_verbose_exit(true)
-        .with_span_retrace(true);
+        .with_indent_lines(true);
+    // .with_verbose_entry(true)
+    // .with_verbose_exit(true)
+    // .with_span_retrace(true);
 
     tracing_subscriber::registry()
         .with(filter_layer)
@@ -118,7 +123,7 @@ fn shared_setup() -> eyre::Result<()> {
     Ok(())
 }
 
-async fn init_app(state: ArcRouteState) -> eyre::Result<Router> {
+async fn init_app(state: ArcRouteState) -> eyre::Result<NormalizePath<Router>> {
     let app = Router::new();
     // static dir
     let app = app.nest_service(
@@ -130,21 +135,7 @@ async fn init_app(state: ArcRouteState) -> eyre::Result<Router> {
             ))
             .service(ServeDir::new("public")),
     );
-    // tracing
-    let app = app.layer(
-        TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
-            let request_id = uuid::Uuid::new_v4().to_string();
 
-            tracing::span!(
-                Level::INFO,
-                "request",
-                %request_id,
-                method = ?request.method(),
-                uri = %request.uri(),
-                version = ?request.version(),
-            )
-        }),
-    );
     // webpages
     let app = pages::routes(app);
     // authentication
@@ -152,7 +143,25 @@ async fn init_app(state: ArcRouteState) -> eyre::Result<Router> {
         .await
         .context("auth routes")?;
 
-    Ok(app.with_state(state))
+    // tracing
+    let app = app.layer(
+        TraceLayer::new_for_http()
+            .make_span_with(|request: &Request<_>| {
+                let request_id = uuid::Uuid::new_v4().to_string();
+
+                tracing::span!(
+                    Level::INFO,
+                    "request",
+                    %request_id,
+                    method = ?request.method(),
+                    uri = %request.uri(),
+                    version = ?request.version(),
+                )
+            })
+            .on_request(DefaultOnRequest::new().level(Level::INFO)),
+    );
+
+    Ok(NormalizePathLayer::trim_trailing_slash().layer(app.with_state(state)))
 }
 
 async fn start() -> eyre::Result<()> {
@@ -183,7 +192,9 @@ async fn start() -> eyre::Result<()> {
     let listener = tokio::net::TcpListener::bind(bind_addr)
         .await
         .context("bind tcp listener")?;
-    axum::serve(listener, app).await.context("serve failed")?;
+    axum::serve(listener, ServiceExt::<Request>::into_make_service(app))
+        .await
+        .context("serve failed")?;
 
     Ok(())
 }
