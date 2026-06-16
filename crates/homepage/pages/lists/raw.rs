@@ -66,7 +66,7 @@ pub async fn get_list_public_items(
     if let Some(limit) = limit {
         sqlx::query_as!(
             Item,
-            "select * from item where list = $1 and public = true and deleted is NULL order by updated desc limit $2",
+            "select * from item where list = $1 and public = true and deleted is NULL order by added desc limit $2",
             list,
             limit as i64,
         )
@@ -75,7 +75,7 @@ pub async fn get_list_public_items(
     } else {
         sqlx::query_as!(
             Item,
-            "select * from item where list = $1 and public = true and deleted is NULL order by updated desc",
+            "select * from item where list = $1 and public = true and deleted is NULL order by added desc",
             list
         )
         .fetch_all(conn)
@@ -91,7 +91,7 @@ pub async fn get_list_all_items(
     if let Some(limit) = limit {
         sqlx::query_as!(
             Item,
-            "select * from item where list = $1 and deleted is NULL order by updated desc limit $2",
+            "select * from item where list = $1 and deleted is NULL order by added desc limit $2",
             list,
             limit as i64,
         )
@@ -100,7 +100,7 @@ pub async fn get_list_all_items(
     } else {
         sqlx::query_as!(
             Item,
-            "select * from item where list = $1 and deleted is NULL order by updated desc",
+            "select * from item where list = $1 and deleted is NULL order by added desc",
             list
         )
         .fetch_all(conn)
