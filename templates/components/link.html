@@ -1,13 +1,13 @@
 {% macro link(link) %}
-<div class="link">
-    {{link.note}}
-</div>
+<li class="link">
+    {{link.note | crate::pages::markdown}}
+</li>
 {% endmacro %}
 
 {% macro links(links) %}
-<div class="link-overview">
+<ol class="link-overview">
     {% for l in links %}
     {{ link(l) }}
     {% endfor %}
-</div>
+</ol>
 {% endmacro %}

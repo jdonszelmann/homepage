@@ -29,6 +29,23 @@
             }
         }
     </style>
+
+    <script>
+        addEventListener("DOMContentLoaded", (event) => { 
+            for (const elem of document.querySelectorAll("time")) {
+                const value = elem.getAttribute("datetime");
+                const date = new Date(parseInt(value) * 1000);
+                elem.innerText = date.toLocaleString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                });
+            }
+        })
+    </script>
 </head>
 
 <body class="{% if gay %}gay{% endif %} {% if wide %}wide{% endif %}">

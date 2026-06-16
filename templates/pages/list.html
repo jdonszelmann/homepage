@@ -46,6 +46,7 @@
             {{ item.note | crate::pages::markdown }}
         </div>
         <div class="controls">
+            {% if user.is_some() %}
             <button hx-target="closest .item" hx-swap="outerHTML" hx-delete="/list/item/{{item.id}}"
                 hx-confirm="Are you sure you wish to delete this list?">
 
@@ -71,6 +72,9 @@
             </button>
             <span>private</span>
             {% endif %}
+            {% endif %}
+
+            <time datetime="{{item.added.unix_timestamp()}}">{{item.added}}</time>
         </div>
     </li>
     {% endfor %}
