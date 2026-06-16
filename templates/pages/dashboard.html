@@ -1,0 +1,23 @@
+{% extends "layouts/base.html" %}
+{% import "components/projects.html" as projects %}
+
+{% block title %}Jana's dashboard{% endblock %}
+
+{% block main %}
+<h1>Dashboard</h1>
+
+{% call projects::projects() %}
+{% call projects::project("links", Some("/links")) %}
+List of links to things I liked online.
+{% endcall %}
+{% call projects::project("lists", Some("/lists")) %}
+All lists.
+{% endcall %}
+{% call projects::project("media server", Some("https://media.donsz.nl/")) %}
+Home media server (jellyfin).
+{% endcall %}
+
+{% endcall %}
+
+
+{% endblock %}

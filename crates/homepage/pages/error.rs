@@ -30,18 +30,24 @@ pub enum RequestError {
     Render(#[from] askama::Error),
     #[error(transparent)]
     Generic(#[from] eyre::Report),
+    #[error("unauthorized")]
+    Unauthorized(#[from] axum_oidc::error::ExtractorError),
 }
 
 impl IntoResponse for RequestError {
     fn into_response(self) -> Response {
         error!("{self:?}");
-        let status = match &self {
-            RequestError::Render(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            RequestError::Generic(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        let (status, message) = match &self {
+            RequestError::Render(_) => (StatusCode::INTERNAL_SERVER_ERROR, None),
+            RequestError::Generic(_) => (StatusCode::INTERNAL_SERVER_ERROR, None),
+            RequestError::Unauthorized(_) => (
+                StatusCode::UNAUTHORIZED,
+                Some("you're not authorized to see this page".to_string()),
+            ),
         };
         let tmpl = ErrorTemplate {
             base: Base::default(),
-            message: status.to_string(),
+            message: message.unwrap_or_else(|| status.to_string()),
         };
         if let Ok(body) = tmpl.render() {
             (status, Html(body)).into_response()

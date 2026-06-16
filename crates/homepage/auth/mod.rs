@@ -22,7 +22,7 @@ use tower_sessions::{
     cookie::{SameSite, time::Duration},
 };
 
-use crate::state::ArcRouteState;
+use crate::{pages::error::RequestError, state::ArcRouteState};
 
 mod session_store;
 
@@ -62,12 +62,13 @@ impl<S> FromRequestParts<S> for User
 where
     S: Send + Sync,
 {
-    type Rejection = ExtractorError;
+    type Rejection = RequestError;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        let claims: OidcClaims<EmptyAdditionalClaims> = parts.extract().await?;
+        let claims: Result<OidcClaims<EmptyAdditionalClaims>, ExtractorError> =
+            parts.extract().await;
 
-        Ok(claims.into())
+        Ok(claims?.into())
     }
 }
 

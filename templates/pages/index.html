@@ -34,7 +34,9 @@
 
 
 {% block main %}
-<div class="sitetitle">
+<div class="sitetitle"
+    hx-on:dblclick = "window.location.assign('/dashboard')"
+>
     {% if gay %}
         <h3>
             Hiiiii, this is the much better gay version of the

@@ -1,6 +1,11 @@
-use std::{convert::Infallible, fmt::Display, sync::atomic::Ordering};
+use std::{convert::Infallible, fmt::Display, ops::Deref, sync::atomic::Ordering};
 
-use crate::{GAY_MODE, auth::User, state::ArcRouteState};
+use crate::{
+    GAY_MODE,
+    auth::{User, require_login},
+    pages::error::RequestError,
+    state::ArcRouteState,
+};
 use askama::{
     Template,
     filters::{HtmlSafe, Safe},
@@ -29,6 +34,7 @@ macro_rules! icon {
 }
 
 pub mod blog;
+pub mod dashboard;
 pub mod error;
 pub mod index;
 pub mod lists;
@@ -95,6 +101,14 @@ where
 
 pub struct LoggedinBase(Base);
 
+impl Deref for LoggedinBase {
+    type Target = Base;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl LoggedinBase {
     pub fn user(&self) -> &User {
         self.0.user.as_ref().unwrap()
@@ -105,7 +119,7 @@ impl<S: Send + Sync> FromRequestParts<S> for LoggedinBase
 where
     ArcRouteState: FromRef<S>,
 {
-    type Rejection = axum_oidc::error::ExtractorError;
+    type Rejection = RequestError;
 
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
@@ -145,8 +159,13 @@ impl Base {
 }
 
 pub fn routes(app: Router<ArcRouteState>) -> Router<ArcRouteState> {
-    let app = app.route("/", get(index::index));
     let app = app.fallback(error::fallback);
+
+    let app = app.route("/", get(index::index));
+    let app = app.route(
+        "/dashboard",
+        get(dashboard::dashboard).layer(require_login()),
+    );
 
     let app = blog::routes(app);
     let app = lists::routes(app);
