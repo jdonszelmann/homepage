@@ -15,7 +15,9 @@
         <tr>
             <th scope="col">name</th>
             <th scope="col">privacy</th>
+            {% if user.is_some() %}
             <th scope="col">actions</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -30,6 +32,7 @@
                     {{icon!(REGULAR_TRASH_CAN)}}
                 </button>
 
+                {% if user.is_some() %}
                 {% if list.public %}
                 <button hx-target="closest .listrow" hx-swap="outerHTML" hx-put="/list/{{list.id}}"
                     hx-vals='{"kind": "public", "public": false}'>
@@ -41,6 +44,7 @@
                     hx-confirm="Are you sure you wish to make this list public?">
                     {{icon!(REGULAR_EYE)}}
                 </button>
+                {% endif %}
                 {% endif %}
             </td>
         </tr>
