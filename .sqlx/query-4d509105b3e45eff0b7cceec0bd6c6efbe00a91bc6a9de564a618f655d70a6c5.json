@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * from item where list = $1 and public = true and deleted is NULL order by updated desc limit $2",
+  "query": "select * from item where list = $1 and public = true and deleted is NULL order by added desc",
   "describe": {
     "columns": [
       {
@@ -105,8 +105,7 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Int8"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -121,5 +120,5 @@
       true
     ]
   },
-  "hash": "b381e94ecaff648e2f42cf5ec0b53b76d554426f077f7e8420eeeb50b812fd5e"
+  "hash": "4d509105b3e45eff0b7cceec0bd6c6efbe00a91bc6a9de564a618f655d70a6c5"
 }
