@@ -1,7 +1,10 @@
 use std::{convert::Infallible, fmt::Display, sync::atomic::Ordering};
 
 use crate::{GAY_MODE, auth::User, state::ArcRouteState};
-use askama::{Template, filters::HtmlSafe};
+use askama::{
+    Template,
+    filters::{HtmlSafe, Safe},
+};
 use axum::{
     RequestPartsExt, Router,
     extract::{FromRef, FromRequestParts, Query},
@@ -29,6 +32,17 @@ pub mod blog;
 pub mod error;
 pub mod index;
 pub mod lists;
+
+#[askama::filter_fn]
+pub fn markdown(value: impl Display, env: &dyn askama::Values) -> askama::Result<Safe<String>> {
+    let input = value.to_string();
+    Ok(Safe(
+        homepage_markdown::markdown_to_html(&input).unwrap_or_else(|| {
+            let Ok(escaped) = askama::filters::escape(input, askama::filters::Html);
+            escaped.0.to_string()
+        }),
+    ))
+}
 
 #[derive(Template, Default)]
 #[template(path = "layouts/base.html")]

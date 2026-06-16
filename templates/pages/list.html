@@ -43,7 +43,7 @@
 
         <div class="note"
             hx-on='dblclick -> this.replaceWith(((e) => {htmx.process(e); return e;})(document.importNode(this.closest(".item").querySelector(".edit-note").content,true)))'>
-            {{ item.note }}
+            {{ item.note | crate::pages::markdown }}
         </div>
         <div class="controls">
             <button hx-target="closest .item" hx-swap="outerHTML" hx-delete="/list/item/{{item.id}}"

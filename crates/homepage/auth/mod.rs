@@ -3,10 +3,10 @@ use std::{convert::Infallible, str::FromStr};
 use axum::{
     RequestPartsExt, Router,
     error_handling::HandleErrorLayer,
-    extract::{FromRequestParts, OptionalFromRequestParts, State},
+    extract::{FromRequestParts, OptionalFromRequestParts, Request, State},
     http::{Uri, request::Parts},
     response::{IntoResponse, Redirect},
-    routing::{any, get},
+    routing::{Route, any, get},
 };
 use axum_oidc::{
     AdditionalClaims, EmptyAdditionalClaims, OidcAuthLayer, OidcClaims, OidcClient, OidcLoginLayer,
@@ -16,7 +16,7 @@ use axum_oidc::{
     openidconnect::{ClientId, ClientSecret, IssuerUrl, Scope, core::CoreGenderClaim},
 };
 use eyre::Context;
-use tower::ServiceBuilder;
+use tower::{Layer, Service, ServiceBuilder};
 use tower_sessions::{
     Expiry, SessionManagerLayer,
     cookie::{SameSite, time::Duration},
@@ -107,6 +107,28 @@ impl<AC: AdditionalClaims> axum_oidc::Session<AC> for SessionWrapper {
     }
 }
 
+pub fn require_login() -> impl Layer<
+    Route,
+    Service: Service<
+        Request,
+        Future: Send + 'static,
+        Response: IntoResponse,
+        Error = Infallible,
+    > + Clone
+                 + Send
+                 + Sync
+                 + 'static,
+> + Clone
++ Send
++ Sync
++ 'static {
+    ServiceBuilder::new()
+        .layer(HandleErrorLayer::<_, ()>::new(|e: MiddlewareError| async {
+            e.into_response()
+        }))
+        .layer(OidcLoginLayer::<EmptyAdditionalClaims, SessionWrapper>::new())
+}
+
 pub async fn auth_routes(
     r: Router<ArcRouteState>,
     state: ArcRouteState,
@@ -117,13 +139,6 @@ pub async fn auth_routes(
         // Lax needed to get requests from oidc providers, I think
         .with_same_site(SameSite::Lax)
         .with_expiry(Expiry::OnInactivity(Duration::days(30)));
-
-    let oidc_login_service = ServiceBuilder::new()
-        .layer(HandleErrorLayer::new(|e: MiddlewareError| async {
-            dbg!(&e);
-            e.into_response()
-        }))
-        .layer(OidcLoginLayer::<EmptyAdditionalClaims, SessionWrapper>::new());
 
     const OIDC_URL: &str = "/auth";
 
@@ -153,7 +168,7 @@ pub async fn auth_routes(
 
     let r = r
         .route("/logout", get(logout))
-        .route("/login", get(login).layer(oidc_login_service))
+        .route("/login", get(login).layer(require_login()))
         .route(
             OIDC_URL,
             any(handle_oidc_redirect::<EmptyAdditionalClaims, SessionWrapper>),

@@ -7,6 +7,10 @@
     border-radius: 0.2em;
 
     align-items: center;
+
+    .icon {
+        color: black;
+    }
 }
 
 .projects {
