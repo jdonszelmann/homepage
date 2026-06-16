@@ -26,13 +26,13 @@
         <tr class="listrow">
             <td><a href="/list/{{ list.id }}">{{ list.name }}</a></td>
             <td>{% if list.public %}public{% else %}private{% endif %}</td>
+            {% if user.is_some() %}
             <td class="controls">
                 <button hx-target="closest .listrow" hx-delete="/list/{{list.id}}"
                     hx-confirm="Are you sure you wish to delete this list?">
                     {{icon!(REGULAR_TRASH_CAN)}}
                 </button>
 
-                {% if user.is_some() %}
                 {% if list.public %}
                 <button hx-target="closest .listrow" hx-swap="outerHTML" hx-put="/list/{{list.id}}"
                     hx-vals='{"kind": "public", "public": false}'>
@@ -45,8 +45,8 @@
                     {{icon!(REGULAR_EYE)}}
                 </button>
                 {% endif %}
-                {% endif %}
             </td>
+            {% endif %}
         </tr>
         {% endfor %}
         {% endblock %}
