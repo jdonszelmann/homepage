@@ -70,6 +70,7 @@ fn make_blogpost_set(
     generate_overview_route_function: Ident,
     overview_route: &str,
     posts: &[&BlogPost],
+    show_links: bool,
 ) -> (TokenStream2, TokenStream2) {
     let data = posts.iter().map(|post| {
         let url = post_url(post);
@@ -84,7 +85,7 @@ fn make_blogpost_set(
             const #name: &[(&str, BlogPost)] = &[#(#data)*];
         },
         quote! {
-          .route(#overview_route, #generate_overview_route_function(#name))
+          .route(#overview_route, #generate_overview_route_function(#name, #show_links))
         },
     )
 }
@@ -174,12 +175,14 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
             generate_overview_route_function.clone(),
             "/blog",
             &posts_with_tag(&posts, None, false),
+            true,
         ),
         make_blogpost_set(
             all_blogposts_name.clone(),
             generate_overview_route_function.clone(),
             "/blog/drafts",
             &posts_with_tag(&posts, None, true),
+            false,
         ),
     ]
     .into_iter()
@@ -193,12 +196,14 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
                 generate_overview_route_function.clone(),
                 &format!("/blog/tag/{tag}"),
                 &posts_with_tag(&posts, Some(&tag), false),
+                false,
             ),
             make_blogpost_set(
                 drafts,
                 generate_overview_route_function.clone(),
                 &format!("/blog/tag/{tag}/drafts"),
                 &posts_with_tag(&posts, Some(&tag), true),
+                false,
             ),
         ]
     }))

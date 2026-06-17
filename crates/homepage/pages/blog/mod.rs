@@ -89,9 +89,11 @@ impl Deref for Overview<'_> {
 
 fn overview_route(
     posts: &'static [(&'static str, BlogPost)],
+    show_links: bool,
 ) -> MethodRouter<ArcRouteState, Infallible> {
+    let num_links = if show_links { 5 } else { 0 };
     get(async move |base: Base| -> Result<_, RequestError> {
-        let links = get_links(&base, 5).await.context("get links")?;
+        let links = get_links(&base, num_links).await.context("get links")?;
         let template = Overview { base, posts, links };
         Ok(Html(template.render()?))
     })
