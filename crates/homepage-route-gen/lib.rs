@@ -156,7 +156,11 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
 
     let mut posts = Vec::<BlogPost>::new();
     for i in sources {
-        match BlogPost::from_file(expansion_base.join(&i), macro_base.join(&i)) {
+        match BlogPost::from_file(
+            expansion_base.join(&i),
+            macro_base.join(&i),
+            repo_root_to_blog.join(&i),
+        ) {
             Ok(i) => posts.push(i),
             Err(e) => {
                 let e = format!("{e:?}");

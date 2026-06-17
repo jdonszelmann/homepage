@@ -57,6 +57,8 @@ pub struct BlogPost {
     pub slug: Cow<'static, str>,
 
     pub filepath: Cow<'static, str>,
+    // path from root of repo
+    pub rootpath: Cow<'static, str>,
 }
 
 impl Deref for BlogPost {
@@ -220,6 +222,7 @@ impl BlogPost {
     pub fn from_file(
         real_path: impl AsRef<Path>,
         path: impl AsRef<Path>,
+        root_path: impl AsRef<Path>,
     ) -> Result<BlogPost, FromFileError> {
         let parse_options = parse_options();
         let compile_options = compile_options();
@@ -259,6 +262,7 @@ impl BlogPost {
             .replace(|i: char| !i.is_ascii_alphanumeric() && i != '-', "");
 
         let filepath = real_path.as_ref().to_string_lossy().into_owned();
+        let rootpath = root_path.as_ref().to_string_lossy().into_owned();
 
         Ok(BlogPost {
             slug: slug.into(),
@@ -266,6 +270,7 @@ impl BlogPost {
             templatable_source: format!("{description_html}{html}").into(),
             templatable_description: description_html.into(),
             filepath: filepath.into(),
+            rootpath: rootpath.into(),
         })
     }
 }
