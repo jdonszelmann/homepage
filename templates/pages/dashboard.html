@@ -6,7 +6,7 @@
 {% block main %}
 <h1>Dashboard</h1>
 
-{% call projects::projects() %}
+{% call projects::projects(true) %}
 {% call projects::project("links", Some("/links")) %}
 List of links to things I liked online.
 {% endcall %}
