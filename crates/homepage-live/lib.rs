@@ -1,9 +1,9 @@
 pub use askama;
 pub use homepage_macros::LiveTemplate;
 
-use askama::Template;
+use askama::DynTemplate;
 
-pub trait LiveTemplate: Template {
+pub trait LiveTemplate: DynTemplate {
     fn render_live(&self) -> Result<String, askama::Error>;
 }
 

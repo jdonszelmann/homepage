@@ -55,34 +55,88 @@ fn posts_with_tag<'a>(
     posts: &'a [BlogPost],
     tag: Option<&str>,
     include_drafts: bool,
-) -> Vec<&'a BlogPost> {
+    derived: Option<Ident>,
+) -> Vec<BlogPostOrDerived<'a>> {
     posts
         .iter()
+        .enumerate()
         // only non drafts, unless we're supposed to include drafts
-        .filter(|i| include_drafts || !i.draft)
+        .filter(|(_, i)| include_drafts || !i.draft)
         // only posts with the requested tags, unless all tags are requested
-        .filter(|i| tag.is_none_or(|requested_tag| i.tags.iter().any(|i| i == requested_tag)))
+        .filter(|(_, i)| tag.is_none_or(|requested_tag| i.tags.iter().any(|i| i == requested_tag)))
+        .map(|(idx, post)| {
+            if let Some(d) = &derived {
+                BlogPostOrDerived::Derived(quote! {
+                    #d[#idx]
+                })
+            } else {
+                BlogPostOrDerived::BlogPost(post)
+            }
+        })
         .collect()
+}
+
+enum BlogPostOrDerived<'a> {
+    BlogPost(&'a BlogPost),
+    Derived(TokenStream2),
 }
 
 fn make_blogpost_set(
     name: Ident,
     generate_overview_route_function: Ident,
     overview_route: &str,
-    posts: &[&BlogPost],
+    posts: &[BlogPostOrDerived],
     show_links: bool,
 ) -> (TokenStream2, TokenStream2) {
-    let data = posts.iter().map(|post| {
-        let url = post_url(post);
-        let serialized = post.reproduce_tokens();
-        quote! {
-            (#url, #serialized),
+    let data = posts.iter().map(|post| match post {
+        BlogPostOrDerived::BlogPost(post) => {
+            let url = post_url(post);
+            let serialized = post.reproduce_tokens();
+            let source = format!(
+                r#"{{% extends "layouts/blog.html" %}} {{% block contents %}} {} {{% endblock %}}"#,
+                post.templatable_source.as_ref()
+            );
+            let path = post.filepath.as_ref();
+            quote! {
+                {
+                    const SERIALIZED: BlogPost = #serialized;
+                    (#url, SERIALIZED, |base: Option<Base>| {
+                        #[derive(Template, LiveTemplate)]
+                        #[template(source = #source, ext="html", blocks=["main"])]
+                        #[template_disambiguator = #path]
+                        struct BlogPostTemplate {
+                            base: Base,
+                            post: &'static BlogPost,
+                        }
+
+                        impl Deref for BlogPostTemplate {
+                            type Target = Base;
+
+                            fn deref(&self) -> &Self::Target {
+                                &self.base
+                            }
+                        }
+
+                        impl PostTemplate for BlogPostTemplate {
+                            fn render_contents(&self) -> Result<String, askama::Error> {
+                                self.as_main().render()
+                            }
+                        }
+
+                        Box::new(BlogPostTemplate {
+                            base: base.unwrap_or_default(),
+                            post: &SERIALIZED
+                        })
+                    })
+                },
+            }
         }
+        BlogPostOrDerived::Derived(base) => quote! {#base,},
     });
 
     (
         quote! {
-            const #name: &[(&str, BlogPost)] = &[#(#data)*];
+            pub const #name: &[RouteInfo] = &[#(&#data)*];
         },
         quote! {
           .route(#overview_route, #generate_overview_route_function(#name, #show_links))
@@ -143,7 +197,7 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
     // where are blog posts relative to the macro?
     let macro_base = call_path
         .join(&call_path_to_repo_root)
-        .join(&repo_root_to_blog);
+        .join(repo_root_to_blog);
     // where are blog posts relative to the expanded source?
     // no need to include the call path, since that's already where we're compiling
     // (in the expanded source)
@@ -171,21 +225,22 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
 
     posts.sort_by_cached_key(|i| Reverse(i.publication_date.clone()));
 
-    let all_blogposts_name = format_ident!("ALL_POSTS_DRAFTS");
+    let all_posts_drafts_name = format_ident!("ALL_POSTS_DRAFTS");
+    let all_posts_name = format_ident!("ALL_POSTS");
 
     let (blog_data, overview_routes): (Vec<_>, Vec<_>) = [
         make_blogpost_set(
-            format_ident!("ALL_POSTS"),
+            all_posts_name.clone(),
             generate_overview_route_function.clone(),
             "/blog",
-            &posts_with_tag(&posts, None, false),
+            &posts_with_tag(&posts, None, false, Some(all_posts_drafts_name.clone())),
             true,
         ),
         make_blogpost_set(
-            all_blogposts_name.clone(),
+            all_posts_drafts_name.clone(),
             generate_overview_route_function.clone(),
             "/blog/drafts",
-            &posts_with_tag(&posts, None, true),
+            &posts_with_tag(&posts, None, true, None),
             false,
         ),
     ]
@@ -199,14 +254,24 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
                 normal,
                 generate_overview_route_function.clone(),
                 &format!("/blog/tag/{tag}"),
-                &posts_with_tag(&posts, Some(&tag), false),
+                &posts_with_tag(
+                    &posts,
+                    Some(&tag),
+                    false,
+                    Some(all_posts_drafts_name.clone()),
+                ),
                 false,
             ),
             make_blogpost_set(
                 drafts,
                 generate_overview_route_function.clone(),
                 &format!("/blog/tag/{tag}/drafts"),
-                &posts_with_tag(&posts, Some(&tag), true),
+                &posts_with_tag(
+                    &posts,
+                    Some(&tag),
+                    true,
+                    Some(all_posts_drafts_name.clone()),
+                ),
                 false,
             ),
         ]
@@ -218,13 +283,8 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
         .enumerate()
         .map(|(idx, post)| {
             let url = post_url(post);
-            let templatable_source = format!(
-                r#"{{% extends "layouts/blog.html" %}} {{% block contents %}} {} {{% endblock %}}"#,
-                post.templatable_source.as_ref()
-            );
-            let path = post.filepath.as_ref();
             quote! {
-                  .route(#url, #generate_route_macro !(#templatable_source, #path, #all_blogposts_name[#idx].1))
+                  .route(#url, #generate_route_macro !(#all_posts_drafts_name[#idx]))
 
             }
         })
@@ -243,16 +303,20 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
     let prelude = quote! {crate::pages::blog::prelude};
 
     (quote! {
-        pub fn routes(r: #prelude::Router<#prelude::ArcRouteState>) -> #prelude::Router<#prelude::ArcRouteState> {
+        mod generated {
             use #prelude::*;
 
             #(#includes)*
             #(#blog_data)*
 
-            r
-                #(#blogpost_routes)*
-                #(#overview_routes)*
+            pub fn routes(r: #prelude::Router<#prelude::ArcRouteState>) -> #prelude::Router<#prelude::ArcRouteState> {
+                r
+                    #(#blogpost_routes)*
+                    #(#overview_routes)*
+            }
         }
+
+        pub use generated::*;
     })
     .into()
 }

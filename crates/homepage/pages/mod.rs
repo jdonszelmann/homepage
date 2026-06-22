@@ -38,6 +38,7 @@ pub mod dashboard;
 pub mod error;
 pub mod index;
 pub mod lists;
+pub mod rss;
 
 #[askama::filter_fn]
 pub fn markdown(value: impl Display, env: &dyn askama::Values) -> askama::Result<Safe<String>> {
@@ -158,10 +159,13 @@ impl Base {
     }
 }
 
+// I like this because it makes every line the same: "let app = something(app);"
+#[allow(clippy::let_and_return)]
 pub fn routes(app: Router<ArcRouteState>) -> Router<ArcRouteState> {
     let app = app.fallback(error::fallback);
 
     let app = app.route("/", get(index::index));
+    let app = app.route("/rss.xml", get(crate::pages::rss::rss_xml));
     let app = app.route(
         "/dashboard",
         get(dashboard::dashboard).layer(require_login()),

@@ -3,7 +3,7 @@ use std::{convert::Infallible, ops::Deref};
 use crate::pages::lists::{Item, LINKS_LIST, get_items};
 use crate::pages::{Base, error::RequestError};
 use crate::state::ArcRouteState;
-use askama::Template;
+use askama::{DynTemplate, Template};
 use axum::response::Html;
 use axum::routing::MethodRouter;
 use axum::routing::get;
@@ -12,37 +12,42 @@ use homepage_live::LiveTemplate;
 use homepage_markdown::BlogPost;
 use homepage_route_gen::generate_blog_routes;
 
+pub const BLOGPOST_INFO: &[RouteInfo] = generated::ALL_POSTS;
+
+pub trait PostTemplate: DynTemplate + LiveTemplate {
+    fn render_contents(&self) -> Result<String, askama::Error>;
+}
+
+pub type RenderFn = fn(Option<Base>) -> Box<dyn PostTemplate>;
+pub type RouteInfo<'a> = &'a (&'a str, BlogPost, RenderFn);
+
 // used in the expansion of generate_blog_routes
 mod prelude {
+    pub(super) use super::overview_route;
+    pub use crate::pages::{Base, error::RequestError};
     pub use crate::state::ArcRouteState;
-    pub use axum::{response::IntoResponse, routing::Router};
+    pub use askama::Template;
+    pub use axum::{
+        response::IntoResponse,
+        routing::{Router, get},
+    };
+    pub use homepage_live::LiveTemplate;
     pub use homepage_markdown::{BlogPost, Preamble, Variant};
+    pub use std::ops::Deref;
+
+    pub(super) use super::{PostTemplate, RouteInfo};
 }
 
 macro_rules! generate_route {
-    ($source: literal, $path: literal, $data: expr) => {{
+    ($data: expr) => {{
         pub async fn blog_route(mut base: Base) -> Result<impl IntoResponse, RequestError> {
-            #[derive(Template, LiveTemplate)]
-            #[template(source = $source, ext="html")]
-            #[template_disambiguator = $path]
-            struct Template {
-                base: Base,
-                post: &'static BlogPost,
-            }
+            use axum::response::Html;
+            let data = $data;
 
-            impl Deref for Template {
-                type Target = Base;
+            base.wide |= matches!(data.1.preamble.variant, Variant::Music);
+            let res = (data.2)(Some(base));
 
-                fn deref(&self) -> &Self::Target {
-                    &self.base
-                }
-            }
-
-            let post = &$data;
-            base.wide |= matches!(post.preamble.variant, Variant::Music);
-            let template = Template { base, post };
-
-            Ok(Html(template.render_live()?))
+            Ok(Html(res.render_live()?))
         }
 
         get(blog_route)
@@ -75,7 +80,7 @@ async fn get_links(base: &Base, limit: usize) -> eyre::Result<Vec<Link>> {
 #[template(path = "layouts/overview.html")]
 struct Overview<'a> {
     base: Base,
-    posts: &'a [(&'a str, BlogPost)],
+    posts: &'a [RouteInfo<'a>],
     links: Vec<Link>,
 }
 
@@ -88,7 +93,7 @@ impl Deref for Overview<'_> {
 }
 
 fn overview_route(
-    posts: &'static [(&'static str, BlogPost)],
+    posts: &'static [RouteInfo<'static>],
     show_links: bool,
 ) -> MethodRouter<ArcRouteState, Infallible> {
     let num_links = if show_links { 5 } else { 0 };
