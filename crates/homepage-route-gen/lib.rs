@@ -217,7 +217,7 @@ pub fn generate_blog_routes(ts: TokenStream) -> TokenStream {
         ) {
             Ok(i) => posts.push(i),
             Err(e) => {
-                let e = format!("{e:?}");
+                let e = format!("{e:?} while parsing {i:?}");
                 return (quote! { compile_error!(#e) }).into();
             }
         }

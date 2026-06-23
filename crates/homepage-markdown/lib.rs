@@ -4,6 +4,7 @@ use homepage_traits::ReproduceTokens;
 use markdown::{CompileOptions, Constructs, LineEnding, Options, ParseOptions, mdast::Node};
 use serde::Deserialize;
 use thiserror::Error;
+use time::Date;
 
 #[derive(Deserialize, Default, ReproduceTokens, Debug)]
 #[serde(rename_all = "kebab-case")]
@@ -19,11 +20,14 @@ impl Variant {
     }
 }
 
+time::serde::format_description!(ymd, Date, "[year]-[month]-[day]");
+
 #[derive(Deserialize, ReproduceTokens, Debug)]
 pub struct Preamble {
     pub title: Cow<'static, str>,
     #[serde(rename = "pubDate")]
-    pub publication_date: Cow<'static, str>,
+    #[serde(with = "ymd")]
+    pub publication_date: Date,
     pub description: Cow<'static, str>,
 
     #[serde(default)]

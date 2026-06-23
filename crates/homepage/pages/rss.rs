@@ -1,6 +1,7 @@
 use axum::{extract::State, response::IntoResponse};
 use eyre::Context;
-use rss::{Channel, ChannelBuilder, ItemBuilder};
+use rss::{Channel, ChannelBuilder, GuidBuilder, ItemBuilder};
+use time::format_description::well_known::Rfc2822;
 
 use crate::pages::blog::BLOGPOST_INFO;
 use crate::{pages::error::RequestError, state::ArcRouteState};
@@ -8,11 +9,21 @@ use crate::{pages::error::RequestError, state::ArcRouteState};
 fn generate_channel(base_url: &str) -> eyre::Result<Channel> {
     let mut items = Vec::new();
     for (_, post, render) in BLOGPOST_INFO {
+        let url = format!("{base_url}/blog/{}", post.slug);
         items.push(
             ItemBuilder::default()
-                .title(post.title.to_owned().into_owned())
-                .link(format!("{base_url}/blog/{}", post.slug))
-                .description(post.preamble.description.to_owned().into_owned())
+                .title(post.title.as_ref().to_string())
+                .link(url.clone())
+                .description(post.preamble.description.as_ref().to_string())
+                .pub_date(
+                    post.publication_date
+                        .with_hms(0, 0, 0)
+                        .context("add time")?
+                        .assume_utc()
+                        .format(&Rfc2822)
+                        .context("format time")?,
+                )
+                .guid(GuidBuilder::default().value(url).build())
                 .content(
                     render(None)
                         .as_ref()
