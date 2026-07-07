@@ -4,15 +4,14 @@ use eyre::{Context, bail};
 use serde::{Deserialize, Deserializer, de};
 use std::str::FromStr;
 use time::UtcDateTime;
-use tracing::error;
 use uuid::Uuid;
 
 use crate::{
     auth::User,
     pages::lists::raw::{
-        self, all_lists, get_item, get_list, get_list_all_items, get_list_public_items,
-        item_set_public, list_set_public, move_item, public_lists, rename_list, set_item_link,
-        set_item_note,
+        self, AddedThrough, all_lists, get_item, get_list, get_list_all_items,
+        get_list_public_items, item_set_public, list_set_public, move_item, public_lists,
+        rename_list, set_item_note,
     },
     state::ArcRouteState,
 };
@@ -46,8 +45,6 @@ pub struct CreateList {
 pub struct CreateItem {
     list: ListId,
     note: String,
-    link: Option<String>,
-    link_type: Option<LinkType>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -56,10 +53,6 @@ pub struct CreateItem {
 pub enum EditItemKind {
     SetNote {
         note: String,
-    },
-    SetLink {
-        link: String,
-        ty: LinkType,
     },
     MoveItem {
         list: ListId,
@@ -96,6 +89,7 @@ pub struct List {
     pub name: String,
 
     pub public: bool,
+    pub rss_source: Option<String>,
 
     pub added: UtcDateTime,
     pub updated: UtcDateTime,
@@ -111,6 +105,7 @@ impl List {
             added,
             updated,
             deleted,
+            rss_source,
         }: raw::List,
     ) -> eyre::Result<Self> {
         Ok(Self {
@@ -120,33 +115,7 @@ impl List {
             added: added.as_utc(),
             updated: updated.as_utc(),
             deleted: deleted.map(|i| i.as_utc()),
-        })
-    }
-}
-
-#[derive(Deserialize, Clone, Copy, Default)]
-pub enum LinkType {
-    Url,
-    #[default]
-    Unset,
-}
-
-impl LinkType {
-    pub fn into_raw(&self) -> &'static str {
-        match self {
-            LinkType::Url => "url",
-            LinkType::Unset => "",
-        }
-    }
-
-    pub fn from_raw(s: String) -> eyre::Result<Self> {
-        Ok(match s.as_str() {
-            "url" => Self::Url,
-            "" => Self::Unset,
-            other => {
-                error!("invalid link type: {other}");
-                bail!("invalid link type: {other}")
-            }
+            rss_source,
         })
     }
 }
@@ -156,9 +125,7 @@ pub struct Item {
     pub list: ListId,
 
     pub note: String,
-
-    pub link: String,
-    pub link_type: LinkType,
+    pub added_through: AddedThrough,
 
     pub public: bool,
 
@@ -173,8 +140,7 @@ impl Item {
             id,
             list,
             note,
-            link,
-            link_type,
+            added_through,
             public,
             added,
             updated,
@@ -185,8 +151,7 @@ impl Item {
             id: ItemId(id),
             list: ListId(list),
             note,
-            link,
-            link_type: LinkType::from_raw(link_type)?,
+            added_through,
             public,
             added: added.as_utc(),
             updated: updated.as_utc(),
@@ -272,26 +237,11 @@ pub async fn delete_item(_user: &User, state: ArcRouteState, item: ItemId) -> ey
 pub async fn create_item(
     _user: &User,
     state: ArcRouteState,
-    CreateItem {
-        list,
-        note,
-        link,
-        link_type,
-    }: CreateItem,
+    CreateItem { list, note }: CreateItem,
 ) -> eyre::Result<()> {
     let mut conn = state.db.begin().await.context("start tx")?;
 
-    let item = raw::create_item(&mut conn, list.0, &note).await?;
-    if let Some(link) = link {
-        raw::set_item_link(
-            &mut conn,
-            item,
-            &link,
-            link_type.unwrap_or_default().into_raw(),
-        )
-        .await?;
-    }
-
+    let item = raw::create_item(&mut conn, list.0, &note, AddedThrough::Manual).await?;
     conn.commit().await.context("commit tx")?;
 
     Ok(())
@@ -309,11 +259,6 @@ pub async fn edit_item(
         EditItemKind::SetNote { note } => set_item_note(&mut conn, item.0, &note)
             .await
             .context("set note")?,
-        EditItemKind::SetLink { link, ty } => {
-            set_item_link(&mut conn, item.0, &link, ty.into_raw())
-                .await
-                .context("set link")?
-        }
         EditItemKind::MoveItem { list } => move_item(&mut conn, item.0, list.0)
             .await
             .context("move item")?,

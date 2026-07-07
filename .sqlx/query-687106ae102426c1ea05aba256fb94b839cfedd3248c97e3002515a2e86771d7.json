@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "insert into item values ($1, $2, $3, '', '', (select list.public from list where list.id = $2)) returning id",
+  "query": "insert into item (id, list, note, public, added_through) values ($1, $2, $3, (select list.public from list where list.id = $2), $4) returning id",
   "describe": {
     "columns": [
       {
@@ -19,12 +19,13 @@
       "Left": [
         "Uuid",
         "Uuid",
-        "Text"
+        "Text",
+        "Int4"
       ]
     },
     "nullable": [
       false
     ]
   },
-  "hash": "5e5c8416305e8ce675aa3987b3cfd40af02095576167cad1833398a47834d95e"
+  "hash": "687106ae102426c1ea05aba256fb94b839cfedd3248c97e3002515a2e86771d7"
 }

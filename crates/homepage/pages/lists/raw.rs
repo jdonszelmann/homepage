@@ -8,6 +8,7 @@ pub struct List {
     pub name: String,
 
     pub public: bool,
+    pub rss_source: Option<String>,
 
     pub added: PrimitiveDateTime,
     pub updated: PrimitiveDateTime,
@@ -21,14 +22,32 @@ pub struct Item {
 
     pub note: String,
 
-    pub link: String,
-    pub link_type: String,
+    pub added_through: AddedThrough,
 
     pub public: bool,
 
     pub added: PrimitiveDateTime,
     pub updated: PrimitiveDateTime,
     pub deleted: Option<PrimitiveDateTime>,
+}
+
+#[repr(i32)]
+pub enum AddedThrough {
+    Manual = 0,
+    Rss = 1,
+}
+
+impl From<i32> for AddedThrough {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => Self::Manual,
+            1 => Self::Rss,
+            _ => {
+                tracing::error!("{value} from database cannot be converted into `AddedThrough`");
+                Self::Manual
+            }
+        }
+    }
 }
 
 pub async fn public_lists(conn: &mut PgConnection) -> sqlx::Result<Vec<List>> {
@@ -138,12 +157,18 @@ pub async fn ensure_list_exists(
     Ok(())
 }
 
-pub async fn create_item(conn: &mut PgConnection, list: Uuid, note: &str) -> sqlx::Result<Uuid> {
+pub async fn create_item(
+    conn: &mut PgConnection,
+    list: Uuid,
+    note: &str,
+    added_through: AddedThrough,
+) -> sqlx::Result<Uuid> {
     let res = sqlx::query!(
-        "insert into item values ($1, $2, $3, '', '', (select list.public from list where list.id = $2)) returning id",
+        "insert into item (id, list, note, public, added_through) values ($1, $2, $3, (select list.public from list where list.id = $2), $4) returning id",
         Uuid::new_v4(),
         list,
         note,
+        added_through as i32,
     )
     .fetch_one(conn)
     .await?;
@@ -234,24 +259,6 @@ pub async fn set_item_note(conn: &mut PgConnection, item: Uuid, note: &str) -> s
         r#"update item set note = $2, updated = CURRENT_TIMESTAMP where id = $1"#,
         item,
         note
-    )
-    .execute(conn)
-    .await?;
-
-    Ok(())
-}
-
-pub async fn set_item_link(
-    conn: &mut PgConnection,
-    item: Uuid,
-    link: &str,
-    link_type: &str,
-) -> sqlx::Result<()> {
-    sqlx::query!(
-        r#"update item set link = $2, link_type = $3, updated = CURRENT_TIMESTAMP where id = $1"#,
-        item,
-        link,
-        link_type,
     )
     .execute(conn)
     .await?;

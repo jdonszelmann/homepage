@@ -38,28 +38,6 @@
       },
       {
         "ordinal": 3,
-        "name": "link",
-        "type_info": "Text",
-        "origin": {
-          "Table": {
-            "table": "item",
-            "name": "link"
-          }
-        }
-      },
-      {
-        "ordinal": 4,
-        "name": "link_type",
-        "type_info": "Text",
-        "origin": {
-          "Table": {
-            "table": "item",
-            "name": "link_type"
-          }
-        }
-      },
-      {
-        "ordinal": 5,
         "name": "public",
         "type_info": "Bool",
         "origin": {
@@ -70,7 +48,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 4,
         "name": "added",
         "type_info": "Timestamp",
         "origin": {
@@ -81,7 +59,7 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 5,
         "name": "updated",
         "type_info": "Timestamp",
         "origin": {
@@ -92,13 +70,24 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 6,
         "name": "deleted",
         "type_info": "Timestamp",
         "origin": {
           "Table": {
             "table": "item",
             "name": "deleted"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "added_through",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "added_through"
           }
         }
       }
@@ -115,9 +104,8 @@
       false,
       false,
       false,
-      false,
-      false,
-      true
+      true,
+      false
     ]
   },
   "hash": "144a8a2881aacb872544a93b0a6f947569478f61f37f2a6c077498d144f0284a"

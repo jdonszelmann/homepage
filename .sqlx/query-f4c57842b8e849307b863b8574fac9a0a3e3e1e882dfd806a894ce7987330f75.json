@@ -68,6 +68,17 @@
             "name": "deleted"
           }
         }
+      },
+      {
+        "ordinal": 6,
+        "name": "rss_source",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "list",
+            "name": "rss_source"
+          }
+        }
       }
     ],
     "parameters": {
@@ -79,6 +90,7 @@
       false,
       false,
       false,
+      true,
       true
     ]
   },
