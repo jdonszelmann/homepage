@@ -90,6 +90,17 @@
             "name": "added_through"
           }
         }
+      },
+      {
+        "ordinal": 8,
+        "name": "rss_guid",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "item",
+            "name": "rss_guid"
+          }
+        }
       }
     ],
     "parameters": {
@@ -106,7 +117,8 @@
       false,
       false,
       true,
-      false
+      false,
+      true
     ]
   },
   "hash": "ab77a70d2bb510fe87fb8c66eec75abab32c38e520287780a7d4ab2b8d8638aa"

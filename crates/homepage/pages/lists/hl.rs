@@ -36,6 +36,16 @@ impl Display for ItemId {
     }
 }
 
+#[derive(Deserialize, Clone, Copy)]
+#[serde(transparent)]
+pub struct RssId(Uuid);
+
+impl Display for RssId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Deserialize)]
 pub struct CreateList {
     name: String,
@@ -45,6 +55,19 @@ pub struct CreateList {
 pub struct CreateItem {
     list: ListId,
     note: String,
+}
+
+#[derive(Deserialize)]
+pub struct CreateRss {
+    list: ListId,
+    url: String,
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(tag = "kind")]
+#[serde(rename_all = "snake_case")]
+pub enum EditRssKind {
+    SetUrl { url: String },
 }
 
 #[derive(Deserialize, Clone)]
@@ -84,12 +107,43 @@ where
     bool::from_str(&s).map_err(de::Error::custom)
 }
 
+pub struct Rss {
+    pub id: RssId,
+    pub list: ListId,
+    pub url: String,
+
+    pub added: UtcDateTime,
+    pub updated: UtcDateTime,
+    pub deleted: Option<UtcDateTime>,
+}
+
+impl Rss {
+    pub fn from_raw(
+        raw::Rss {
+            id,
+            list,
+            url,
+            added,
+            updated,
+            deleted,
+        }: raw::Rss,
+    ) -> eyre::Result<Self> {
+        Ok(Self {
+            id: RssId(id),
+            list: ListId(list),
+            url,
+            added: added.as_utc(),
+            updated: updated.as_utc(),
+            deleted: deleted.map(|i| i.as_utc()),
+        })
+    }
+}
+
 pub struct List {
     pub id: ListId,
     pub name: String,
 
     pub public: bool,
-    pub rss_source: Option<String>,
 
     pub added: UtcDateTime,
     pub updated: UtcDateTime,
@@ -109,7 +163,6 @@ impl List {
             added,
             updated,
             deleted,
-            rss_source,
         }: raw::List,
     ) -> eyre::Result<Self> {
         Ok(Self {
@@ -119,7 +172,6 @@ impl List {
             added: added.as_utc(),
             updated: updated.as_utc(),
             deleted: deleted.map(|i| i.as_utc()),
-            rss_source,
         })
     }
 }
@@ -129,7 +181,9 @@ pub struct Item {
     pub list: ListId,
 
     pub note: String,
+
     pub added_through: AddedThrough,
+    pub rss_guid: Option<String>,
 
     pub public: bool,
 
@@ -145,6 +199,7 @@ impl Item {
             list,
             note,
             added_through,
+            rss_guid,
             public,
             added,
             updated,
@@ -156,6 +211,7 @@ impl Item {
             list: ListId(list),
             note,
             added_through,
+            rss_guid,
             public,
             added: added.as_utc(),
             updated: updated.as_utc(),

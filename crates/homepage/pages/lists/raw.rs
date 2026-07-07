@@ -3,12 +3,23 @@ use time::PrimitiveDateTime;
 use uuid::Uuid;
 
 #[derive(sqlx::FromRow)]
+pub struct Rss {
+    pub id: Uuid,
+    pub list: Uuid,
+
+    pub url: String,
+
+    pub added: PrimitiveDateTime,
+    pub updated: PrimitiveDateTime,
+    pub deleted: Option<PrimitiveDateTime>,
+}
+
+#[derive(sqlx::FromRow)]
 pub struct List {
     pub id: Uuid,
     pub name: String,
 
     pub public: bool,
-    pub rss_source: Option<String>,
 
     pub added: PrimitiveDateTime,
     pub updated: PrimitiveDateTime,
@@ -23,6 +34,7 @@ pub struct Item {
     pub note: String,
 
     pub added_through: AddedThrough,
+    pub rss_guid: Option<String>,
 
     pub public: bool,
 

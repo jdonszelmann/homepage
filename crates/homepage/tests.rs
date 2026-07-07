@@ -16,7 +16,7 @@ use crate::{RouteState, init_app, shared_setup};
 
 fn start_test_server<O, F: UnwindSafe + AsyncFnOnce(TestServer) -> eyre::Result<O>>(
     f: F,
-) -> yre::Result<O> {
+) -> eyre::Result<O> {
     let mut args = Args::parse_from(iter::empty::<OsString>());
 
     // ignore errors, they only happen if we've already initialized for this process which we expect
