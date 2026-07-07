@@ -31,8 +31,8 @@
     </style>
 
     <script>
-        addEventListener("DOMContentLoaded", (event) => { 
-            for (const elem of document.querySelectorAll("time")) {
+        function convertTimeComponents() {
+            for (const elem of document.getElementsByTagName("time")) {
                 const value = elem.getAttribute("datetime");
                 const date = new Date(parseInt(value) * 1000);
                 elem.innerText = date.toLocaleString(undefined, {
@@ -44,6 +44,16 @@
                     hour12: false,
                 });
             }
+        }
+
+        addEventListener("DOMContentLoaded", (event) => { 
+            convertTimeComponents();
+            const observer = new MutationObserver(() => {
+                convertTimeComponents();
+                observer.disconnect();
+                observer.observe(document.body, { childList: true, subtree: true });
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
         })
     </script>
 </head>
