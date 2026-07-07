@@ -1,6 +1,7 @@
 use std::{convert::Infallible, ops::Deref};
 
-use crate::pages::lists::{Item, LINKS_LIST, get_items};
+use crate::pages::lists::item::hl::{Item, get_items};
+use crate::pages::lists::list::LINKS_LIST;
 use crate::pages::{Base, error::RequestError};
 use crate::state::ArcRouteState;
 use askama::{DynTemplate, Template};
