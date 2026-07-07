@@ -102,9 +102,9 @@ async fn create_list(
     State(state): State<ArcRouteState>,
     Form(list): Form<CreateList>,
 ) -> Result<impl IntoResponse, RequestError> {
-    hl::create_list(&user, state, list).await?;
+    let list = hl::create_list(&user, state, list).await?;
 
-    Ok([(HeaderName::from_static("hx-refresh"), "true")])
+    Ok([(HeaderName::from_static("hx-redirect"), list.link())])
 }
 
 async fn delete_list(

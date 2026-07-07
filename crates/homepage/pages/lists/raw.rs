@@ -127,16 +127,17 @@ pub async fn get_list_all_items(
     }
 }
 
-pub async fn create_list(conn: &mut PgConnection, name: &str) -> sqlx::Result<()> {
-    sqlx::query!(
-        "insert into list values ($1, $2, false)",
+pub async fn create_list(conn: &mut PgConnection, name: &str) -> sqlx::Result<List> {
+    let list = sqlx::query_as!(
+        List,
+        "insert into list values ($1, $2, false) returning *",
         Uuid::new_v4(),
         name,
     )
-    .execute(conn)
+    .fetch_one(conn)
     .await?;
 
-    Ok(())
+    Ok(list)
 }
 
 pub async fn ensure_list_exists(

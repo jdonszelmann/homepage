@@ -97,6 +97,10 @@ pub struct List {
 }
 
 impl List {
+    pub fn link(&self) -> String {
+        format!("/list/{}", self.id)
+    }
+
     pub fn from_raw(
         raw::List {
             id,
@@ -209,14 +213,14 @@ pub async fn get_items(
 pub(super) async fn create_list_unauthenticated(
     state: ArcRouteState,
     CreateList { name }: CreateList,
-) -> eyre::Result<()> {
+) -> eyre::Result<List> {
     let mut conn = state.db.acquire().await.context("aqcuire")?;
-    raw::create_list(&mut conn, &name).await?;
+    let list = raw::create_list(&mut conn, &name).await?;
 
-    Ok(())
+    List::from_raw(list)
 }
 
-pub async fn create_list(_user: &User, state: ArcRouteState, cl: CreateList) -> eyre::Result<()> {
+pub async fn create_list(_user: &User, state: ArcRouteState, cl: CreateList) -> eyre::Result<List> {
     create_list_unauthenticated(state, cl).await
 }
 

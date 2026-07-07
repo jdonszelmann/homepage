@@ -24,7 +24,7 @@
         {% block listitem %}
         {% for list in lists %}
         <tr class="listrow">
-            <td><a href="/list/{{ list.id }}">{{ list.name }}</a></td>
+            <td><a href="{{ list.link() }}">{{ list.name }}</a></td>
             <td>{% if list.public %}public{% else %}private{% endif %}</td>
             {% if user.is_some() %}
             <td class="controls">
