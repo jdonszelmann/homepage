@@ -2,8 +2,7 @@ use std::time::Duration;
 
 use axum_oidc::openidconnect::reqwest;
 use eyre::{Context, ContextCompat};
-use rss::Channel;
-use time::{UtcDateTime, format_description::well_known::Rfc2822};
+use time::UtcDateTime;
 
 use crate::{
     pages::lists::{
