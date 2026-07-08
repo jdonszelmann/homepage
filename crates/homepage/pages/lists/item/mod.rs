@@ -19,7 +19,7 @@ use crate::{
 };
 
 pub mod hl;
-mod raw;
+pub(super) mod raw;
 
 pub async fn create_item(
     user: User,

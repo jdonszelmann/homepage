@@ -19,7 +19,7 @@ use crate::{
 
 #[derive(Deserialize, Clone, Copy)]
 #[serde(transparent)]
-pub struct RssId(Uuid);
+pub struct RssId(pub Uuid);
 
 impl Display for RssId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

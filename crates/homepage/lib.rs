@@ -22,6 +22,7 @@ use tracing_tree::HierarchicalLayer;
 
 use crate::{
     auth::auth_routes,
+    pages::lists::rss::update_feed::start_periodic_feed_updates,
     state::{ArcRouteState, RouteState, init_database},
 };
 
@@ -100,16 +101,18 @@ fn init_tracing() -> eyre::Result<()> {
     let filter_layer = EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new("info"))
         .unwrap();
-    let tree_layer = HierarchicalLayer::new(2)
-        .with_ansi(true)
-        .with_indent_lines(true);
+    // let tree_layer = HierarchicalLayer::new(2)
+    //     .with_ansi(true)
+    //     .with_indent_lines(true);
+    let fmt_layer = tracing_subscriber::fmt::layer();
     // .with_verbose_entry(true)
     // .with_verbose_exit(true)
     // .with_span_retrace(true);
 
     tracing_subscriber::registry()
         .with(filter_layer)
-        .with(tree_layer)
+        // .with(tree_layer)
+        .with(fmt_layer)
         .try_init()
         .context("init tracing")?;
 
@@ -185,6 +188,7 @@ async fn start() -> eyre::Result<()> {
         GAY_MODE.store(true, Ordering::Relaxed);
     }
 
+    start_periodic_feed_updates(&state).await;
     let app = init_app(state).await.context("init app")?;
 
     let bind_addr = args.bind_addr();

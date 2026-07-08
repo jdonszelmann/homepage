@@ -48,8 +48,8 @@ pub enum EditItemKind {
 
 #[derive(Deserialize)]
 pub struct CreateItem {
-    list: ListId,
-    note: String,
+    pub list: ListId,
+    pub note: String,
 }
 
 pub struct Item {
@@ -142,7 +142,7 @@ pub async fn create_item(
 ) -> eyre::Result<()> {
     let mut conn = state.db.begin().await.context("start tx")?;
 
-    let _item = raw::create_item(&mut conn, list.0, &note, AddedThrough::Manual).await?;
+    let _item = raw::create_item(&mut conn, list.0, &note, None, AddedThrough::Manual).await?;
     conn.commit().await.context("commit tx")?;
 
     Ok(())

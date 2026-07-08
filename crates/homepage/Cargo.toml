@@ -23,6 +23,7 @@ tower = "0.5"
 askama = {workspace = true}
 sqlx = { version = "0.9", features = [ "runtime-tokio", "tls-rustls", "uuid", "json", "postgres", "migrate", "time", "macros" ], default-features=false }
 axum-oidc = {version = "1.0.0-dev-2"}
+reqwest = "0.13"
 
 fontawesome-free-pack = "7.2.0"
 markdown = {workspace = true}

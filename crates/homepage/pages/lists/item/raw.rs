@@ -98,13 +98,15 @@ pub async fn create_item(
     conn: &mut PgConnection,
     list: Uuid,
     note: &str,
+    guid: Option<&str>,
     added_through: AddedThrough,
 ) -> sqlx::Result<Uuid> {
     let res = sqlx::query!(
-        "insert into item (id, list, note, public, added_through) values ($1, $2, $3, (select list.public from list where list.id = $2), $4) returning id",
+        "insert into item (id, list, note, public, rss_guid, added_through) values ($1, $2, $3, (select list.public from list where list.id = $2), $4, $5) returning id",
         Uuid::new_v4(),
         list,
         note,
+        guid,
         added_through as i32,
     )
     .fetch_one(conn)

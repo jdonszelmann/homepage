@@ -1,5 +1,5 @@
 use sqlx::PgConnection;
-use time::PrimitiveDateTime;
+use time::{OffsetDateTime, PrimitiveDateTime, UtcDateTime};
 use uuid::Uuid;
 
 #[derive(sqlx::FromRow)]
@@ -12,6 +12,23 @@ pub struct Rss {
     pub added: PrimitiveDateTime,
     pub updated: PrimitiveDateTime,
     pub deleted: Option<PrimitiveDateTime>,
+}
+
+pub async fn item_exists(conn: &mut PgConnection, list: Uuid, guid: &str) -> sqlx::Result<bool> {
+    sqlx::query!(
+        "select exists(select 1 from item where list = $1 and rss_guid = $2)",
+        list,
+        guid
+    )
+    .fetch_one(conn)
+    .await
+    .map(|i| i.exists.unwrap_or_default())
+}
+
+pub async fn all_rss_sources(conn: &mut PgConnection) -> sqlx::Result<Vec<Rss>> {
+    sqlx::query_as!(Rss, "select * from rss where rss.deleted is null")
+        .fetch_all(conn)
+        .await
 }
 
 pub async fn rss_sources_for_list(conn: &mut PgConnection, list: Uuid) -> sqlx::Result<Vec<Rss>> {
@@ -48,6 +65,22 @@ pub async fn set_rss_url(conn: &mut PgConnection, rss: Uuid, url: &str) -> sqlx:
         r#"update rss set url = $2, updated = CURRENT_TIMESTAMP where id = $1"#,
         rss,
         url,
+    )
+    .execute(conn)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn update_rss(
+    conn: &mut PgConnection,
+    rss: Uuid,
+    timestamp: UtcDateTime,
+) -> sqlx::Result<()> {
+    sqlx::query!(
+        r#"update rss set updated = $2 where id = $1"#,
+        rss,
+        PrimitiveDateTime::new(timestamp.date(), timestamp.time()),
     )
     .execute(conn)
     .await?;

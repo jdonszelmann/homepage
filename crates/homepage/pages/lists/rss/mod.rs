@@ -21,7 +21,7 @@ use crate::{
 
 pub mod hl;
 mod raw;
-mod update_feed;
+pub mod update_feed;
 
 pub async fn add_rss_source(
     user: User,
