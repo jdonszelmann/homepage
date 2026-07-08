@@ -12,7 +12,7 @@ use crate::{
             get_list,
             hl::{List, ListId},
         },
-        rss::raw::{self, delete_rss, get_rss, rss_sources_for_list, set_rss_url},
+        rss::raw::{self, delete_rss, rss_sources_for_list, set_rss_url},
     },
     state::ArcRouteState,
 };
@@ -121,9 +121,16 @@ pub async fn edit_rss_source(
             .context("set note")?,
     }
 
-    let rss = get_rss(&mut conn, rss.0).await?;
+    let rss = raw::get_rss(&mut conn, rss.0).await?;
     let list = get_list(&mut conn, rss.list).await?;
     conn.commit().await.context("commit tx")?;
 
     Ok((Rss::from_raw(rss)?, List::from_raw(list)?))
+}
+
+pub async fn get_rss(_user: &User, state: &ArcRouteState, rss: RssId) -> eyre::Result<Rss> {
+    let mut conn = state.db.acquire().await.context("start tx")?;
+    let rss = raw::get_rss(&mut conn, rss.0).await?;
+
+    Rss::from_raw(rss)
 }

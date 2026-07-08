@@ -43,6 +43,7 @@ pub fn routes(app: Router<ArcRouteState>) -> Router<ArcRouteState> {
     .route("/list/rss_source", post(add_rss_source))
     .route("/list/rss_source/{:id}", put(edit_rss_source))
     .route("/list/rss_source/{:id}", delete(delete_rss_source))
+    .route("/list/rss_source/{:id}/update", put(delete_rss_source))
     // item routes
     .route("/list/item", post(create_item))
     .route("/list/item/{:id}", delete(delete_item))

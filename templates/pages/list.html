@@ -42,6 +42,9 @@
 
                     {{icon!(REGULAR_TRASH_CAN)}}
                 </button>
+                <button hx-swap="none" hx-put="/list/rss_source/{{rss.id}}/update">
+                    {{icon!(SOLID_ARROWS_ROTATE)}}
+                </button>
             </li>
         {% endfor %}
     </ul>

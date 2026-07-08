@@ -13,7 +13,7 @@ use crate::{
         error::RequestError,
         lists::{
             list::ListTemplate,
-            rss::hl::{CreateRss, EditRssKind, RssId},
+            rss::hl::{CreateRss, EditRssKind, RssId, get_rss},
         },
     },
     state::ArcRouteState,
@@ -22,6 +22,17 @@ use crate::{
 pub mod hl;
 mod raw;
 pub mod update_feed;
+
+pub async fn update_rss(
+    user: User,
+    Path(rss): Path<RssId>,
+    State(state): State<ArcRouteState>,
+) -> Result<impl IntoResponse, RequestError> {
+    let rss = get_rss(&user, &state, rss).await?;
+    update_feed::update_feed(&state, &rss, true).await?;
+
+    Ok(())
+}
 
 pub async fn add_rss_source(
     user: User,

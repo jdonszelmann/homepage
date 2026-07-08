@@ -71,6 +71,8 @@ pub async fn check_item_update(
             .await
             .wrap_err("add item from rss")?;
         }
+
+        conn.commit().await.context("commit tx")?;
     }
 
     Ok(())
