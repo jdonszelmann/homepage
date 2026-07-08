@@ -142,7 +142,7 @@ pub async fn create_item(
 ) -> eyre::Result<()> {
     let mut conn = state.db.begin().await.context("start tx")?;
 
-    let item = raw::create_item(&mut conn, list.0, &note, AddedThrough::Manual).await?;
+    let _item = raw::create_item(&mut conn, list.0, &note, AddedThrough::Manual).await?;
     conn.commit().await.context("commit tx")?;
 
     Ok(())

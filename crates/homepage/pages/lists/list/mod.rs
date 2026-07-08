@@ -16,6 +16,7 @@ use crate::{
         lists::{
             item::hl::{Item, get_items},
             list::hl::{CreateList, EditListKind, List, ListId, get_lists},
+            rss::hl::{Rss, get_rss_sources},
         },
     },
     state::ArcRouteState,
@@ -83,11 +84,12 @@ pub async fn edit_list(
 }
 
 #[derive(Template)]
-#[template(path = "pages/list.html", blocks=["listitem"])]
+#[template(path = "pages/list.html", blocks=["listitem", "rss_source"])]
 pub struct ListTemplate {
     pub base: Base,
     pub list: List,
     pub items: Vec<Item>,
+    pub rss_sources: Vec<Rss>,
 }
 
 impl Deref for ListTemplate {
@@ -104,9 +106,18 @@ pub async fn list(
     Path(list): Path<ListId>,
 ) -> Result<impl IntoResponse, RequestError> {
     ensure_links_list_exists(&state).await?;
+    let rss_sources = get_rss_sources(base.user.as_ref(), &state, list).await?;
     let (items, list) = get_items(base.user.as_ref(), &state, list, None).await?;
 
-    Ok(Html(ListTemplate { items, list, base }.render()?))
+    Ok(Html(
+        ListTemplate {
+            items,
+            list,
+            base,
+            rss_sources,
+        }
+        .render()?,
+    ))
 }
 
 #[derive(Template)]

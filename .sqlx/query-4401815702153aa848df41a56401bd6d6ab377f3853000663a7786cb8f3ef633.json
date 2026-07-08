@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update rss set url = $2, updated = CURRENT_TIMESTAMP where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4401815702153aa848df41a56401bd6d6ab377f3853000663a7786cb8f3ef633"
+}

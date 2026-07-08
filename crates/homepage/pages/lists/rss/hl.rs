@@ -1,10 +1,21 @@
 use std::fmt::Display;
 
+use eyre::Context;
 use serde::Deserialize;
 use time::UtcDateTime;
 use uuid::Uuid;
 
-use crate::pages::lists::{list::hl::ListId, rss::raw};
+use crate::{
+    auth::User,
+    pages::lists::{
+        list::{
+            get_list,
+            hl::{List, ListId},
+        },
+        rss::raw::{self, delete_rss, get_rss, rss_sources_for_list, set_rss_url},
+    },
+    state::ArcRouteState,
+};
 
 #[derive(Deserialize, Clone, Copy)]
 #[serde(transparent)]
@@ -59,4 +70,60 @@ impl Rss {
             deleted: deleted.map(|i| i.as_utc()),
         })
     }
+}
+
+pub async fn get_rss_sources(
+    user: Option<&User>,
+    state: &ArcRouteState,
+    list: ListId,
+) -> eyre::Result<Vec<Rss>> {
+    if user.is_none() {
+        return Ok(Vec::new());
+    }
+
+    let mut conn = state.db.acquire().await.context("aqcuire")?;
+    let res = rss_sources_for_list(&mut conn, list.0).await?;
+
+    res.into_iter().map(Rss::from_raw).collect::<Result<_, _>>()
+}
+
+pub async fn delete_rss_source(_user: &User, state: ArcRouteState, rss: RssId) -> eyre::Result<()> {
+    let mut conn = state.db.acquire().await.context("aqcuire")?;
+    delete_rss(&mut conn, rss.0).await?;
+
+    Ok(())
+}
+
+pub async fn add_rss_source(
+    _user: &User,
+    state: ArcRouteState,
+    CreateRss { list, url }: CreateRss,
+) -> eyre::Result<()> {
+    let mut conn = state.db.begin().await.context("start tx")?;
+
+    let _rss = raw::create_rss(&mut conn, list.0, &url).await?;
+    conn.commit().await.context("commit tx")?;
+
+    Ok(())
+}
+
+pub async fn edit_rss_source(
+    _user: &User,
+    state: ArcRouteState,
+    rss: RssId,
+    edit: EditRssKind,
+) -> eyre::Result<(Rss, List)> {
+    let mut conn = state.db.begin().await.context("start tx")?;
+
+    match edit {
+        EditRssKind::SetUrl { url } => set_rss_url(&mut conn, rss.0, &url)
+            .await
+            .context("set note")?,
+    }
+
+    let rss = get_rss(&mut conn, rss.0).await?;
+    let list = get_list(&mut conn, rss.list).await?;
+    conn.commit().await.context("commit tx")?;
+
+    Ok((Rss::from_raw(rss)?, List::from_raw(list)?))
 }

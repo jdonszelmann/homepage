@@ -57,6 +57,7 @@ pub async fn edit_item(
         ListTemplate {
             list,
             items: vec![item],
+            rss_sources: vec![],
             base: base.0,
         }
         .as_listitem()

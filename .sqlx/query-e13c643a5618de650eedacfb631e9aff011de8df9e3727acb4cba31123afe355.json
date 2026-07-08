@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select rss.* from rss join list on list.id = rss.list where list.id = $1 and list.deleted is null and rss.deleted is null",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "url",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "rss",
+            "name": "url"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "list",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "rss",
+            "name": "list"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "added",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "rss",
+            "name": "added"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "updated",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "rss",
+            "name": "updated"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "deleted",
+        "type_info": "Timestamp",
+        "origin": {
+          "Table": {
+            "table": "rss",
+            "name": "deleted"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "rss",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "e13c643a5618de650eedacfb631e9aff011de8df9e3727acb4cba31123afe355"
+}

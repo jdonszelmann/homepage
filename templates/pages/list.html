@@ -19,6 +19,34 @@
     </p>
 {% endif %}
 
+{% if user.is_some() %}
+    <details class="add-rss">
+        <summary>Add rss source to feed this list</summary>
+        <form 
+            hx-post="/list/rss_source" 
+            hx-vals='{"list": "{{list.id}}"}'
+            hx-on::after:request="if(event.detail.ctx.response.status === 200) this.reset()"
+            hx-status:200="transition:true"
+        >
+            <input name="url" type="url" placeholder="https://example.com/rss.xml" />
+            <button type="submit">Add</input>
+        </form>
+    </details>
+    <ul>
+        {% for rss in rss_sources %}
+            <li class="rss-source">
+                <a>{{rss.url}}</a> 
+                (Last updated: <time datetime="{{rss.updated.unix_timestamp()}}">{{rss.updated}}</time>)
+                <button hx-target="closest .rss-source" hx-swap="outerHTML" hx-delete="/list/rss_source/{{rss.id}}"
+                    hx-confirm="Are you sure you wish to delete this list?">
+
+                    {{icon!(REGULAR_TRASH_CAN)}}
+                </button>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
 <ol class="list">
     {% if let Some(user) = user %}
     <div class="item newitem">

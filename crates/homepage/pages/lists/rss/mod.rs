@@ -1,2 +1,65 @@
+use askama::Template;
+use axum::{
+    Form,
+    extract::{Path, State},
+    http::HeaderName,
+    response::{Html, IntoResponse},
+};
+
+use crate::{
+    auth::User,
+    pages::{
+        LoggedinBase,
+        error::RequestError,
+        lists::{
+            list::ListTemplate,
+            rss::hl::{CreateRss, EditRssKind, RssId},
+        },
+    },
+    state::ArcRouteState,
+};
+
 pub mod hl;
 mod raw;
+mod update_feed;
+
+pub async fn add_rss_source(
+    user: User,
+    State(state): State<ArcRouteState>,
+    Form(rss): Form<CreateRss>,
+) -> Result<impl IntoResponse, RequestError> {
+    hl::add_rss_source(&user, state, rss).await?;
+
+    Ok([(HeaderName::from_static("hx-refresh"), "true")])
+}
+
+pub async fn delete_rss_source(
+    user: User,
+    State(state): State<ArcRouteState>,
+    Path(rss): Path<RssId>,
+) -> Result<impl IntoResponse, RequestError> {
+    hl::delete_rss_source(&user, state, rss).await?;
+
+    Ok(())
+}
+
+pub async fn edit_rss_source(
+    base: LoggedinBase,
+    State(state): State<ArcRouteState>,
+    Path(item): Path<RssId>,
+    Form(edit): Form<EditRssKind>,
+) -> Result<impl IntoResponse, RequestError> {
+    let (rss_source, list) = hl::edit_rss_source(base.user(), state, item, edit).await?;
+
+    Ok(Html(
+        ListTemplate {
+            list,
+            items: vec![],
+            rss_sources: vec![rss_source],
+            base: base.0,
+        }
+        .as_rss_source()
+        .render()?,
+    )
+    .into_response())
+}

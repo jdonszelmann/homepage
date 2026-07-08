@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update rss set deleted = CURRENT_TIMESTAMP, updated = CURRENT_TIMESTAMP where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "42a7020e654ac3b99b589cd0ccdf5fa918c5d930412a35c22354f4398471f2b2"
+}
