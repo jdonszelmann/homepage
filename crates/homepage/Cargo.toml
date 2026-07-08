@@ -28,6 +28,7 @@ reqwest = "0.13"
 fontawesome-free-pack = "7.2.0"
 markdown = {workspace = true}
 rss = "2"
+feed-rs = "2.4"
 
 url = "2"
 uuid = {version = "1", features = ["v4", "serde"]}

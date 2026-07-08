@@ -23,16 +23,23 @@ pub async fn all_rss_sources(state: &ArcRouteState) -> eyre::Result<Vec<Rss>> {
     res.into_iter().map(Rss::from_raw).collect::<Result<_, _>>()
 }
 
-pub fn format_item(item: &rss::Item, link: &str) -> String {
+pub fn format_item(item: &feed_rs::model::Entry, name: Option<&str>, link: &str) -> String {
     let author = item
-        .author()
-        .map(|a| format!("\nby {a}"))
+        .authors
+        .first()
+        .map(|a| format!("\nby {}", a.name))
         .unwrap_or_default();
-    let title = item.title().unwrap_or(link);
+    let title = item
+        .title
+        .as_ref()
+        .map(|i| i.content.clone())
+        .unwrap_or(link.to_string());
     let description = item
-        .description()
-        .map(|d| format!("\n{d}"))
+        .summary
+        .as_ref()
+        .map(|d| format!("\n{}", d.content))
         .unwrap_or_default();
+    let name = name.unwrap_or(link);
 
     let note = format!(
         "
@@ -40,6 +47,7 @@ pub fn format_item(item: &rss::Item, link: &str) -> String {
 
 {description}
 {author}
+from {link}
 "
     );
 
@@ -49,10 +57,15 @@ pub fn format_item(item: &rss::Item, link: &str) -> String {
 pub async fn check_item_update(
     state: &ArcRouteState,
     rss: &Rss,
-    item: &rss::Item,
+    name: Option<&str>,
+    item: &feed_rs::model::Entry,
 ) -> eyre::Result<()> {
-    let link = item.link().wrap_err("item has no link")?;
-    let guid = item.guid().map(|i| i.value()).unwrap_or(link);
+    let link = item
+        .links
+        .first()
+        .map(|i| &i.href)
+        .wrap_err("item has no link")?;
+    let guid = &item.id;
 
     {
         let mut conn = state.db.begin().await.wrap_err("aqcuire")?;
@@ -61,15 +74,15 @@ pub async fn check_item_update(
             .wrap_err("item exists")?
         {
             let time_added = item
-                .pub_date()
-                .and_then(|i| UtcDateTime::parse(i, &Rfc2822).ok())
+                .published
+                .and_then(|i| UtcDateTime::from_unix_timestamp(i.timestamp()).ok())
                 .unwrap_or_else(UtcDateTime::now);
 
             tracing::info!("adding new item with guid {guid} to {}", rss.url);
             let _item = item::raw::create_item(
                 &mut conn,
                 rss.list.0,
-                &format_item(item, link),
+                &format_item(item, name, link),
                 Some(guid),
                 AddedThrough::Rss,
                 Some(time_added),
@@ -127,11 +140,17 @@ async fn update_feed(state: &ArcRouteState, rss: &Rss, force: bool) -> eyre::Res
     // TODO: hash content to see if anything changed
     // TODO: see if channel has an update frequency
     // TODO: dedupe rss feeds for more than one list
+    // TODO: undelete deleted items
+    let feed = {
+        let parser = feed_rs::parser::Builder::new()
+            .sanitize_content(true)
+            .build();
+        parser.parse(&content[..]).wrap_err("parse feed")?
+    };
+    let title = feed.title.map(|i| i.content);
 
-    let channel = Channel::read_from(&content[..]).wrap_err("read channel")?;
-
-    for item in channel.items() {
-        check_item_update(state, rss, item).await?
+    for item in &feed.entries {
+        check_item_update(state, rss, title.as_deref(), item).await?;
     }
 
     Ok(())
