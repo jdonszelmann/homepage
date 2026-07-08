@@ -8,6 +8,10 @@ main {
         margin-bottom: 2mm;
     }
 
+    .style-error {
+        color: #e02e22;
+    }
+
     a {
         color: #9c3574;
 

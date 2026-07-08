@@ -1,5 +1,5 @@
 use sqlx::PgConnection;
-use time::{OffsetDateTime, PrimitiveDateTime, UtcDateTime};
+use time::{PrimitiveDateTime, UtcDateTime};
 use uuid::Uuid;
 
 #[derive(sqlx::FromRow)]
@@ -8,6 +8,8 @@ pub struct Rss {
     pub list: Uuid,
 
     pub url: String,
+
+    pub last_error: Option<String>,
 
     pub added: PrimitiveDateTime,
     pub updated: PrimitiveDateTime,
@@ -58,6 +60,32 @@ pub async fn create_rss(conn: &mut PgConnection, list: Uuid, url: &str) -> sqlx:
     .await?;
 
     Ok(res.id)
+}
+
+pub async fn clear_error(conn: &mut PgConnection, rss: Uuid) -> sqlx::Result<()> {
+    sqlx::query!("update rss set last_error = null where id = $1", rss)
+        .execute(conn)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn append_error(conn: &mut PgConnection, rss: Uuid, error: &str) -> sqlx::Result<()> {
+    sqlx::query!(
+        "update rss set last_error =
+            case 
+                when last_error is null THEN $2
+                else last_error || chr(10) || $2
+            end
+         where id = $1
+        ",
+        rss,
+        error
+    )
+    .execute(conn)
+    .await?;
+
+    Ok(())
 }
 
 pub async fn set_rss_url(conn: &mut PgConnection, rss: Uuid, url: &str) -> sqlx::Result<()> {

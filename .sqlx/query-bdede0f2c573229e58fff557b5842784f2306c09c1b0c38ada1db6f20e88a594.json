@@ -68,6 +68,17 @@
             "name": "id"
           }
         }
+      },
+      {
+        "ordinal": 6,
+        "name": "last_error",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "rss",
+            "name": "last_error"
+          }
+        }
       }
     ],
     "parameters": {
@@ -79,7 +90,8 @@
       false,
       false,
       true,
-      false
+      false,
+      true
     ]
   },
   "hash": "bdede0f2c573229e58fff557b5842784f2306c09c1b0c38ada1db6f20e88a594"

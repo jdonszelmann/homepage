@@ -36,6 +36,9 @@
         {% for rss in rss_sources %}
             <li class="rss-source">
                 <a>{{rss.url}}</a> 
+                {% if let Some(err) = rss.last_error %}
+                    <span class="style-error">{{ err }}</span>
+                {% endif %}
                 (Last updated: <time datetime="{{rss.updated.unix_timestamp()}}">{{rss.updated}}</time>)
                 <button hx-target="closest .rss-source" hx-swap="outerHTML" hx-delete="/list/rss_source/{{rss.id}}"
                     hx-confirm="Are you sure you wish to delete this list?">

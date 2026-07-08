@@ -43,7 +43,7 @@ clap = {version = "4.6.1", features=["derive", "env"]}
 tokio = {version = "1", features = ["macros", "rt-multi-thread"]}
 serde = {workspace = true}
 serde_json = {version = "1", features = ["arbitrary_precision"]}
-eyre = {version = "0.6", default-features = false}
+eyre = {version = "0.6", default-features = false, features=["auto-install"]}
 async-trait = "0.1"
 thiserror = {workspace = true}
 

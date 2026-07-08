@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update rss set last_error =\n            case \n                when last_error is null THEN $2\n                else last_error || chr(10) || $2\n            end\n         where id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d32b4abd93f3fef2637aa7e18d57b5420758105f34ac1a74815993df1a3dfbca"
+}

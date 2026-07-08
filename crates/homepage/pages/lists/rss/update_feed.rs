@@ -10,7 +10,7 @@ use crate::{
         item::{self, raw::AddedThrough},
         rss::{
             hl::Rss,
-            raw::{self, item_exists, update_rss},
+            raw::{self, append_error, clear_error, item_exists, update_rss},
         },
     },
     state::ArcRouteState,
@@ -103,7 +103,7 @@ fn should_update(rss: &Rss, now: UtcDateTime) -> bool {
     true
 }
 
-pub async fn update_feed(state: &ArcRouteState, rss: &Rss, force: bool) -> eyre::Result<()> {
+async fn update_feed(state: &ArcRouteState, rss: &Rss, force: bool) -> eyre::Result<()> {
     let now = UtcDateTime::now();
     if !should_update(rss, now) && !force {
         return Ok(());
@@ -125,12 +125,10 @@ pub async fn update_feed(state: &ArcRouteState, rss: &Rss, force: bool) -> eyre:
         .wrap_err("read response as bytes")?;
 
     // TODO: hash content to see if anything changed
-    // TODO: see if content has updated timestamp
     // TODO: see if channel has an update frequency
-    // TODO: forward errors to the frontend
-    // TODO: allow frontend to force an update
+    // TODO: dedupe rss feeds for more than one list
 
-    let channel = Channel::read_from(&content[..])?;
+    let channel = Channel::read_from(&content[..]).wrap_err("read channel")?;
 
     for item in channel.items() {
         check_item_update(state, rss, item).await?
@@ -139,15 +137,39 @@ pub async fn update_feed(state: &ArcRouteState, rss: &Rss, force: bool) -> eyre:
     Ok(())
 }
 
+pub async fn try_update_feed(state: &ArcRouteState, rss: &Rss, force: bool) -> eyre::Result<()> {
+    {
+        let mut conn = state.db.acquire().await.wrap_err("aqcuire")?;
+        clear_error(&mut conn, rss.id.0)
+            .await
+            .wrap_err("clear errors")?
+    }
+
+    if let Err(e) = tokio::spawn({
+        let state = state.clone();
+        let rss = rss.clone();
+        async move { update_feed(&state, &rss, force).await }
+    })
+    .await
+    .map_err(|e| eyre::eyre!("{e:?}"))
+    .flatten()
+    .wrap_err_with(|| format!("update {}", rss.url))
+    {
+        tracing::error!("{e:?}");
+        {
+            let mut conn = state.db.acquire().await.wrap_err("aqcuire")?;
+            append_error(&mut conn, rss.id.0, &format!("{e:?}"))
+                .await
+                .wrap_err("add errors")?;
+        }
+    }
+
+    Ok(())
+}
+
 pub async fn try_update_all_feeds(state: &ArcRouteState) -> eyre::Result<()> {
     for rss in all_rss_sources(state).await? {
-        if let Err(e) = update_feed(state, &rss, false)
-            .await
-            .wrap_err_with(|| format!("update {}", rss.url))
-        {
-            tracing::error!("{e}");
-            todo!()
-        }
+        try_update_feed(state, &rss, false).await?
     }
 
     Ok(())

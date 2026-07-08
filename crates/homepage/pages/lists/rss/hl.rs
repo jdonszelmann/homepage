@@ -40,10 +40,13 @@ pub enum EditRssKind {
     SetUrl { url: String },
 }
 
+#[derive(Clone)]
 pub struct Rss {
     pub id: RssId,
     pub list: ListId,
     pub url: String,
+
+    pub last_error: Option<String>,
 
     pub added: UtcDateTime,
     pub updated: UtcDateTime,
@@ -56,6 +59,7 @@ impl Rss {
             id,
             list,
             url,
+            last_error,
             added,
             updated,
             deleted,
@@ -65,6 +69,7 @@ impl Rss {
             id: RssId(id),
             list: ListId(list),
             url,
+            last_error,
             added: added.as_utc(),
             updated: updated.as_utc(),
             deleted: deleted.map(|i| i.as_utc()),
@@ -96,15 +101,15 @@ pub async fn delete_rss_source(_user: &User, state: ArcRouteState, rss: RssId) -
 
 pub async fn add_rss_source(
     _user: &User,
-    state: ArcRouteState,
+    state: &ArcRouteState,
     CreateRss { list, url }: CreateRss,
-) -> eyre::Result<()> {
+) -> eyre::Result<RssId> {
     let mut conn = state.db.begin().await.context("start tx")?;
 
-    let _rss = raw::create_rss(&mut conn, list.0, &url).await?;
+    let rss = raw::create_rss(&mut conn, list.0, &url).await?;
     conn.commit().await.context("commit tx")?;
 
-    Ok(())
+    Ok(RssId(rss))
 }
 
 pub async fn edit_rss_source(

@@ -29,9 +29,9 @@ pub async fn update_rss(
     State(state): State<ArcRouteState>,
 ) -> Result<impl IntoResponse, RequestError> {
     let rss = get_rss(&user, &state, rss).await?;
-    update_feed::update_feed(&state, &rss, true).await?;
+    update_feed::try_update_feed(&state, &rss, true).await?;
 
-    Ok(())
+    Ok([(HeaderName::from_static("hx-refresh"), "true")])
 }
 
 pub async fn add_rss_source(
@@ -39,7 +39,9 @@ pub async fn add_rss_source(
     State(state): State<ArcRouteState>,
     Form(rss): Form<CreateRss>,
 ) -> Result<impl IntoResponse, RequestError> {
-    hl::add_rss_source(&user, state, rss).await?;
+    let rss = hl::add_rss_source(&user, &state, rss).await?;
+    let rss = get_rss(&user, &state, rss).await?;
+    update_feed::try_update_feed(&state, &rss, true).await?;
 
     Ok([(HeaderName::from_static("hx-refresh"), "true")])
 }
