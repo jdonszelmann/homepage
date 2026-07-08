@@ -3,7 +3,7 @@ use std::time::Duration;
 use axum_oidc::openidconnect::reqwest;
 use eyre::{Context, ContextCompat};
 use rss::Channel;
-use time::UtcDateTime;
+use time::{UtcDateTime, format_description::well_known::Rfc2822};
 
 use crate::{
     pages::lists::{
@@ -60,6 +60,11 @@ pub async fn check_item_update(
             .await
             .wrap_err("item exists")?
         {
+            let time_added = item
+                .pub_date()
+                .and_then(|i| UtcDateTime::parse(i, &Rfc2822).ok())
+                .unwrap_or_else(UtcDateTime::now);
+
             tracing::info!("adding new item with guid {guid} to {}", rss.url);
             let _item = item::raw::create_item(
                 &mut conn,
@@ -67,6 +72,7 @@ pub async fn check_item_update(
                 &format_item(item, link),
                 Some(guid),
                 AddedThrough::Rss,
+                Some(time_added),
             )
             .await
             .wrap_err("add item from rss")?;

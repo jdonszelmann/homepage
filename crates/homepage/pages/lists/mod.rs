@@ -9,7 +9,7 @@ use crate::{
     pages::lists::{
         item::{create_item, delete_item, edit_item},
         list::{LINKS_LIST, all_lists, create_list, delete_list, edit_list, list},
-        rss::{add_rss_source, delete_rss_source, edit_rss_source},
+        rss::{add_rss_source, delete_rss_source, edit_rss_source, update_rss},
     },
     state::ArcRouteState,
 };
@@ -43,7 +43,7 @@ pub fn routes(app: Router<ArcRouteState>) -> Router<ArcRouteState> {
     .route("/list/rss_source", post(add_rss_source))
     .route("/list/rss_source/{:id}", put(edit_rss_source))
     .route("/list/rss_source/{:id}", delete(delete_rss_source))
-    .route("/list/rss_source/{:id}/update", put(delete_rss_source))
+    .route("/list/rss_source/{:id}/update", put(update_rss))
     // item routes
     .route("/list/item", post(create_item))
     .route("/list/item/{:id}", delete(delete_item))

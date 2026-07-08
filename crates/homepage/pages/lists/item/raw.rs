@@ -1,5 +1,5 @@
 use sqlx::PgConnection;
-use time::PrimitiveDateTime;
+use time::{PrimitiveDateTime, UtcDateTime};
 use uuid::Uuid;
 
 #[derive(sqlx::FromRow)]
@@ -100,14 +100,16 @@ pub async fn create_item(
     note: &str,
     guid: Option<&str>,
     added_through: AddedThrough,
+    added: Option<UtcDateTime>,
 ) -> sqlx::Result<Uuid> {
     let res = sqlx::query!(
-        "insert into item (id, list, note, public, rss_guid, added_through) values ($1, $2, $3, (select list.public from list where list.id = $2), $4, $5) returning id",
+        "insert into item (id, list, note, public, rss_guid, added_through, added) values ($1, $2, $3, (select list.public from list where list.id = $2), $4, $5, $6) returning id",
         Uuid::new_v4(),
         list,
         note,
         guid,
         added_through as i32,
+        added.map(|i| PrimitiveDateTime::new(i.date(), i.time()))
     )
     .fetch_one(conn)
     .await?;
