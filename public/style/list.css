@@ -50,6 +50,8 @@
 
         box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
 
+        word-wrap: anywhere;
+
         form {
             display: contents;
         }
@@ -76,6 +78,11 @@
 
         & .controls-after {
             grid-area: controls-after;
+        }
+
+        img {
+            object-fit: contain;
+            max-width: 100%;
         }
     }
 }
