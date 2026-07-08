@@ -25,6 +25,18 @@ pub enum AddedThrough {
     Rss = 1,
 }
 
+impl AddedThrough {
+    /// Returns true if deleting this item makes sense
+    pub fn can_delete(&self) -> bool {
+        match self {
+            AddedThrough::Manual => true,
+            // rss items are automatically re-added if you were to delete one,
+            // so deleting them isn't super useful.
+            AddedThrough::Rss => false,
+        }
+    }
+}
+
 impl From<i32> for AddedThrough {
     fn from(value: i32) -> Self {
         match value {
@@ -139,6 +151,17 @@ pub async fn item_set_public(
 pub async fn item_delete(conn: &mut PgConnection, item: Uuid) -> sqlx::Result<()> {
     sqlx::query!(
         r#"update item set deleted = CURRENT_TIMESTAMP, updated = CURRENT_TIMESTAMP where id = $1"#,
+        item,
+    )
+    .execute(conn)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn undelete_item(conn: &mut PgConnection, item: Uuid) -> sqlx::Result<()> {
+    sqlx::query!(
+        r#"update item set deleted = null, updated = CURRENT_TIMESTAMP where id = $1"#,
         item,
     )
     .execute(conn)

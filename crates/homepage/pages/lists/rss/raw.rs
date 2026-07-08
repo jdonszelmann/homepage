@@ -16,15 +16,19 @@ pub struct Rss {
     pub deleted: Option<PrimitiveDateTime>,
 }
 
-pub async fn item_exists(conn: &mut PgConnection, list: Uuid, guid: &str) -> sqlx::Result<bool> {
-    sqlx::query!(
-        "select exists(select 1 from item where list = $1 and rss_guid = $2)",
+pub async fn item_exists(
+    conn: &mut PgConnection,
+    list: Uuid,
+    guid: &str,
+) -> sqlx::Result<Option<Uuid>> {
+    Ok(sqlx::query!(
+        "select id from item where list = $1 and rss_guid = $2",
         list,
         guid
     )
-    .fetch_one(conn)
-    .await
-    .map(|i| i.exists.unwrap_or_default())
+    .fetch_optional(conn)
+    .await?
+    .map(|i| i.id))
 }
 
 pub async fn all_rss_sources(conn: &mut PgConnection) -> sqlx::Result<Vec<Rss>> {

@@ -69,8 +69,8 @@
                 required
             ></textarea>
 
-            <div class="controls-after">
-                <button type="submit">Submit</button>
+            <div class="below">
+                <button style="margin-left: auto" type="submit">submit</button>
             </div>
         </form>
     </div>
@@ -103,11 +103,14 @@
         </div>
         <div class="controls">
             {% if user.is_some() %}
+
+            {% if item.added_through.can_delete() %}
             <button hx-target="closest .item" hx-swap="outerHTML" hx-delete="/list/item/{{item.id}}"
                 hx-confirm="Are you sure you wish to delete this list?">
 
                 {{icon!(REGULAR_TRASH_CAN)}}
             </button>
+            {% endif %}
 
             <button
                 hx-on='click -> this.closest(".item").querySelector(".note").replaceWith(((e) => {htmx.process(e); return e;})(document.importNode(this.closest(".item").querySelector(".edit-note").content,true)))'>
@@ -119,18 +122,25 @@
                 hx-vals='{"kind": "public", "public": false}'>
                 {{icon!(REGULAR_EYE_SLASH)}}
             </button>
-            <span>public</span>
             {% else %}
             <button hx-target="closest .item" hx-swap="outerHTML" hx-put="/list/item/{{item.id}}"
                 hx-vals='{"kind": "public", "public": true}'
                 hx-confirm="Are you sure you wish to make this list public?">
                 {{icon!(REGULAR_EYE)}}
             </button>
-            <span>private</span>
             {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="below">
+            <time datetime="{{item.added.unix_timestamp()}}">{{item.added}}</time>
+
+            {% if user.is_some() && item.public %}
+            (public)
+            {% else %}
+            (private)
             {% endif %}
 
-            <time datetime="{{item.added.unix_timestamp()}}">{{item.added}}</time>
         </div>
     </li>
     {% endfor %}

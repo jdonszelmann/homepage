@@ -219,7 +219,9 @@ pub fn markdown_to_html(text: &str) -> Option<String> {
         parse: parse_options,
         compile: compile_options,
     };
-    markdown::to_html_with_options(text, &options).ok()
+    markdown::to_html_with_options(text, &options)
+        .ok()
+        .map(|i| i.replace("<img", "<img loading='lazy'"))
 }
 
 impl BlogPost {

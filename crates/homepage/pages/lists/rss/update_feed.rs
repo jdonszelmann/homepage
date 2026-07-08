@@ -6,7 +6,10 @@ use time::UtcDateTime;
 
 use crate::{
     pages::lists::{
-        item::{self, raw::AddedThrough},
+        item::{
+            self,
+            raw::{AddedThrough, set_item_note, undelete_item},
+        },
         rss::{
             hl::Rss,
             raw::{self, append_error, clear_error, item_exists, update_rss},
@@ -22,7 +25,12 @@ pub async fn all_rss_sources(state: &ArcRouteState) -> eyre::Result<Vec<Rss>> {
     res.into_iter().map(Rss::from_raw).collect::<Result<_, _>>()
 }
 
-pub fn format_item(item: &feed_rs::model::Entry, name: Option<&str>, link: &str) -> String {
+pub fn format_item(
+    rss: &Rss,
+    item: &feed_rs::model::Entry,
+    name: Option<&str>,
+    link: &str,
+) -> String {
     let author = item
         .authors
         .first()
@@ -38,15 +46,15 @@ pub fn format_item(item: &feed_rs::model::Entry, name: Option<&str>, link: &str)
         .as_ref()
         .map(|d| format!("\n{}", d.content))
         .unwrap_or_default();
-    let name = name.unwrap_or(link);
+    let name = name.unwrap_or(&rss.url);
 
     let note = format!(
         "
-# [{title}]({link})
+[{title}]({link})
 
 {description}
 {author}
-from {link}
+from {name}
 "
     );
 
@@ -68,10 +76,18 @@ pub async fn check_item_update(
 
     {
         let mut conn = state.db.begin().await.wrap_err("aqcuire")?;
-        if !item_exists(&mut conn, rss.list.0, guid)
+        let formatted = format_item(rss, item, name, link);
+        if let Some(item) = item_exists(&mut conn, rss.list.0, guid)
             .await
             .wrap_err("item exists")?
         {
+            set_item_note(&mut conn, item, &formatted)
+                .await
+                .wrap_err("set item note")?;
+            undelete_item(&mut conn, item)
+                .await
+                .wrap_err("undelete item")?;
+        } else {
             let time_added = item
                 .published
                 .and_then(|i| UtcDateTime::from_unix_timestamp(i.timestamp()).ok())
@@ -81,7 +97,7 @@ pub async fn check_item_update(
             let _item = item::raw::create_item(
                 &mut conn,
                 rss.list.0,
-                &format_item(item, name, link),
+                &formatted,
                 Some(guid),
                 AddedThrough::Rss,
                 Some(time_added),
