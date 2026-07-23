@@ -14,7 +14,7 @@
       src="https://cdn.jsdelivr.net/npm/justif@0.5.1/dist/auto.js"
       integrity="sha384-DnIhwLwkHYcy1EkiE+4CmcVwlrGwWNxXiqxBt8n0HgxG23S897N5gJrH1OdjdX3R"
       crossorigin="anonymous"
-      data-justif-selector="main"
+      data-justif-selector="main p,a,blockquote,span"
     ></script>
 
     {% block head %}{% endblock %}
@@ -39,7 +39,7 @@
             }
         }
         
-        main p {
+        main p,a,blockquote,span {
             text-align: justify;
         }
     </style>
