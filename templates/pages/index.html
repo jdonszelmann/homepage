@@ -163,46 +163,60 @@
 
 {% call projects::projects() %}
     {% call projects::project("blog", Some("/blog")) %}
+        <p>
         I occasionally write blog posts, mainly about Rust.
+        </p>
     {% endcall %}
 
     {% call projects::project("temporary directory manager", Some("https://github.com/jdonszelmann/t-rs")) %}
+        <p>
         A tool to manage tempororary directories, easily accessible in <code
             >~/tempdirs</code
         >. Useful, for example, when you often pull git repositories
         just to build their source and discard again.
+        </p>
     {% endcall %}
 
     {% call projects::project("rust-lang/rust", Some("https://github.com/jdonszelmann/rust")) %}
+        <p>
         A cool programming language! You may have heard of it :3. I help
         develop its compiler.
+        </p>
     {% endcall %}
 
     {% call projects::project("review queue", Some("https://queue.donsz.nl")) %}
+        <p>
         A work tracker specifically for the rust-lang/rust repository.
+        </p>
     {% endcall %}
 
     {% call projects::project("rust-scopegraphs", Some("https://github.com/metaborg/rust-scopegraphs")) %}
+        <p>
         An implementation of the <a
             href="https://dl.acm.org/doi/10.1145/3276484"
             >scopegraphs algorithm</a
         > in Rust, which I worked on together with Aron Zwaan.
+        </p>
     {% endcall %}
 
     {% call projects::project("thesis", Some("https://mapfm-poster.donsz.nl")) %}
+        <p>
         A visualization of the work I did for my bachelor's thesis at <a
             href="https://mapf.donsz.nl">mapf.donsz.nl</a
         >, and an overview of it at <a
             href="https://mapfm-poster.donsz.nl"
             >mapfm-poster.donsz.nl</a
         >
+        </p>
     {% endcall %}
 
     {% call projects::project("compiler resources", Some("https://compiler-construction-2021.donsz.nl")) %}
+        <p>
         Some excellent resources on compiler construction from when I
         studied at the TU Delft. <b>These are not mine!</b> Its author, my
         professor, unfortunately passed away far too early, days after the
         final exam. Over time, these resources slowly started to disappear.
+        </p>
     {% endcall %}
 {% endcall %}
 
