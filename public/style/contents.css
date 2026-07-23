@@ -1,4 +1,5 @@
 main {
+    color: var(--foreground);
 
     h1,
     h2,
@@ -51,7 +52,7 @@ main {
     code {
         font-family: JBM;
         font-size: 4mm;
-        color: var(--code-background);
+        color: var(--code-foreground);
 
         --lnWidth: 2ch;
 
@@ -75,6 +76,7 @@ main {
     }
 
     blockquote {
+        color: var(--foreground);
         border-left: 3px solid var(--accent);
         padding: 0 0.75em;
         margin: 1em 0em;

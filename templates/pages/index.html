@@ -1,6 +1,7 @@
 {% extends "layouts/base.html" %}
 {% import "components/social.html" as social %}
 {% import "components/projects.html" as projects %}
+{% import "components/generic.html" as generic %}
 
 {% block title %}Jana's homepage{% endblock %}
 
@@ -27,7 +28,7 @@
     }
 
     .icon {
-        color: black;
+        color: var(--foreground);
     }
 </style>
 {% endblock %}
@@ -52,43 +53,38 @@
     Hi! I'm Jana (she/her)
 
     {% if gay %}
-        <span>
-            I'm a girl from Delft, The Netherlands. Come on this has
-            to be professional, bear with me for a sec. I sometimes
-            use computers, something something Rust, you get the
-            gist. Quite gay, likes kitties, and cute girls who are
-            sometimes also kitties etc. Has been described as "quite
-            hot". Oh I have ADHD btw. Trans rights are human rights.
-            Did I mention I like girls? Yeah, pretty gay. Warning: I
-            bite. More boobs accellerate this process.
-        </span>
+        I'm a girl from Delft, The Netherlands. Come on this has
+        to be professional, bear with me for a sec. I sometimes
+        use computers, something something Rust, you get the
+        gist. Quite gay, likes kitties, and cute girls who are
+        sometimes also kitties etc. Has been described as "quite
+        hot". Oh I have ADHD btw. Trans rights are human rights.
+        Did I mention I like girls? Yeah, pretty gay. Warning: I
+        bite. More boobs accellerate this process.
+        </p>
     {% else %}
-        <span>
-            I'm a software developer from Delft, The Netherlands. I
-            work for my own company,
-            <a href="https://hexcat.nl">Hexcat</a> and the RustNL
-            foundation. A large part of my job is to work on
-            <a href="https://github.com/rust-lang/rust">rustc</a>,
-            the rust compiler, being a member of the compiler team.
-            Additionally, every year I help co-organize
-            <a href="https://rustweek.org">Rust Week</a>, the
-            largest rust conference. Before that, I used to teach
-            computer science and embedded systems at the University
-            of Delft, giving and developing three courses called
-            <i>Software Fundamentals</i>, <i>Software Systems</i>,
-            and the <i>Embedded Systems Lab</i>. All these courses
-            used Rust as their primary programming language.
-        </span>
+        I'm a software developer from Delft, The Netherlands.
+        I like travelling, music, playing my guitar, cats&nbsp;𑄝&nbsp;꠹, and having a good time with friends.
+        </p>
+
+        <p>
+        I work for <a href="https://hexcat.nl">Hexcat</a> and the RustNL foundation.
+        A large part of my job is to work on <a href="https://github.com/rust-lang/rust">rustc</a>,
+        the rust compiler, being a member of the compiler team.
+
+        Additionally, every year I help co-organize <a href="https://rustweek.org">Rust Week</a>, the
+        largest rust conference.
+        I like teaching, and before I worked on rustc,
+        I used to teach computer science and embedded systems at the University of Delft,
+        giving and developing three courses called <i>Software Fundamentals</i>, <i>Software Systems</i>,
+        and the <i>Embedded Systems Lab</i>.
+        All these courses used Rust as their primary programming language.
+        </p>
     {% endif %}
-</p>
 
 <p>
     🏳️‍🌈🏳️‍⚧️ trans rights are human rights. If you've got a problem with that, go away.
 </p>
-
-<blockquote>
-    <b>NO large language models were or are used in any of my open source contributions or anything I do. If you see something that I made online: that is <i>me</i>, and I take full responsibility for it.</b>
-</blockquote>
 
 <p>
     I
@@ -100,12 +96,30 @@
 
 <ul class="sociallist nodots">
     <li>
-        {% call social::social("https://github.com/jdonszelmann") %}
-            {{icon!(BRANDS_GITHUB)}}
-            <span>jdonszelmann</span>
+        {% call social::social("https://fedi.xirion.net/@jana") %}
+            {{icon!(BRANDS_MASTODON)}}
+            <span>@jana@xirion.net</span>
         {% endcall %}
     </li>
-    {% if gay %}
+    <li>
+        {% call social::social("https://git.donsz.nl/jana") %}
+            {{icon!(BRANDS_FORGEJO)}}
+            <span>@jana</span>
+        {% endcall %}
+    </li>
+    <li>
+        {% call social::social("https://github.com/jdonszelmann") %}
+            {{icon!(BRANDS_GITHUB)}}
+            <span>@jdonszelmann</span>
+        {% endcall %}
+    </li>
+    <li>
+        {% call social::social("mailto://website+jana@donsz.nl") %}
+            {{icon!(SOLID_ENVELOPE)}}
+            <span>jana౷donsz.nl</span>
+        {% endcall %}
+    </li>
+    {% if !gay %}
         <li>
             {% call social::social("https://www.linkedin.com/in/jdonszelmann/") %}
                 {{icon!(BRANDS_LINKEDIN)}}
@@ -122,21 +136,10 @@
     <li>
         {% call social::social("https://crates.io/users/jdonszelmann") %}
             {{icon!(BRANDS_RUST)}}
-            <span>jdonszelmann</span>
+            <span>@jdonszelmann</span>
         {% endcall %}
     </li>
-    <li>
-        {% call social::social("mailto://website+jana@donsz.nl") %}
-            {{icon!(SOLID_ENVELOPE)}}
-            <span>jana@donsz.nl</span>
-        {% endcall %}
-    </li>
-    <li>
-        {% call social::social("https://fedi.xirion.net/@jana") %}
-            {{icon!(BRANDS_MASTODON)}}
-            <span>@jana@xirion.net</span>
-        {% endcall %}
-    </li>
+
     {% if gay %}
         <li>
             {% call social::social("/") %}
@@ -219,6 +222,8 @@
         </p>
     {% endcall %}
 {% endcall %}
+
+{{ generic::llm_notice() }}
 
 {% if gay %}<p>meow meow mrrrp mrow meow :3 :3 &lt;3</p>{% endif %}
 

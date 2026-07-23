@@ -1,6 +1,0 @@
-{% macro tag(name, wide = false) %}
-<a class="tag {% if wide %}wide{% endif %}" {# style={` color: hsl(${nameHash}deg 60% 10%); background:
-    hsl(${nameHash}deg 80% 95%); border-color: hsl(${nameHash}deg 100% 55%); `} #} href="/blog/tag/{{name}}">
-    {{name}}
-</a>
-{% endmacro %}

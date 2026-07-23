@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 {% import "components/github.html" as github %}
-{% import "components/tag.html" as t %}
+{% import "components/generic.html" as generic %}
 {% import "components/rust.html" as rust %}
 {% import "components/arena.html" as arena %}
 
@@ -49,7 +49,7 @@ hljs.highlightAll();
     <div class="tags">
         Tags:
         {% for tag in post.tags %}
-        {{ t::tag(tag, true) }}
+        {{ generic::tag(tag, true) }}
         {% endfor %}
     </div>
 </div>
@@ -80,6 +80,8 @@ hljs.highlightAll();
 
 <div class="contents {% if !post.ligatures || post.variant.is_music() %}no-ligatures{% endif %}">
     {% block contents %}{% endblock %}
+
+    {{ generic::llm_notice() }}
 </div>
 
 <footer class="ifnarrow center">
@@ -114,7 +116,7 @@ hljs.highlightAll();
         <div class="tags">
             Tags:
             {% for tag in post.tags %}
-            {{ t::tag(tag, true) }}
+            {{ generic::tag(tag, true) }}
             {% endfor %}
         </div>
     </div>

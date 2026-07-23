@@ -1,0 +1,15 @@
+{% macro tag(name, wide = false) %}
+<a class="tag {% if wide %}wide{% endif %}" {# style={` color: hsl(${nameHash}deg 60% 10%); background:
+    hsl(${nameHash}deg 80% 95%); border-color: hsl(${nameHash}deg 100% 55%); `} #} href="/blog/tag/{{name}}">
+    {{name}}
+</a>
+{% endmacro %}
+
+{% macro llm_notice %}
+<blockquote>
+    <b>NO large language models were or are used in any of my open source contributions or anything I do.
+        Not for proof-reading, not for trying out random ideas, not for generating code or text.
+        LLMs and the companies that create and sell them destroy communities and the world around us.
+        If you see something that I made online: that is <i>me</i>, and I take full responsibility for it.</b>
+</blockquote>
+{% endmacro %}

@@ -9,7 +9,7 @@
     align-items: center;
 
     .icon {
-        color: black;
+        color: var(--foreground);
     }
 }
 
@@ -124,7 +124,7 @@
     display: inline-flex;
     align-items: center;
 
-    color: white;
+    color: var(--text-white);
     box-shadow: var(--shadow) 0px 1px 4px;
 
     padding: 0 0.3em;
@@ -172,7 +172,7 @@
         i * {
             height: 0.8em;
             width: 0.8em;
-            color: black;
+            color: var(--foreground);
         }
     }
 
@@ -322,7 +322,7 @@
 
     .click-area {
         display: contents;
-        color: black;
+        color: var(--foreground);
         text-decoration: none;
     }
 
