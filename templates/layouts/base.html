@@ -5,7 +5,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
 
+    <!-- TODO: only dynamic pages -->
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta4/dist/htmx.min.js" integrity="sha384-aWZK1NtOs/aWb/+YZdTM8q2JkWEshlMc9mgZ189numT9bwFhyAyYEoO4nO/2dTXt" crossorigin="anonymous"></script>
+
+    <script
+      type="module"
+      blocking="render"
+      src="https://cdn.jsdelivr.net/npm/justif@0.5.1/dist/auto.js"
+      integrity="sha384-DnIhwLwkHYcy1EkiE+4CmcVwlrGwWNxXiqxBt8n0HgxG23S897N5gJrH1OdjdX3R"
+      crossorigin="anonymous"
+      data-justif-selector="main"
+    ></script>
 
     {% block head %}{% endblock %}
 
@@ -27,6 +37,10 @@
             to {
                 --can-scroll: ;
             }
+        }
+        
+        main p {
+            text-align: justify;
         }
     </style>
 

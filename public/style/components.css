@@ -311,7 +311,7 @@
 .preview {
     box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
     display: block;
-    padding: 1em;
+    padding: 1em 1.5em 1em 1.5em;
 
     &.draft {
         background: repeating-linear-gradient(135deg,
