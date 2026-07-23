@@ -208,6 +208,25 @@ details {
     nav {
         padding-top: 1em;
         flex-direction: row !important;
+        width: 100%;
+
+        .menu {
+            display: block;
+            overflow-x: scroll;
+
+            display: flex;
+            flex-direction: row;
+            justify-self: end;
+
+            justify-content: start;
+            align-items: center;
+            padding-bottom: 1em;
+
+
+            align-self: start;
+
+            gap: 1em;
+        }
     }
 
     .only-narrow {
