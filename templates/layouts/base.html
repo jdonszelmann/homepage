@@ -38,6 +38,12 @@
                 --can-scroll: ;
             }
         }
+
+        {% if let Some(user) = user && user.name == "jana" %}
+            :root {
+                color-scheme: light;
+            }
+        {% endif %}
     </style>
 
     <script>

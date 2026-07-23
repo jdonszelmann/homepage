@@ -36,7 +36,9 @@ main p,blockquote {
 }
 
 :root {
-    /* color-scheme: light dark; */
+    /* preferred */
+    color-scheme: light dark;
+
     --text-white: #e9e9e9;
 
     --background: light-dark(#f0f0f0, #18191b);
