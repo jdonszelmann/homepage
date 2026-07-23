@@ -31,11 +31,31 @@
     font-weight: bold;
 }
 
+main p,blockquote,span {
+    text-align: justify;
+}
+
+:root {
+    --background: #f5f5f5;
+    --foreground: #000000;
+
+    --table-odd: #ccc;
+    --table-even: #f5f5f5;
+    --table-header: #f5f5f5;
+
+    --draft-red: #ffadb0;
+    --shadow: rgba(0, 0, 0, 0.16);
+    --accent: #9c3574;
+    --code-background: #000000;
+    --crate-green: #264323;
+    --error: #e02e22;
+}
+
 html,
 body {
     margin: 0;
     padding: 0;
-    background: #f5f5f5;
+    background: var(--background);
 
     min-height: 100vh;
     height: fit-content;
@@ -67,7 +87,7 @@ main {
 }
 
 nav {
-    background: #f5f5f5;
+    background: var(--background);
     grid-area: nav;
     display: flex;
     flex-direction: column;

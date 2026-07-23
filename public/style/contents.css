@@ -9,11 +9,11 @@ main {
     }
 
     .style-error {
-        color: #e02e22;
+        color: var(--error);
     }
 
     a {
-        color: #9c3574;
+        color: var(--accent);
 
         font-family: "Noto Sans Mono";
         font-weight: 600;
@@ -51,7 +51,7 @@ main {
     code {
         font-family: JBM;
         font-size: 4mm;
-        color: #000000;
+        color: var(--code-background);
 
         --lnWidth: 2ch;
 
@@ -61,7 +61,7 @@ main {
     }
 
     button {
-        color: #9c3574;
+        color: var(--accent);
         padding: 0.3em 0.5em;
     }
 
@@ -75,7 +75,7 @@ main {
     }
 
     blockquote {
-        border-left: 3px solid #9c3574;
+        border-left: 3px solid var(--accent);
         padding: 0 0.75em;
         margin: 1em 0em;
 

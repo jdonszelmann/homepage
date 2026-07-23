@@ -42,7 +42,7 @@
 }
 
 .project {
-    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+    box-shadow: var(--shadow) 0px 1px 4px;
     display: block;
     padding: 1em;
 
@@ -75,10 +75,10 @@
         font-size: unset;
         margin-right: 1em;
 
-        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+        box-shadow: var(--shadow) 0px 1px 4px;
         padding: 0 0.3em;
         border-radius: 0.3em;
-        color: #212529;
+        color: var(--foreground);
 
         font-size: unset;
     }
@@ -112,7 +112,7 @@
     font-size: unset;
     text-decoration: none;
 
-    color: #9c3574;
+    color: var(--foreground);
 
     &.wide {
         padding: 0.125em 0em;
@@ -125,7 +125,7 @@
     align-items: center;
 
     color: white;
-    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+    box-shadow: var(--shadow) 0px 1px 4px;
 
     padding: 0 0.3em;
     border-radius: 0.3em;
@@ -134,7 +134,7 @@
     font-size: 4mm;
     vertical-align: middle;
 
-    background: #264323;
+    background: var(--crate-green);
 
     &.large {
         padding: 0.3em;
@@ -189,15 +189,15 @@
         overflow-x: scroll;
 
         tbody tr:nth-child(odd) td {
-            background-color: #ccc;
+            background-color: var(--table-odd);
         }
 
         tbody tr:nth-child(even) td {
-            background: #f5f5f5;
+            background: var(--table-even);
         }
 
         th {
-            background: #f5f5f5;
+            background: var(--table-header);
         }
 
         th,
@@ -205,7 +205,6 @@
             min-width: fit-content;
             white-space: nowrap;
             padding: 0.5em 0.2em;
-            border-left: 0.5px solid #ddd;
         }
 
         /* @media (width > 449px) { */
@@ -295,7 +294,7 @@
     margin-top: 1em;
 
     .urls {
-        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+        box-shadow: var(--shadow) 0px 1px 4px;
         display: block;
         padding: 1em;
 
@@ -309,16 +308,16 @@
 }
 
 .preview {
-    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+    box-shadow: var(--shadow) 0px 1px 4px;
     display: block;
     padding: 1em 1.5em 1em 1.5em;
 
     &.draft {
         background: repeating-linear-gradient(135deg,
-                color-mix(in hsl, #f5f5f5, white 0%),
-                color-mix(in hsl, #f5f5f5, white 0%) 20px,
-                color-mix(in hsl, #ffadb0, white 30%) 20px,
-                color-mix(in hsl, #ffadb0, white 30%) 40px);
+                color-mix(in hsl, var(--background), var(--background) 0%),
+                color-mix(in hsl, var(--background), var(--background) 0%) 20px,
+                color-mix(in hsl, var(--draft-red), white 30%) 20px,
+                color-mix(in hsl, var(--draft-red), white 30%) 40px);
     }
 
     .click-area {

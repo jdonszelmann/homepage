@@ -48,7 +48,7 @@
 
         padding: 0.5em 0.5em;
 
-        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+        box-shadow: var(--shadow) 0px 1px 4px;
 
         word-wrap: anywhere;
 
