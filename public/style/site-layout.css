@@ -50,7 +50,7 @@ main p,blockquote {
 
     --draft-red: light-dark(#ffadb0, #300810);
     --shadow: light-dark(rgba(0, 0, 0, 0.16), #66666633);
-    --accent: light-dark(#9c3574, #d4429b);
+    --accent: light-dark(#9c3574, #eb4bac);
     --code-foreground: light-dark(#000000, var(--text-white));
     --crate-green: #264323;
     --error: #e02e22;
