@@ -1,0 +1,113 @@
+---
+title: 'Optimizing the new trait solver'
+pubDate: 2026-08-07
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "rust" ]
+description: |
+    This is a more detailed writeup of all the changes we made in the past months to optimize the performance of the next trait solver.
+    Basically, anything that didn't fit in the blog post on https://blog.rust-lang.org.
+draft: true
+time: "15 minutes"
+ligatures: true
+---
+
+TODO: newer graph
+TODO: intern images
+
+In April, we started tracking the performance of the new solver better by adding more benchmarks to our [performance benchmarking infrastructure](https://perf.rust-lang.org) that used the new solver.
+Importantly, that way we could also start better tracking the performance *over time*.
+
+One spectacular example is thet wg-grammar benchmark, which used a lot of *opaque types* in a way that caused exponential slowdowns. The solution here wasn't micro-otptimizations, but algorithmic changes to increase the likelyhood of cache hits.
+
+![A plot of the wg-grammar benchmark from perf.rust-lang.org between may and august 2026](https://hackmd.io/_uploads/HyBmM2t8fg.png)
+
+The y-axis here shows billion (G for giga) instructions executed while compiling the benchmark.
+
+We run these benchmarks on every single merge into rust's main branch, providing valuable statistics. However, this set of benchmarks will always be slightly synthetic. So @lqd started doing a crater-like run, but for performance. 
+
+So, @lqd downloaded the 20 000 most downloaded crates from `crates.io`, and measured how much slower the new solver compiled it compared to the old solver.
+A process which took multiple weeks of compute time.
+Based on these results, several people started addressing the outliers. 
+
+> To crate the graphs in this document, we took a sample of 1 000 out of these 20 000 crates, and followed them over time.
+
+To show what happened when we started looking more into these outliers, let's look again at the graph from the main blog post:
+
+![The performance of 1000 crates (on the x axis) plotted against their slowdown factor (logarithmic) on the y axis. Many crates around the 1.0 mark (no slowdown), with at both ends major outliers up and down. Colors show progression over time.](https://hackmd.io/_uploads/B1yNjSjUzx.png)
+
+> **note** that all graphs in this document have a logarithmic y axis!
+
+Each vertical slice in this plot shows a single crate. Each slice ideally contains 4 datapoints (this is not always true when in an older version a crate didn't compile *at all* with the new solver).
+Each red dot represents the performance at the end of May, Green at the end of June, Cyan at the end of July, and light blue is right now.
+
+So you can see that on the left, there are some red dots between 4x and 16x. That means that in June, there were crates that were 4 to 16x slower with the new solver than they were to compile with the old solver.
+In this range, 4x to 16x, we only see red and green dots, because a lot of these crates became a lot faster! The first blue dot can be found between 2x and 4x. Still bad, but much better.
+
+More interesting to me, is the fact that on the right, we also see a lot of dots above the 1x line. So, by optimizing the very slow crates, we accidentally made them not just *as* fast as the old solver, but in many cases *much faster*.
+
+Finally, there are a large number of crates (over 900 of the 1 000) for which the blue dot lies between 0.8 and 1.2. In other words, most crates are barely affected by the change in trait solvers.
+
+## Individual sorting
+
+Several people who I showed the above graph asked me if I could make a small change, sorting all datapoints.
+
+![The same graph as before, but the sorting of datapoints happens independently per compiler version](https://hackmd.io/_uploads/H1OgiSsLfg.png)
+
+I find this slightly less informative, since you can't see the per-crate progression as easily. But it does show the total progression over time better.
+
+Here's a visualization in which we tracked a representative sample of 1 000 out of those 20 000 crates over the course of the last two months, to give you an idea of what happened.
+
+## Crates as lines
+
+Finally, I'd like to show you the very first way I tried visualizing this data, by following the progression of individual crates as lines.
+
+![Line plot of 1 000 crates tracked at 4 points in the past two months, showing the ratio between old and new solver performance.](https://hackmd.io/_uploads/rJbPiSo8Ml.png)
+
+
+The result, I admit, is a little messy. That's a lot of lines! However, there are interesting things to learn here anyway:
+
+- A couple crates used to be extremely slow two months ago (up to 16x slower with the new solver than they were with the old solver), and many of those are much closer to 1x now, even if not fully mitigated. These are the cases that we've been caring a lot about recently.
+- The density of crates between 1.5x and 4x slower has gone down significantly (from 42 to 24 of the 1 000 in this plot).
+- A **lot** of crates (more than 900 of the 1 000 in this plot) hover between 0.8 and 1.2x slower, and are roughly stable there. That means many crates have similar performance with the old and new solver.
+- A couple of outliers are massively faster with the new solver! Those are all the lines below 1x.
+
+We didn't label any crates in any of these graphs, but some of the outliers that might be interesting are:
+
+- typenum-1.20.1 (consistently around 2.1x slower than the old solver).
+- nacl-0.5.3 (which we brought from 4.5x slower to only 1.7x slower than the old solver).
+- nom-8.0.0 which went from 6.2x slower to only 1.6x slower.
+- datafusion-0.5.3 which is one of the crates that is almost 4x faster under the new solver, one of the lines far below 1x.
+- astrology-3.0.3 is a crate that started at 4.1x slower, and over the past months went down to being *20% faster* than the old solver.
+
+## A short list of performance issues resolved in the past months
+
+Note, the explanations in this section are majorly simplified to hopefully be interesting to a larger audience.
+
+**TypingMode::Erased**
+
+See [#155443](https://github.com/rust-lang/rust/pull/155443), [#156246](https://github.com/rust-lang/rust/pull/156246), [#157910](https://github.com/rust-lang/rust/pull/157910), 
+
+Queries to the trait solver involving opaque types (return-position impl trait), often result in cache misses.
+To mitigate, we pre-process such queries, stripping out all mentions of opaque types,
+noting down whether the evaluation of the query actually ever uses the information of these opaque types.
+If it turns out we don't, the result without opaques is valid, and the cache entry is more general.
+If the opaque types *were* relevant, we will retry such queries with the original opaque types.
+
+Since we now sometimes do double work, there are cases in which this is a slowdown. However, much more often than not it helps with performance.
+
+**less re-evaluation of stalled queries**
+
+Query evaluation is a fixpoint loop. We evaluate a list of queries, and find out that some cannot be evaluated yet. We say that those queries are *stalled*, until some progress is made on another query.
+After we've attempted to make progress on all queries, we could naively restart at the start of the list, retrying all queries to see if they can now make more progress.
+
+However, a lot of work went into not unnecessarily retrying queries when we already know they cannot make further progress. For each query, we keep some metadata, trying to remember *what* they are stalled on. We then only retry a query if something changes that can actually affect it.
+
+Time invested in optimizing this stalling process turned out to give major gains:
+
+- [#156187](https://github.com/rust-lang/rust/pull/156187) skips more goals by ensuring more up-to-date information is used
+- [#160479](https://github.com/rust-lang/rust/pull/160479) micro-optimizes allocation in the fixpoint loop, streamlining the hottest paths as much as possible
+- [#158042](https://github.com/rust-lang/rust/pull/158042) the check to abort queries that are stalled lived at the start of one of the hottest functions in the solver, but also one of the *biggest* functions. LLVM dealt with this poorly, not properly optimizing the fast path independently from this big function with lots of logic. By splitting it into a smaller function handling the fast path, and a larger function for the slow path lots of performance was gained.
+- [#160886](https://github.com/rust-lang/rust/pull/160886) and [#158436](https://github.com/rust-lang/rust/pull/158436) making the datastructure that contains metadata about stalled queries smaller.
+
+Note that this list is *far* from complete. A lot of micro-optimization was also done which are harder to "explain" or give context for. See https://github.com/rust-lang/goals/issues/113 for a complete list of work.
