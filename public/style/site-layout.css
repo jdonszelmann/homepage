@@ -37,7 +37,8 @@ main p,blockquote {
 
 :root {
     /* preferred */
-    color-scheme: light dark;
+    /* color-scheme: light dark; */
+    color-scheme: light;
 
     --text-white: #e9e9e9;
 

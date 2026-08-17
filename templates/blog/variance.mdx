@@ -1,0 +1,156 @@
+---
+title: 'Variance'
+pubDate: 2026-07-24
+authors: ['jdonszelmann']
+reviewers: []
+tags: [ "programming languages", "rust" ]
+description: |
+    Variance is a notoriously confusing topic in programming languages, though of course monads still beat variance.
+    I've heard a funny saying, that when a programmer finally understands monads, they will invariably write a blogpost about how easy they actually are for the next generation of programmer to then stare at in confusion.
+    Who knows if variance works the same, but here's my attempt.
+draft: true
+time: "5 minutes"
+---
+
+## Type Relations
+
+Every programming language with a type system will eventually have to compare two types,
+to check that you got your types right, or tell you why you didn't.
+Let's say you write `a == b`.
+The type checker only allows that if both `a` and `b` have the same type[^1], duh.
+The same happens when you assign to a variable: `let a: i32 = 3`, where the type of the expression (`3`) has to be equated with the expected type (`i32`).
+I hope you can see how a similar process happens when calling a function with a given type signature.
+The given parameters must match.
+
+Type relations are recursive. To check that `Vec<i32>` is equal to `Vec<i32>` we check that `Vec` is equal to `Vec`, and `i32` is equal to `i32`.
+`Vec<u32>` is not equal to `Vec<u64>`, even though the outer type is similar: both types are a `Vec`.
+This recursion even applies to weirder types, like functions: `fn(Vec<u32>) -> u32` is not equal to `fn(Vec<String>) -> u32`, and we know by checking both all parameters and the return type.
+
+Sofar I've described type equality. Equality is an instance of a type relation, some function that compares two types. And as we'll see, equality isn't the only type relation.
+In fact, taking the Rust compiler as an example, it currently contains 14 different kinds of type relations (types implementing the `TypeRelation` trait).
+Most of them are just an implementation detail, subtle variations of "type equality", and that important to talk about.
+However, that does bring us to our next interesting type relation...
+
+## Subtyping
+
+In some languages, in some situations, we don't care that much about type equality.
+Just for fun, I'm going to briefly switch to an example in Java, with some class `Kitty`.
+It's entirely fine to write code that looks like this:
+
+```java
+Object mrower = new Kitty();
+```
+
+So we did an assignment to a variable, and we specified the type of the variable to be `Object`, and assign a value of type `Kitty`, and...
+Java is totally fine with that.
+That's just inheritance.
+
+Still, the Java compiler has to typecheck this, and clearly the type relation java applies here is not type equality.
+But what's happening here, is a different type relation: subtyping.
+Java allows assignments, as long as the right hand side expression is a subtype of the specified type.
+`Kitty` is a subclass of `Object`.
+Or, yet another way to describe what's happening here is this is that `Object` is "more general".
+When you say that a variable has type `Object`, you can assign more things to it than when you say it has type `Kitty`.
+For example, you can also write
+
+```java
+Object mrower = new Kitty();
+
+// later
+mrower = new Doggo();
+```
+
+<!-- `Object` can be used in more places, places where we could have also used *less* general types like `Kitty`. -->
+
+
+Knowing that, it might make sense that subtyping relations are often written with a greater-than-or-equal sign.
+`Object >= Kitty` means `Object` is a more general type than `Kitty`.
+More values are of type `Object` than of type `Kitty`, since all values of type `Kitty` are compatible with variables of type `Object`.
+The equal part comes from the fact that subtyping *includes* type equality.
+Assigning a value of type `Kitty` to a variable of type `Kitty` is obviously fine.
+
+> You can read `a >= b` as "a is a supertype of b"
+
+From now on I'll use this notation. So instead of saying "if I have a variable of type Object and a value of type Kitty, can I assign the value?",
+I'll write, "is Object >= Kitty?"
+
+> from here on out, I'll also start mixing some syntax of different languages.
+> The truth is, the exact language doesn't matter so much.
+> What matters is that some types are subtypes of other types.
+
+## Recursive Subtyping
+
+Earlier, we talked about the recursive nature of type relations.
+The same is true for subtyping:
+Is `Object >= u32`? sure!
+But `Object >= Vec<u32>` is also true, as well as `Vec<Object> >= Vec<u32>`.
+
+I specifically want to go back to function types, because with subtyping something weird happens.
+Let's start simple: `fn(u32) -> u32 >= fn(u32) -> u32` is true.
+Left and right are just the same types, and subtyping includes equality.
+Next, `Object >= fn(u32) -> u32`, and sure, that also makes sense.
+`Object` is the supertype of everything[^2].
+Working our way up, how about `fn(u32) -> Object >= fn(u32) -> u32`?
+
+This relation says that if we have a function that takes a `u32` and returns a `u32`,
+and we want to assign that function to a variable `x` that expects something that returns an `Object`,
+is that ok?
+The answer is yes: because `Object >= u32`. If we now call the variable `x`, we expect to get back an `Object`.
+Sure, we get back an `u32` but that's more specific than we expected. All good.
+Some pseudocode might help:
+
+```rust
+fn meow(foo: u32) -> u32 {
+    return foo;
+}
+
+fn main() {
+    // Here we assign meow to x, and we check `fn(u32) -> Object >= fn(u32) -> u32`.
+    let x: fn(u32) -> Object = meow;
+    // It's ok, Object is a supertype of u32.
+    let foo: Object = x(13);
+}
+
+
+```
+
+Finally, we get to the weird bit. The same is *not* true for function parameters.
+The following subtyping relation: `fn(Object) -> u32 >= fn(u32) -> u32` is not true!
+Why not? Let's write it out in some pseudocode:
+
+```rust
+fn meow(foo: u32) -> u32 {
+    return foo;
+}
+
+fn main() {
+    // Here we assign meow to x, and we check `fn(Object) -> u32 >= fn(u32) -> u32`.
+    let x: fn(Object) -> u32 = meow;
+    // Not ok, sure, `Kitty` is a subclass of `Object`,
+    // but `meow` expectes an u32, not an `Object`!!!
+    x(new Kitty());
+}
+
+```
+
+Suddenly calling `x` is completely wrong.
+Sure, `Kitty` is a subclass of `Object`, but `meow` expectes an u32, not an `Object`!!!
+
+To type check parameters of functions, we have to *invert* the subtyping relationship.
+Normally, in an assignment, we check `Expected >= Given`, but for parameters, we have to check `Given >= Expected`.
+
+## Variance
+
+Finally, the promised topic of this blog post!
+
+
+- Variance
+- Variants
+
+- Function types
+- Cell
+- Scala
+
+
+[^1]: yes, I'm aware that depending on the language, the rules for equality may be more difficult. Rust, for example, allows trait implementations of `PartialEq` with different `Rhs` types.
+[^2]: This supertype of all types is often called "Top" in type theory, and written as `⊤`. The inverse is "Bottom" or `⊥`, which is the subtype of all types. Rust calls this bottom type the "never type", and writes it as `!`.

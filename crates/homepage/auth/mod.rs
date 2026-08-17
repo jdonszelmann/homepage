@@ -154,28 +154,34 @@ pub async fn auth_routes(
         .add_scope(Scope::new("email".into()))
         .with_client_secret(ClientSecret::new(state.args.client_secret.clone()));
 
-    let oidc_client = oidc_client
-        .discover(IssuerUrl::new(state.args.auth_server.clone()).context("invalid auth server")?)
-        .await
-        .unwrap()
-        .build();
-
-    let oidc_auth_service = ServiceBuilder::new()
-        .layer(HandleErrorLayer::new(|e: MiddlewareError| async {
-            dbg!(&e);
-            e.into_response()
-        }))
-        .layer(OidcAuthLayer::<_, SessionWrapper>::new(oidc_client));
-
-    let r = r
+    let mut r = r
         .route("/logout", get(logout))
         .route("/login", get(login).layer(require_login()))
         .route(
             OIDC_URL,
             any(handle_oidc_redirect::<EmptyAdditionalClaims, SessionWrapper>),
-        )
-        .layer(oidc_auth_service)
-        .layer(session_layer);
+        );
+
+    if let Some(oidc_client) = oidc_client
+        .discover(IssuerUrl::new(state.args.auth_server.clone()).context("invalid auth server")?)
+        .await
+        .inspect_err(|e| {
+            tracing::error!("{e:?}");
+        })
+        .ok()
+        .map(|i| i.build())
+    {
+        let oidc_auth_service = ServiceBuilder::new()
+            .layer(HandleErrorLayer::new(|e: MiddlewareError| async {
+                dbg!(&e);
+                e.into_response()
+            }))
+            .layer(OidcAuthLayer::<_, SessionWrapper>::new(oidc_client));
+
+        r = r.layer(oidc_auth_service);
+    }
+
+    let r = r.layer(session_layer);
 
     Ok(r)
 }

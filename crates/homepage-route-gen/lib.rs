@@ -61,7 +61,7 @@ fn posts_with_tag<'a>(
         .iter()
         .enumerate()
         // only non drafts, unless we're supposed to include drafts
-        .filter(|(_, i)| include_drafts || !i.draft)
+        // .filter(|(_, i)| include_drafts || !i.draft)
         // only posts with the requested tags, unless all tags are requested
         .filter(|(_, i)| tag.is_none_or(|requested_tag| i.tags.iter().any(|i| i == requested_tag)))
         .map(|(idx, post)| {
