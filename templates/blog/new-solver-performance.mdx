@@ -12,15 +12,12 @@ time: "15 minutes"
 ligatures: true
 ---
 
-TODO: newer graph
-TODO: intern images
-
 In April, we started tracking the performance of the new solver better by adding more benchmarks to our [performance benchmarking infrastructure](https://perf.rust-lang.org) that used the new solver.
 Importantly, that way we could also start better tracking the performance *over time*.
 
 One spectacular example is thet wg-grammar benchmark, which used a lot of *opaque types* in a way that caused exponential slowdowns. The solution here wasn't micro-otptimizations, but algorithmic changes to increase the likelyhood of cache hits.
 
-![A plot of the wg-grammar benchmark from perf.rust-lang.org between may and august 2026](https://hackmd.io/_uploads/HyBmM2t8fg.png)
+![A plot of the wg-grammar benchmark from perf.rust-lang.org between may and august 2026](/static/images/optimizing-the-new-trait-solver/wg-grammar.png)
 
 The y-axis here shows billion (G for giga) instructions executed while compiling the benchmark.
 
@@ -28,13 +25,13 @@ We run these benchmarks on every single merge into rust's main branch, providing
 
 So, @lqd downloaded the 20 000 most downloaded crates from `crates.io`, and measured how much slower the new solver compiled it compared to the old solver.
 A process which took multiple weeks of compute time.
-Based on these results, several people started addressing the outliers. 
+Based on these results, several people started addressing the outliers.
 
 > To crate the graphs in this document, we took a sample of 1 000 out of these 20 000 crates, and followed them over time.
 
 To show what happened when we started looking more into these outliers, let's look again at the graph from the main blog post:
 
-![The performance of 1000 crates (on the x axis) plotted against their slowdown factor (logarithmic) on the y axis. Many crates around the 1.0 mark (no slowdown), with at both ends major outliers up and down. Colors show progression over time.](https://hackmd.io/_uploads/B1yNjSjUzx.png)
+![The performance of 1000 crates (on the x axis) plotted against their slowdown factor (logarithmic) on the y axis. Many crates around the 1.0 mark (no slowdown), with at both ends major outliers up and down. Colors show progression over time.](/static/images/optimizing-the-new-trait-solver/scatter.png)
 
 > **note** that all graphs in this document have a logarithmic y axis!
 
@@ -48,11 +45,23 @@ More interesting to me, is the fact that on the right, we also see a lot of dots
 
 Finally, there are a large number of crates (over 900 of the 1 000) for which the blue dot lies between 0.8 and 1.2. In other words, most crates are barely affected by the change in trait solvers.
 
+## Change from last week
+
+The graph above was generated with the newest datapoints on `nightly-2026-08-16`. However, I've been running the benchmark script almost every day this past week.
+Looking at a similar graph from last week (`nightly-2026-08-09`), a lot of changes can be seen:
+
+
+![The same graph as before, but generated with a nightly from last week.](/static/images/optimizing-the-new-trait-solver/scatter-last-week.png)
+
+The older graph's line of points has a slightly smoother bend in the bottom-left, but that's just a funny coincidence I think.
+The change I'm interested here is that fewer points in the middle (where the line is around 1.0x) have older datapoints (red, green, cyan) above them.
+In this old graph, some crates are not as optimized yet, and are sorted towards the left, where in the new graph these points are sorted towards the center of the graph (i.e. their current performance is closer to 1.0x and closer to all the other crates).
+
 ## Individual sorting
 
 Several people who I showed the above graph asked me if I could make a small change, sorting all datapoints.
 
-![The same graph as before, but the sorting of datapoints happens independently per compiler version](https://hackmd.io/_uploads/H1OgiSsLfg.png)
+![The same graph as before, but the sorting of datapoints happens independently per compiler version](/static/images/optimizing-the-new-trait-solver/scatter-sorted.png)
 
 I find this slightly less informative, since you can't see the per-crate progression as easily. But it does show the total progression over time better.
 
@@ -62,7 +71,7 @@ Here's a visualization in which we tracked a representative sample of 1 000 out 
 
 Finally, I'd like to show you the very first way I tried visualizing this data, by following the progression of individual crates as lines.
 
-![Line plot of 1 000 crates tracked at 4 points in the past two months, showing the ratio between old and new solver performance.](https://hackmd.io/_uploads/rJbPiSo8Ml.png)
+![Line plot of 1 000 crates tracked at 4 points in the past two months, showing the ratio between old and new solver performance.](/static/images/optimizing-the-new-trait-solver/lines.png)
 
 
 The result, I admit, is a little messy. That's a lot of lines! However, there are interesting things to learn here anyway:
@@ -96,7 +105,38 @@ If the opaque types *were* relevant, we will retry such queries with the origina
 
 Since we now sometimes do double work, there are cases in which this is a slowdown. However, much more often than not it helps with performance.
 
-**less re-evaluation of stalled queries**
+**Quadratic slowdowns in `unic-ucd-name`**
+
+In all the graphs above, one datapoint is purposefully omitted. The crate `unic-ucd-name` used to be 214x slower with the new solver than with the old solver...
+It simply didn't fit on the graph.
+After [#160982](https://github.com/rust-lang/rust/pull/160982) it's now at 1.07x slower, which is much more acceptable.
+The culprit was code like this (minimized by [Mira](https://github.com/inkreasing)):
+
+```rust
+pub const A: &[&[&str]] = &[
+    &["A"],
+    &["A"],
+    &["A"],
+    // ...
+    &["A"],
+    &["A"],
+];
+```
+
+With the new solver, this code would scale quadratically in the number of items in the outer slice.
+And `unic-ucd-name` has a slice of tens of thousands of these (enumerating unicode codepoints).
+The problem was that the new solver can sometimes cause lifetime "infer vars" (like type variables but for lifetimes) to be unified.
+And, somwhere in NLL code, we'd call into the trait solver, and then undo all changes to the lifetime inference storage (a union-find datastructure).
+This undoing would iterate over every lifetime in the storage.
+However, there's also a flag: if no lifetimes were touched, we'd skip the iteration.
+The old solver wouldn't touch lifetimes, so would never do this iteration.
+Since we run this code once for each slice in the example above, and each time we undid an operation we'd iterate over N lifetime variables (*two* per slice, also one for the string inside),
+we get quadratic performance.
+
+These kinds of situations occur frequently, where we change something in the new solver, that has a cascading effect into unrelated code that suddenly increases the computational complexity.
+The above change of adding `TypingMode::Erased` has a similar (exponential) speedup effect on some crates.
+
+**Less re-evaluation of stalled queries**
 
 Query evaluation is a fixpoint loop. We evaluate a list of queries, and find out that some cannot be evaluated yet. We say that those queries are *stalled*, until some progress is made on another query.
 After we've attempted to make progress on all queries, we could naively restart at the start of the list, retrying all queries to see if they can now make more progress.

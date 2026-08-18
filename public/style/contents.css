@@ -61,6 +61,26 @@ main {
         }
     }
 
+    img:not(:active) {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 1px;
+        max-width: 100%;
+        height: auto;
+    }
+
+    img:active {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%); 
+
+        height: 80%;
+        min-height: 1px;
+        max-height: 80%;
+        width: auto;
+    }
+
     button {
         color: var(--accent);
         padding: 0.3em 0.5em;

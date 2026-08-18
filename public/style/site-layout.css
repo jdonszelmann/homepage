@@ -32,7 +32,7 @@
 }
 
 main p,blockquote {
-    text-align: justify;
+    /* text-align: justify; */
 }
 
 :root {
