@@ -21,9 +21,9 @@ One spectacular example is thet wg-grammar benchmark, which used a lot of *opaqu
 
 The y-axis here shows billion (G for giga) instructions executed while compiling the benchmark.
 
-We run these benchmarks on every single merge into rust's main branch, providing valuable statistics. However, this set of benchmarks will always be slightly synthetic. So @lqd started doing a crater-like run, but for performance. 
+We run these benchmarks on every single merge into rust's main branch, providing valuable statistics. However, this set of benchmarks will always be slightly synthetic. So [Rémy](https://github.com/lqd) started doing a crater-like run, but for performance.
 
-So, @lqd downloaded the 20 000 most downloaded crates from `crates.io`, and measured how much slower the new solver compiled it compared to the old solver.
+So, [Rémy](https://github.com/lqd) downloaded the 20 000 most downloaded crates from `crates.io`, and measured how much slower the new solver compiled it compared to the old solver.
 A process which took multiple weeks of compute time.
 Based on these results, several people started addressing the outliers.
 
