@@ -21,7 +21,7 @@ One spectacular example is thet wg-grammar benchmark, which used a lot of *opaqu
 
 The y-axis here shows billion (G for giga) instructions executed while compiling the benchmark.
 
-We run these benchmarks on every single merge into rust's main branch, providing valuable statistics. However, this set of benchmarks will always be slightly synthetic. So [Rémy](https://github.com/lqd) started doing a crater-like run, but for performance.
+We run these benchmarks on every single merge into rust's main branch, providing valuable statistics. However, this set of benchmarks will always be slightly synthetic. So [Rémy Rakic (aka lqd)](https://github.com/lqd) started doing a crater-like run, but for performance.
 
 So, [Rémy](https://github.com/lqd) downloaded the 20 000 most downloaded crates from `crates.io`, and measured how much slower the new solver compiled it compared to the old solver.
 A process which took multiple weeks of compute time.
@@ -110,7 +110,7 @@ Since we now sometimes do double work, there are cases in which this is a slowdo
 In all the graphs above, one datapoint is purposefully omitted. The crate `unic-ucd-name` used to be 214x slower with the new solver than with the old solver...
 It simply didn't fit on the graph.
 After [#160982](https://github.com/rust-lang/rust/pull/160982) it's now at 1.07x slower, which is much more acceptable.
-The culprit was code like this (minimized by [Mira](https://github.com/inkreasing)):
+The culprit was code like this (minimized by [mira](https://github.com/inkreasing)):
 
 ```rust
 pub const A: &[&[&str]] = &[
