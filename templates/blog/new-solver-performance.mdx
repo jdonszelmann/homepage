@@ -6,7 +6,7 @@ reviewers: []
 tags: [ "rust" ]
 description: |
     This is a more detailed writeup of all the changes we made in the past months to optimize the performance of the next trait solver.
-    Basically, anything that didn't fit in the blog post on https://blog.rust-lang.org.
+    Basically, anything that didn't fit in the blog post on https://blog.rust-lang.org/2026/08/21/enabling-next-solver-on-nightly/.
 draft: false
 time: "15 minutes"
 ligatures: true
@@ -15,7 +15,7 @@ ligatures: true
 In April, we started tracking the performance of the new solver better by adding more benchmarks to our [performance benchmarking infrastructure](https://perf.rust-lang.org) that used the new solver.
 Importantly, that way we could also start better tracking the performance *over time*.
 
-One spectacular example is thet wg-grammar benchmark, which used a lot of *opaque types* in a way that caused exponential slowdowns. The solution here wasn't micro-otptimizations, but algorithmic changes to increase the likelyhood of cache hits.
+One spectacular example is thet wg-grammar benchmark, which used a lot of *opaque types* in a way that caused exponential slowdowns. The solution here wasn't micro-optimizations, but algorithmic changes to increase the likelyhood of cache hits.
 
 ![A plot of the wg-grammar benchmark from perf.rust-lang.org between may and august 2026](/static/images/optimizing-the-new-trait-solver/wg-grammar.png)
 
@@ -23,11 +23,11 @@ The y-axis here shows billion (G for giga) instructions executed while compiling
 
 We run these benchmarks on every single merge into rust's main branch, providing valuable statistics. However, this set of benchmarks will always be slightly synthetic. So [Rémy Rakic (aka lqd)](https://github.com/lqd) started doing a crater-like run, but for performance.
 
-So, [Rémy](https://github.com/lqd) downloaded the 20 000 most downloaded crates from `crates.io`, and measured how much slower the new solver compiled it compared to the old solver.
+To do so, [Rémy](https://github.com/lqd) downloaded the 20 000 most downloaded crates from `crates.io`, and measured how much slower the new solver compiled it compared to the old solver.
 A process which took multiple weeks of compute time.
 Based on these results, several people started addressing the outliers.
 
-> To crate the graphs in this document, we took a sample of 1 000 out of these 20 000 crates, and followed them over time.
+> To create the graphs in this document, we took a sample of 1 000 out of these 20 000 crates, and followed them over time.
 
 To show what happened when we started looking more into these outliers, let's look again at the graph from the main blog post:
 
@@ -45,6 +45,23 @@ More interesting to me, is the fact that on the right, we also see a lot of dots
 
 Finally, there are a large number of crates (over 900 of the 1 000) for which the blue dot lies between 0.8 and 1.2. In other words, most crates are barely affected by the change in trait solvers.
 
+## Generating these benchmarks
+
+These benchmarks show instruction counts (not wall time), measured with perf.
+They involve 3 separate cargo commands, because I'm specifically interested in the root crate's performance,
+not its dependencies.
+So for a crate named `mrow`, it would look something like this:
+
+```bash
+cargo check
+cargo clean -p mrow
+perf ... -- cargo check
+```
+
+The `cargo clean` in the middle deletes only the specific crate given, in our case the root crate `mrow`.
+On each compiler version, on each crate, I'd then run that sequence of commands twice.
+Once with `-Znext-solver=coherence` and once with `-Znext-solver=globally` to see the difference in instruction counts.
+
 ## Change from last week
 
 The graph above was generated with the newest datapoints on `nightly-2026-08-16`. However, I've been running the benchmark script almost every day this past week.
@@ -61,11 +78,14 @@ In this old graph, some crates are not as optimized yet, and are sorted towards 
 
 <div id="zoomed"></div>
 
+As requested on [lobsters](https://lobste.rs/s/3giezs/enabling_next_generation_trait_solver_on), here's a zoomed-in version from between y=0.5 to y=2.0.
+Before you ask, the ticks inbetween are √2 and 1/√2 because that's what happens to equal spacing on log plots :3
+
 ![The same scatter plot, but zoomed in between 0.5x and 2x](/static/images/optimizing-the-new-trait-solver/scatter-zoomed.png)
 
 ## Individual sorting
 
-Several people who I showed the above graph asked me if I could make a small change, sorting all datapoints.
+Several people who I showed the above graphs asked me if I could make a small change, sorting all datapoints.
 
 ![The same graph as before, but the sorting of datapoints happens independently per compiler version](/static/images/optimizing-the-new-trait-solver/scatter-sorted.png)
 
@@ -89,11 +109,11 @@ The result, I admit, is a little messy. That's a lot of lines! However, there ar
 
 We didn't label any crates in any of these graphs, but some of the outliers that might be interesting are:
 
-- typenum-1.20.1 (consistently around 2.1x slower than the old solver).
-- nacl-0.5.3 (which we brought from 4.5x slower to only 1.7x slower than the old solver).
-- nom-8.0.0 which went from 6.2x slower to only 1.6x slower.
-- datafusion-0.5.3 which is one of the crates that is almost 4x faster under the new solver, one of the lines far below 1x.
-- astrology-3.0.3 is a crate that started at 4.1x slower, and over the past months went down to being *20% faster* than the old solver.
+- `typenum-1.20.1` (consistently around 2.1x slower than the old solver).
+- `nacl-0.5.3` (which we brought from 4.5x slower to only 1.7x slower than the old solver).
+- `nom-8.0.0` which went from 6.2x slower to only 1.6x slower.
+- `datafusion-0.5.3` which is one of the crates that is almost 4x faster under the new solver, one of the lines far below 1x.
+- `astrology-3.0.3` is a crate that started at 4.1x slower, and over the past months went down to being *20% faster* than the old solver.
 
 ## A short list of performance issues resolved in the past months
 
