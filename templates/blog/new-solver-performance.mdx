@@ -57,6 +57,12 @@ The older graph's line of points has a slightly smoother bend in the bottom-left
 The change I'm interested here is that fewer points in the middle (where the line is around 1.0x) have older datapoints (red, green, cyan) above them.
 In this old graph, some crates are not as optimized yet, and are sorted towards the left, where in the new graph these points are sorted towards the center of the graph (i.e. their current performance is closer to 1.0x and closer to all the other crates).
 
+## Zoomed in around 0.5x - 2x
+
+<div id="zoomed"></div>
+
+![The same scatter plot, but zoomed in between 0.5x and 2x](/static/images/optimizing-the-new-trait-solver/scatter-zoomed.png)
+
 ## Individual sorting
 
 Several people who I showed the above graph asked me if I could make a small change, sorting all datapoints.
