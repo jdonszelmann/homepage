@@ -62,6 +62,9 @@ The `cargo clean` in the middle deletes only the specific crate given, in our ca
 On each compiler version, on each crate, I'd then run that sequence of commands twice.
 Once with `-Znext-solver=coherence` and once with `-Znext-solver=globally` to see the difference in instruction counts.
 
+See my code to gather the data here: <https://git.donsz.nl/jana/new-solver-perf>
+And no, I won't show my plotting code. It's the ugliest python I've ever written. Oh my gods. You'd die reading it. And I've written some ugly [python code in the past](/blog/pipethon)
+
 ## Change from last week
 
 The graph above was generated with the newest datapoints on `nightly-2026-08-16`. However, I've been running the benchmark script almost every day this past week.
