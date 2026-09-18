@@ -35,7 +35,7 @@ In Rust, the ordering of modules doesn't matter.
 As long as a function is visible enough (using `pub` qualifiers),
 any function can call any other function,
 regardless of definition order or location in the module tree.
-Though it's probably not a great idea to call into this code, the following code _does_ compiles in rust:
+Though it's probably not a great idea to call into this code, the following code _does_ compile in rust:
 
 ```rust
 fn foo() {
@@ -48,7 +48,7 @@ fn bar() {
 ```
 
 That's not the way that, for example, C works.
-In C, the global scope is **not** order-independent, and declarations are processed top-top-bottom.
+In C, the global scope is **not** order-independent, and declarations are processed top-to-bottom.
 That means that you can only call a function *after* it's declared.
 The way to work around this is by using what's called a forward declaration:
 you can declare the type of a function first, without giving a definition.
