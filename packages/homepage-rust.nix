@@ -5,7 +5,7 @@
   llvmPackages_latest,
   clang,
   lib,
-  openssl_3,
+  openssl,
   fira,
   jetbrains-mono,
   fira-mono,
@@ -26,12 +26,12 @@ naersk'.buildPackage {
     pkg-config
     clang
     llvmPackages_latest.bintools
-    openssl_3
+    openssl
   ];
   LIBCLANG_PATH = lib.makeLibraryPath [
     llvmPackages_latest.libclang.lib
   ];
-  PKG_CONFIG_PATH = "${openssl_3.dev}/lib/pkgconfig";
+  PKG_CONFIG_PATH = "${openssl.dev}/lib/pkgconfig";
 
   preConfigure = ''
     mkdir -p ./public/fonts
