@@ -417,7 +417,7 @@ and have gone even further by implementing [a chess engine](https://github.com/D
 Trait solving ends up being a subsystem that the compiler spends quite a large portion of its time in.
 In general, there are two reasons for that:
 
-- During a compilation, we call into the trait solver very often, for many answering many different questions.
+- During compilation, we call into the trait solver very often, to answer many answering many different questions.
 - A single call into the trait solver can effectively perform arbitrary computation (up to some recursion limit), which may potentially scale exponentially with the size of the program.
 
 This ends up replacing the trait solver more complicated than you might think. People have already written many programs using the old solver,
@@ -484,7 +484,7 @@ For more complicated types this is not true.
 
 ### Caching
 
-A naive cache would be a mapping to questions asked to the trait solver, to answers (errors or proofs).
+A naive cache would be a mapping from questions asked to the trait solver, to answers (errors or proofs).
 So, something like `HashMap<Question, Answer>`, but this wouldn't perform so well.
 Let's look at this example:
 
