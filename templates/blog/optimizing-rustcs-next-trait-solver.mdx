@@ -170,7 +170,7 @@ Having said that, sometimes during type inference we do have to ask things about
 Furthermore, the trait solver sometimes "unifies type variables", which means that while Rust makes a query about traits,
 we might make some progress on figuring out what the types of some variables are.
 
-### Trait solving
+## Trait solving
 
 In the example code, one place where the trait solver comes into effect is when we call `weird_add`.
 On the function there's a `where` bound. A `where` bound is a requirement that the Rust compiler must check before allowing a call to that function.
