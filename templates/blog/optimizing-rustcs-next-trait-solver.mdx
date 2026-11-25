@@ -185,7 +185,7 @@ impl Add for i32 {
 }
 ```
 
-Once the trait solver finds this `impl` block, it acts a anser to the question "does i32 implement Add?".
+Once the trait solver finds this `impl` block, it acts as an answer to the question "does i32 implement Add?".
 We somtimes refer to this answer as a a proof that the statement holds.
 
 The example code contains several more calls to the trait solver.
@@ -410,7 +410,7 @@ And `impl` blocks can also define *outputs* thrugh associated types.
 What we've done here, is make `impl` blocks powerful enough to act as *functions*, with inputs and outputs.
 And Alonzo Church proved that a language with *only* pure functions is in fact turing complete.
 
-This is why `Prolog` is a fully-fledged turing programming language, and *so is Rust's type system*.
+This is why `Prolog` is a fully-fledged turing complete programming language, and *so is Rust's type system*.
 People have defined numbers completely in Rust's type system in a crate called [typenum](https://docs.rs/typenum/latest/typenum/),
 and have gone even further by implementing [a chess engine](https://github.com/Dragon-Hatcher/type-system-chess) inside the type system.
 
