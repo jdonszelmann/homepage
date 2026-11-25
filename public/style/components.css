@@ -110,7 +110,7 @@
     justify-content: center;
     cursor: pointer;
     font-weight: normal;
-    font-family: "Fira Sans";
+    font-family: "Fira Sans", sans-serif;
     font-size: unset;
     text-decoration: none;
 
@@ -156,6 +156,8 @@
         height: 1em;
         border-radius: 1em;
         margin-right: 0.3em;
+        aspect-ratio: 1/1;
+        max-width: 1em;
     }
 
     &.large img.logo {
@@ -352,7 +354,7 @@
     }
 
     a {
-        font-family: "Fira Sans";
+        font-family: "Fira Sans", sans-serif;
         font-size: unset;
         font-weight: normal;
     }

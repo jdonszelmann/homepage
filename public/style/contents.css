@@ -16,7 +16,7 @@ main {
     a {
         color: var(--accent);
 
-        font-family: "Noto Sans Mono";
+        font-family: "Noto Sans Mono", monospace;
         font-weight: 600;
 
         font-size: 4mm;
@@ -50,7 +50,7 @@ main {
     }
 
     code {
-        font-family: JBM;
+        font-family: JBM, monospace;
         font-size: 4mm;
         color: var(--code-foreground);
 
@@ -73,7 +73,7 @@ main {
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%); 
+        transform: translate(-50%, -50%);
 
         height: 80%;
         min-height: 1px;

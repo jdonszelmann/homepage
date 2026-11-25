@@ -1,7 +1,7 @@
 .keys {
     list-style-type: none;
     padding-left: 0;
-    font-family: JBM;
+    font-family: JBM, monospace;
     font-size: 3mm;
 
     li {

@@ -1,37 +1,44 @@
 @font-face {
     font-family: "JBM";
     src: url("/static/fonts/JetBrainsMono-Regular.ttf") format("truetype");
+    font-display: block;
 }
 
 @font-face {
     font-family: "NF";
     src: url("/static/fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
+    font-display: block;
 }
 
 @font-face {
     font-family: "Noto Sans Mono";
     src: url("/static/fonts/NotoSansMono.ttf") format("truetype");
+    font-display: block;
 }
 
 @font-face {
     font-family: "Fira Sans";
     src: url("/static/fonts/FiraSans-Regular.otf") format("opentype");
     font-weight: normal;
+    font-display: block;
 }
 
 @font-face {
     font-family: "Fira Sans";
     src: url("/static/fonts/FiraSans-Bold.otf") format("opentype");
     font-weight: bold;
+    font-display: block;
 }
 
 @font-face {
     font-family: "Fira Sans Mono";
     src: url("/static/fonts/FiraMono-Medium.otf") format("opentype");
     font-weight: bold;
+    font-display: block;
 }
 
-main p,blockquote {
+main p,
+blockquote {
     /* text-align: justify; */
 }
 
@@ -68,6 +75,7 @@ body {
     color: var(--foreground);
 
     font-variant-ligatures: additional-ligatures;
+    font-size-adjust: ex-height 0.5;
 }
 
 body {
@@ -78,7 +86,7 @@ body {
     grid-template-columns: auto 15em min(55em, 70vw) 0em auto;
     gap: 1em;
 
-    font-family: "Fira Sans";
+    font-family: "Fira Sans", sans-serif;
 
     &.wide {
         grid-template-columns: auto 15em min(65em, 90vw) 0em auto;
@@ -133,12 +141,12 @@ nav {
 }
 
 .sans {
-    font-family: "Fira Sans";
+    font-family: "Fira Sans", sans-serif;
     font-weight: inherit;
 }
 
 .mono {
-    font-family: "JBM";
+    font-family: "JBM", monospace;
 }
 
 .no-ligatures {

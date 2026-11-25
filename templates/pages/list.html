@@ -6,10 +6,12 @@
 
 <!-- TODO make highlighting a component -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
 <script>
-hljs.configure({languages:[]});
-hljs.highlightAll();
+window.addEventListener('load', () => {
+    hljs.configure({languages:[]});
+    hljs.highlightAll();
+});
 </script>
 
 {% endblock %}
