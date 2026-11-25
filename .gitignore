@@ -1,6 +1,7 @@
 .env
 result
 public/fonts
+.direnv
 
 # Added by cargo
 
