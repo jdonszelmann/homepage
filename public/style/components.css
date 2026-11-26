@@ -94,6 +94,7 @@
         margin-right: 0.3em;
         aspect-ratio: 1/1;
         max-width: 1em;
+        min-width: 1em;
     }
 
     &.large img.gh-avatar {
@@ -158,6 +159,7 @@
         margin-right: 0.3em;
         aspect-ratio: 1/1;
         max-width: 1em;
+        min-width: 1em;
     }
 
     &.large img.logo {
@@ -366,4 +368,10 @@
     padding-left: 0;
 
     .link {}
+}
+
+.question {
+    border-left: 3px solid var(--accent);
+    padding: 0 0.75em;
+    margin: 1em 0em;
 }

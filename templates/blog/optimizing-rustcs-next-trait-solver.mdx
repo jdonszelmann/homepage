@@ -605,6 +605,44 @@ This sometimes makes performance worse (we sometimes do double work), but since 
 In the graph from above, there are two bars for wg-grammar. One where the hit rate is 73% and one where the hit rate is 79%.
 This 6% difference translates to some the `wg-grammar` crate first taking 28 seconds to compile, and afterwards only 14 seconds. That's 2x faster!
 
+<details>
+<summary>
+On Reddit I got the following question that I liked:
+
+<div class="question">
+The opaque type retry path is what I want to understand better: when an answer was recorded assuming opaque types don't matter and the retry says otherwise, do you evict the entry or keep both keyed by the recorded state?
+
+<a href="https://www.reddit.com/r/rust/s/o3fvHcS9kk" class="author">Author: kevinbaiv</a>
+
+</div>
+
+(click to expand for me going into a little more detail about this)
+
+</summary>
+
+Technically even when we use opaque type tracking, the list of opaques is still part of the key.
+We just set it to be an empty list.
+That means that in the rerun, we un-empty it and we get a different cache key.
+Now because we keep the cache entry with the empty list around too, when a new query comes along it will also empty the list,
+find a cache hit that matches this empty list but *with* tracking information (so it's not redoing work getting that tracking).
+Then, if it decides it needs to rerun, it adds back the list of opaques and could totally get a cache hit again if we've tried with those exact opaques before.
+
+Of note is also that sometimes we run multiple dependent queries without their opaques like this.
+We can only un-empty the list once we get back up to the root at the point where we emptied the list to see if they may be unnecessary.
+To make sure we don't spend too much time running giant query trees we have a bailing mechanism built in to the tracking.
+Once a query and it's dependencies try to access opaques more than 3 times (or when they do so in very specific ways) we assume that it's unlikely for opaques *not* to influence the outcome of the query in any way,
+and we bail out of the "erased" attempts (recording in each dependent result that it's likely a rerun is necessary) and rerun without every knowing the original (erased) result, since it's unlikely to be correct.
+Future queries will see that this happened in the tracking information, and never attempt to erase opaque types. They know that the attempt is likely wasted.
+
+Now there's an even more subtle thing going on.
+Sometimes assuming that opaques are empty (in a specific path related to coroutines) leads to query cycles.
+So, in that case we are forced to do this bailing and to rerun with opaque types even if the answer would've maybe been correct with the erased environment,
+because the compiler would crash if it encountered the cycle and we want to avoid those at all costs.
+In this case we may end up rerunning with opaque types, get to the exact same point, and continue to return the exact same result as we would have when we erased the environment previously.
+This is sadly unavoidable.
+
+</details>
+
 This, and more optimizations meant that wg-grammar used to take almost 200 Billion cpu cycles to compile, and now only about 7 Billion.
 
 ![A plot of the wg-grammar benchmark from perf.rust-lang.org between may and august 2026](/static/images/optimizing-the-new-trait-solver/wg-grammar.png)
@@ -613,6 +651,8 @@ Now this is my second blog post about trait solver optimization. [The other one]
 and goes into all the different things we did over the past year to bring the new trait solver towards stabilization.
 Go read it next if you're interested, and thank you for reading!
 If you're still interested in learning more about this, I'm happy to answer any questions if you reach out.
+
+Also, hell yea! you made it to the end. Here's my cat.
 
 ![Jazz on my bed](/static/images/cats/jazz-on-bed.jpg)
 
