@@ -252,6 +252,11 @@ fn weird_add<T>(a: T, b: T) -> T
 }
 ```
 
+> On [lobsters](https://lobste.rs/s/lyyksp/optimizing_rustc_s_next_trait_solver#c_fmxsd7) I got asked about whether the `Add` bound is required to add the `Sized` bound.
+> The `T: Sized` implicit bound gets added for any generic. Even if there was *not* already an `Add` bound, `T` would still be `Sized`.
+> Currently, you can opt out of that implicit bound using `T: ?Sized` (or in the example, `T: Add + ?Sized`). In the future we may change the syntax for that to
+> `T: MetaSized`. Look for the keyword "Sized Hierarchy" if you want to learn more. [This document](https://github.com/rust-lang/goals/blob/main/src/2026/scalable-vectors.md) should also give you a primer.
+
 Finally, this code will actually give a type error, because there's one more trait to prove. Because `b` gets mentioned twice, we have to clone or copy values of type `T`.
 The function signature really should have been:
 
