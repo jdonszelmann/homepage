@@ -62,7 +62,7 @@ It [says](https://rustc-dev-guide.rust-lang.org/solve/trait-solving.html?highlig
 But I promised I'd start at absolute zero, so what's a trait?
 
 Some types act in similar ways. They share certain properties.
-For example, a lot of different types can be cloned, or copared for equality.
+For example, a lot of different types can be cloned, or compared for equality.
 To codify these properties, we can use traits.
 In other words, a trait is a *property of a type*.
 
@@ -147,7 +147,7 @@ Trait solving is not the same as type inference.
 This is a common misconception.
 Inside the Rust compiler, the two are completely different subsystems.
 Type inference is the process of replacing blanks with types.
-Throughout this text I'll refer to some the following example code (with slight variations):
+Throughout this text I'll refer to the following example code (with slight variations):
 
 ```rust
 fn weird_add<T>(a: T, b: T) -> T
@@ -186,7 +186,7 @@ impl Add for i32 {
 ```
 
 Once the trait solver finds this `impl` block, it acts as an answer to the question "does i32 implement Add?".
-We somtimes refer to this answer as a a proof that the statement holds.
+We somtimes refer to this answer as a proof that the statement holds.
 
 The example code contains several more calls to the trait solver.
 One you may not have thought about is that all local variables in Rust have to implement the `Sized` trait to be allowed on the stack.
@@ -197,7 +197,7 @@ The proof for this statement doesn't come from an `impl` block though. I did say
 In this case, the fact that some primitive types implement `Sized` is built-in to the compiler.
 `i32` is *inherently* Sized, and there is no `impl` block anywhere that says so.
 
-Answering `Sized` queries in general turns out to be quite hard because of the shear volume at which it occurs.
+Answering `Sized` queries in general turns out to be quite hard because of the sheer volume at which it occurs.
 To compile rust's standard library, we'll ask "does type implement Sized?" about 800 000 times!
 Additionally, answering it isn't always this simple.
 Let's take a slightly more involved example:
@@ -275,14 +275,14 @@ To summarize, trait solving is the process of answering questions about relation
 These questions are submitted to the trait solver, and the trait solver looks for candidates in the form of:
 
 - `impl` blocks,
-- built-in candiates,
+- built-in candidates,
 - or `where` bounds.
 
 When it finds one of these, we say we've found a proof, and if we cannot find one, a type error is emitted.
 
 ## Multi-step trait solving
 
-Sofar, all trait solving came down to finding a single candidate, but that's not always how it works.
+So far, all trait solving came down to finding a single candidate, but that's not always how it works.
 Let's look at the definition of the `From` and the `Into` traits:
 
 ```rust
@@ -322,7 +322,7 @@ impl<T> From<T> for T {
 ```
 
 Some preference takes place here. Since this is a blanket implementation, the other more specific one takes precedence.
-We can think about the trait solving about answering a tree of candidates that may apply.
+We can of trait solving as exploring a tree of candidates that may apply.
 In this case, the single candidate for `u32: Into<u64>` turns into two, `u64: From<u32>` *and* `T: From<T>`.
 
 Something we'll not cover today, but this tree of candidates in reality is not a tree, it can have cycles!
@@ -410,7 +410,7 @@ fn weird_add<T>(a: T, b: T) ->
 Hold on!
 `impl` blocks can define *inputs* they act on, like `impl Foo for i32` applies when the input is `i32`.
 It can make these inputs variables, like `impl<T> Foo for T`.
-And `impl` blocks can also define *outputs* thrugh associated types.
+And `impl` blocks can also define *outputs* through associated types.
 
 What we've done here, is make `impl` blocks powerful enough to act as *functions*, with inputs and outputs.
 And Alonzo Church proved that a language with *only* pure functions is in fact turing complete.
@@ -422,10 +422,10 @@ and have gone even further by implementing [a chess engine](https://github.com/D
 Trait solving ends up being a subsystem that the compiler spends quite a large portion of its time in.
 In general, there are two reasons for that:
 
-- During compilation, we call into the trait solver very often, to answer many answering many different questions.
+- During compilation, we call into the trait solver very often, to answer many different questions.
 - A single call into the trait solver can effectively perform arbitrary computation (up to some recursion limit), which may potentially scale exponentially with the size of the program.
 
-This ends up replacing the trait solver more complicated than you might think. People have already written many programs using the old solver,
+This ends up making replacing the trait solver more complicated than you might think. People have already written many programs using the old solver,
 and because the new solver internally makes different assumptions (sometimes in the name of soundness, remember the old solver has many bugs),
 we end up having programs that take both longer and shorter to compile.
 Sometimes with a polynomial factor, sometimes even with an exponential factor.
@@ -521,7 +521,7 @@ By now, we've learned that candidates for proofs can come from three sources:
 - `where` bounds
 
 The first two play nicely, because the same `impl` blocks and compiler built-ins are around for all questions submitted to the trait solver.
-Howver, `where` bounds are different for every function, and thus a proof that a type implements a trait inside of one function,
+However, `where` bounds are different for every function, and thus a proof that a type implements a trait inside of one function,
 may not be reusable inside another function.
 
 ```rust
